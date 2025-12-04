@@ -87,6 +87,75 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Deposit<'a> {
     }
 }
 
+//  vault is owned by the program, matches the PDA derived from the owner, and the owner is the signer of the withdraw transaction. The withdrawn amount is everything above the rent minimum.
+pub struct Withdraw<'a> {
+    pub owner: &'a AccountInfo,
+    pub vault: &'a AccountInfo,
+}
+impl<'a> Withdraw<'a> {
+    pub const DISCRIMINATOR: &'a u8 = &1;
+
+    /// Transfer lamports from the vault PDA to the owner, leaving the rent minimum in place.
+    pub fn process(self) -> ProgramResult {
+        let Withdraw { owner, vault } = self;
+        if !owner.is_signer() {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+
+        // Validate that the vault is owned by the program
+        if !vault.is_owned_by(&crate::ID) {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+
+        // Validate that the provided vault account is the correct PDA for this owner
+        let (expected_vault_pda, _bump) = derive_vault(owner);
+        if vault.key() != &expected_vault_pda {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        // Compute how much can be withdrawn while keeping the account rent-exempt
+        let data_len = vault.data_len();
+        let min_balance = Rent::get()?.minimum_balance(data_len);
+        let current = vault.lamports();
+        if current <= min_balance {
+            // Nothing withdrawable; keep behavior strict to avoid rent violations
+            return Err(ProgramError::InsufficientFunds);
+        }
+        let withdraw_amount = current - min_balance;
+
+        // Transfer from vault to owner
+        {
+            let mut vault_lamports = vault.try_borrow_mut_lamports()?;
+            *vault_lamports = vault_lamports
+                .checked_sub(withdraw_amount)
+                .ok_or(ProgramError::InsufficientFunds)?;
+        }
+
+        {
+            let mut owner_lamports = owner.try_borrow_mut_lamports()?;
+            *owner_lamports = owner_lamports
+                .checked_add(withdraw_amount)
+                .ok_or(ProgramError::InsufficientFunds)?;
+        }
+
+        log!("{} lamports withdrawn from vault", withdraw_amount);
+        Ok(())
+    }
+}
+
+impl<'a> TryFrom<&'a [AccountInfo]> for Withdraw<'a> {
+    type Error = ProgramError;
+
+    fn try_from(accounts: &'a [AccountInfo]) -> Result<Self, Self::Error> {
+        if accounts.len() < 2 {
+            return Err(ProgramError::NotEnoughAccountKeys);
+        }
+        let owner = &accounts[0];
+        let vault = &accounts[1];
+        Ok(Self { owner, vault })
+    }
+}
+
 //-------------==
 /// Parse a u64 from instruction data.
 /// amount must be non-zero,
