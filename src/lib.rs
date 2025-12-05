@@ -23,9 +23,10 @@ fn process_instruction(
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
+    //reads the first byte as a discriminator to determine which method to call (here: 0 = Deposit, 1 = Withdraw).
     match instruction_data.split_first() {
-        Some((Deposit::DISCRIMINATOR, data)) => Deposit::try_from((data, accounts))?.process(),
-        Some((Withdraw::DISCRIMINATOR, _)) => Withdraw::try_from(accounts)?.process(),
+        Some((Deposit::DISCRIMINATOR, data)) => Deposit::try_from((data, accounts))?.process_sol(),
+        Some((Withdraw::DISCRIMINATOR, _)) => Withdraw::try_from(accounts)?.process_sol(),
         _ => Err(ProgramError::InvalidInstructionData),
     }
 }

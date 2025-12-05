@@ -11,10 +11,11 @@ test-ledger
 .yarn
 .env*
 aarchives
-accountclones
 justfile
 env.ts
 index.ts
 removed.rs
-klend-sdk
-kliquidity-sdk
+accounts
+idl
+clients
+codama.json

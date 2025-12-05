@@ -49,14 +49,14 @@ pub struct Deposit<'a> {
 impl<'a> Deposit<'a> {
     pub const DISCRIMINATOR: &'a u8 = &0;
 
-    pub fn process(self) -> ProgramResult {
+    pub fn process_sol(self) -> ProgramResult {
         let Deposit {
             owner,
             vault,
             amount,
         } = self;
 
-        ensure_vault_exists(owner, vault)?;
+        ensure_accounts(owner, vault)?;
 
         SystemTransfer {
             from: owner,
@@ -78,7 +78,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Deposit<'a> {
         }
         let owner = &accounts[0];
         let vault = &accounts[1];
-        let amount = parse_amount(data)?;
+        let amount = parse_amount_u64(data)?;
         Ok(Self {
             owner,
             vault,
@@ -96,8 +96,9 @@ impl<'a> Withdraw<'a> {
     pub const DISCRIMINATOR: &'a u8 = &1;
 
     /// Transfer lamports from the vault PDA to the owner, leaving the rent minimum in place.
-    pub fn process(self) -> ProgramResult {
+    pub fn process_sol(self) -> ProgramResult {
         let Withdraw { owner, vault } = self;
+        // Validate owner is signer
         if !owner.is_signer() {
             return Err(ProgramError::InvalidAccountOwner);
         }
@@ -108,7 +109,7 @@ impl<'a> Withdraw<'a> {
         }
 
         // Validate that the provided vault account is the correct PDA for this owner
-        let (expected_vault_pda, _bump) = derive_vault(owner);
+        let (expected_vault_pda, _bump) = derive_vault_pda(owner);
         if vault.key() != &expected_vault_pda {
             return Err(ProgramError::InvalidAccountData);
         }
@@ -123,7 +124,7 @@ impl<'a> Withdraw<'a> {
         }
         let withdraw_amount = current - min_balance;
 
-        // Transfer from vault to owner
+        // Transfer SOL from vault to owner
         {
             let mut vault_lamports = vault.try_borrow_mut_lamports()?;
             *vault_lamports = vault_lamports
@@ -159,7 +160,7 @@ impl<'a> TryFrom<&'a [AccountInfo]> for Withdraw<'a> {
 //-------------==
 /// Parse a u64 from instruction data.
 /// amount must be non-zero,
-fn parse_amount(data: &[u8]) -> Result<u64, ProgramError> {
+fn parse_amount_u64(data: &[u8]) -> Result<u64, ProgramError> {
     if data.len() != core::mem::size_of::<u64>() {
         return Err(ProgramError::InvalidInstructionData);
     }
@@ -171,13 +172,13 @@ fn parse_amount(data: &[u8]) -> Result<u64, ProgramError> {
 }
 
 /// Derive the vault PDA for an owner and return (pda, bump).
-fn derive_vault(owner: &AccountInfo) -> (Pubkey, u8) {
+fn derive_vault_pda(owner: &AccountInfo) -> (Pubkey, u8) {
     find_program_address(&[b"vault", owner.key().as_ref()], &crate::ID)
 }
 
 /// Ensure the vault exists; if not, create it with PDA seeds.
 /// owner must be a signer, vault must be writable, and rent minimum must be respected for creation.
-fn ensure_vault_exists(owner: &AccountInfo, vault: &AccountInfo) -> ProgramResult {
+fn ensure_accounts(owner: &AccountInfo, vault: &AccountInfo) -> ProgramResult {
     if !owner.is_signer() {
         return Err(ProgramError::InvalidAccountOwner);
     }
@@ -186,7 +187,7 @@ fn ensure_vault_exists(owner: &AccountInfo, vault: &AccountInfo) -> ProgramResul
     if vault.lamports() == 0 {
         const ACCOUNT_DISCRIMINATOR_SIZE: usize = 8;
 
-        let (_pda, bump) = derive_vault(owner);
+        let (_pda, bump) = derive_vault_pda(owner);
         let signer_seeds = [
             Seed::from(b"vault".as_slice()),
             Seed::from(owner.key().as_ref()),
