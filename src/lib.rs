@@ -16,17 +16,25 @@ entrypoint!(process_instruction);
 pub mod instructions;
 pub use instructions::*;
 
-declare_id!("J7KVuhnkyabChZs2r7wLVduZvJr4GiSGTZt3b3dJyykJ"); //crate::ID
+declare_id!("7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e"); //crate::ID
 
 fn process_instruction(
-    _program_id: &Pubkey,
+    program_id: &Pubkey,
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
+    if program_id != &crate::ID {
+        return Err(ProgramError::IncorrectProgramId);
+    }
+    // `split_first` separates the first byte (discriminator) from the rest (payload).
+    let (discriminator, data) = instruction_data
+        .split_first()
+        .ok_or(ProgramError::InvalidInstructionData)?;
+
     //reads the first byte as a discriminator to determine which method to call (here: 0 = Deposit, 1 = Withdraw).
-    match instruction_data.split_first() {
-        Some((Deposit::DISCRIMINATOR, data)) => Deposit::try_from((data, accounts))?.process_sol(),
-        Some((Withdraw::DISCRIMINATOR, _)) => Withdraw::try_from(accounts)?.process_sol(),
-        _ => Err(ProgramError::InvalidInstructionData),
+    match discriminator {
+        Deposit::DISCRIMINATOR => Deposit::try_from((data, accounts))?.process(),
+        Withdraw::DISCRIMINATOR => Withdraw::try_from(accounts)?.process(),
+        _ => Err(ProgramError::InvalidArgument),
     }
 }

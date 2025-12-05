@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { before, describe, it } from "node:test";
+//import { test, expect, mock } from "bun:test";
 import {
 	airdropFactory,
 	appendTransactionMessageInstruction,
@@ -25,6 +26,7 @@ import * as vault from "../clients/js/src/generated/index";
 const LAMPORTS_PER_SOL = BigInt(1_000_000_000);
 const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
 
+//BunJs Tests: https://bun.com/docs/test/writing-tests
 describe("Vault Program", () => {
 	let rpc: any;
 	let rpcSubscriptions: any;
@@ -38,6 +40,7 @@ describe("Vault Program", () => {
 	const DEPOSIT_AMOUNT = BigInt(100000000);
 	const ll = console.log;
 
+	//https://bun.com/docs/test: beforeAll, beforeEach
 	before(async () => {
 		// Establish connection to Solana cluster
 		const httpProvider = "http://127.0.0.1:8899";
@@ -45,6 +48,20 @@ describe("Vault Program", () => {
 		rpc = createSolanaRpc(httpProvider);
 		rpcSubscriptions = createSolanaRpcSubscriptions(wssProvider);
 		ll(`✅ - Established connection to ${httpProvider}`);
+
+		const { value } = await rpc
+			.getAccountInfo(vaultProgAddr, { encoding: "base64" })
+			.send();
+		if (!value || !value?.data) {
+			throw new Error(
+				`Program account does not exist: ${vaultProgAddr.toString()}`,
+			);
+		}
+		ll("✅ - program exits!");
+		/*const base64Encoder = getBase64Encoder();
+    let bytes = base64Encoder.encode(value.data[0]);
+    const decoded = ammConfigDecoder.decode(bytes);
+    ll(decoded);*/
 
 		//https://www.solanakit.com/docs/getting-started/signers
 		// Generate signers
@@ -61,7 +78,7 @@ describe("Vault Program", () => {
 			lamports: lamports(LAMPORTS_PER_SOL),
 			recipientAddress: signerAddress,
 		});
-		ll(`Airdropped SOL to Signer: ${signerAddress}`);
+		ll(`✅ - Airdropped SOL to Signer: ${signerAddress}`);
 
 		// get vault rent
 		vaultRent = await rpc.getMinimumBalanceForRentExemption(VAULT_SIZE).send();
@@ -75,7 +92,7 @@ describe("Vault Program", () => {
 			programAddress: vaultProgAddr,
 			seeds: [seedTag, seedSigner],
 		});
-		ll(`Vault PDA: ${vaultPDA[0]}`);
+		ll(`✅ - Vault PDA: ${vaultPDA[0]}`);
 	});
 
 	//------------------==
@@ -131,7 +148,12 @@ describe("Vault Program", () => {
 		const { value } = await rpc.getBalance(vaultPDA[0].toString()).send();
 		assert.equal(DEPOSIT_AMOUNT, Number(value) - Number(vaultRent));
 	}); //can deposit to vault
-
+	/* BunJs
+  test.serial("first test", ()=>{...})
+  expect(true).toBe(true);
+  expect(1 + 1).toBe(2);
+  expect(sharedState).toBe(1);
+ */
 	//------------------==
 	it("can withdraw from vault", async () => {
 		const withdrawIx = vault.getWithdrawInstruction({
@@ -167,6 +189,8 @@ describe("Vault Program", () => {
 		assert.equal(Number(vaultRent), value);
 	}); //can withdraw from vault
 
+	//------------------==
+	//test.failing("fail test",)_=>{...})
 	it("doesn't allow other users to withdraw from the vault", async () => {
 		// signer that DOES NOT own the vault
 		const otherSigner = await generateKeyPairSigner();

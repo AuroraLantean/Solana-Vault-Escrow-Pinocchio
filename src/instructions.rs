@@ -11,6 +11,7 @@ use pinocchio::{
 };
 use pinocchio_log::log;
 use pinocchio_system::instructions::{CreateAccount, Transfer as SystemTransfer};
+//use pinocchio_token::instructions::InitializeMint2;
 use shank::ShankInstruction;
 
 /// Shank IDL enum describes all program instructions and their required accounts.
@@ -49,14 +50,14 @@ pub struct Deposit<'a> {
 impl<'a> Deposit<'a> {
     pub const DISCRIMINATOR: &'a u8 = &0;
 
-    pub fn process_sol(self) -> ProgramResult {
+    pub fn process(self) -> ProgramResult {
         let Deposit {
             owner,
             vault,
             amount,
         } = self;
 
-        ensure_accounts(owner, vault)?;
+        ensure_deposit_accounts(owner, vault)?;
 
         SystemTransfer {
             from: owner,
@@ -78,6 +79,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Deposit<'a> {
         }
         let owner = &accounts[0];
         let vault = &accounts[1];
+        //let [owner, vault, _] = accounts else {..}
+
         let amount = parse_amount_u64(data)?;
         Ok(Self {
             owner,
@@ -96,19 +99,15 @@ impl<'a> Withdraw<'a> {
     pub const DISCRIMINATOR: &'a u8 = &1;
 
     /// Transfer lamports from the vault PDA to the owner, leaving the rent minimum in place.
-    pub fn process_sol(self) -> ProgramResult {
+    pub fn process(self) -> ProgramResult {
         let Withdraw { owner, vault } = self;
         // Validate owner is signer
-        if !owner.is_signer() {
-            return Err(ProgramError::InvalidAccountOwner);
-        }
+        check_signer(owner)?;
 
-        // Validate that the vault is owned by the program
-        if !vault.is_owned_by(&crate::ID) {
-            return Err(ProgramError::InvalidAccountOwner);
-        }
+        // Validate the vault is owned by the program
+        check_pda(vault)?;
 
-        // Validate that the provided vault account is the correct PDA for this owner
+        // Validate the vault is the correct PDA for this owner
         let (expected_vault_pda, _bump) = derive_vault_pda(owner);
         if vault.key() != &expected_vault_pda {
             return Err(ProgramError::InvalidAccountData);
@@ -161,27 +160,38 @@ impl<'a> TryFrom<&'a [AccountInfo]> for Withdraw<'a> {
 /// Parse a u64 from instruction data.
 /// amount must be non-zero,
 fn parse_amount_u64(data: &[u8]) -> Result<u64, ProgramError> {
+    // Verify the data length matches a u64 (8 bytes)
     if data.len() != core::mem::size_of::<u64>() {
         return Err(ProgramError::InvalidInstructionData);
     }
+    // Convert the byte slice to a u64
     let amt = u64::from_le_bytes(data.try_into().unwrap());
+    // Validate the amount (e.g., not zero)
     if amt == 0 {
         return Err(ProgramError::InvalidInstructionData);
     }
     Ok(amt)
 }
 
-/// Derive the vault PDA for an owner and return (pda, bump).
+/// Derive the vault PDA for an owner -> (pda, bump)
 fn derive_vault_pda(owner: &AccountInfo) -> (Pubkey, u8) {
     find_program_address(&[b"vault", owner.key().as_ref()], &crate::ID)
 }
-
-/// Ensure the vault exists; if not, create it with PDA seeds.
-/// owner must be a signer, vault must be writable, and rent minimum must be respected for creation.
-fn ensure_accounts(owner: &AccountInfo, vault: &AccountInfo) -> ProgramResult {
-    if !owner.is_signer() {
+fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
+    if !account.is_signer() {
         return Err(ProgramError::InvalidAccountOwner);
     }
+    Ok(())
+}
+fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
+    if !account.is_owned_by(&crate::ID) {
+        return Err(ProgramError::InvalidAccountOwner);
+    }
+    Ok(())
+}
+/// Ensure the vault exists; if not, create it with PDA seeds. owner must be a signer, vault must be writable, and rent minimum must be respected for creation.
+fn ensure_deposit_accounts(owner: &AccountInfo, vault: &AccountInfo) -> ProgramResult {
+    check_signer(owner)?;
 
     // Create when empty and fund rent-exempt.
     if vault.lamports() == 0 {
@@ -211,11 +221,8 @@ fn ensure_accounts(owner: &AccountInfo, vault: &AccountInfo) -> ProgramResult {
         log!("Vault created");
     } else {
         // If vault already exists, validate owner matches the program.
-        if !vault.is_owned_by(&crate::ID) {
-            return Err(ProgramError::InvalidAccountOwner);
-        }
+        check_pda(vault)?;
         log!("Vault already exists");
     }
-
     Ok(())
 }
