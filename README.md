@@ -75,8 +75,7 @@ You'll see a clients/js/src/generated/ folder in our project with the program ty
 
 ### Reference
 
-Pinocchio: <https://github.com/anza-xyz/pinocchio>
-Bun Js Test: <https://bun.com/docs/test>
-Solana Kit: <https://www.solanakit.com/>
-
-Quicknode: <https://www.quicknode.com/guides/solana-development/pinocchio/how-to-build-and-deploy-a-solana-program-using-pinocchio>
+- Pinocchio: <https://github.com/anza-xyz/pinocchio>
+- Bun Js Test: <https://bun.com/docs/test>
+- Solana Kit: <https://www.solanakit.com/>
+- Quicknode: <https://www.quicknode.com/guides/solana-development/pinocchio/how-to-build-and-deploy-a-solana-program-using-pinocchio>
