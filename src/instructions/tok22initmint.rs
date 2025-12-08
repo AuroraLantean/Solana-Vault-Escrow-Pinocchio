@@ -2,7 +2,6 @@ use core::convert::TryFrom;
 use pinocchio::{
     account_info::AccountInfo,
     program_error::ProgramError,
-    pubkey::{Pubkey, PUBKEY_BYTES},
     sysvars::{rent::Rent, Sysvar},
     ProgramResult,
 };
@@ -10,16 +9,19 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 //use pinocchio_log::log;
 
-use crate::instructions::{check_signer, check_str_len};
+use crate::{
+    check_empty_acct,
+    instructions::{check_signer, check_str_len},
+};
 use pinocchio_token_2022::{instructions::InitializeMint2, state::Mint};
 
 //Initiate Token2022 Mint Account
 pub struct Token2022InitMint<'a> {
     pub payer: &'a AccountInfo,
-    pub mint_authority: &'a AccountInfo,
     pub mint_account: &'a AccountInfo,
     pub token_program: &'a AccountInfo,
-    pub freeze_authority_opt: Option<&'a AccountInfo>,
+    pub mint_authority: &'a [u8; 32],
+    pub freeze_authority_opt: Option<&'a [u8; 32]>,
     pub name: &'a str,
     pub symbol: &'a str,
     pub uri: &'a str,
@@ -78,24 +80,16 @@ impl<'a> Token2022InitMint<'a> {
         .invoke()?;*/
 
         // initialize Token2022 Mint
-        let freeze_authority: Option<&[u8; PUBKEY_BYTES]> =
-            if let Some(freeze_authority) = freeze_authority_opt {
-                Some(freeze_authority.key())
-            } else {
-                None
-            };
-
         if !mint_account.is_writable() {
             return Err(ProgramError::InvalidAccountData);
         }
-        if mint_account.data_len() != Mint::BASE_LEN {
-            return Err(ProgramError::AccountDataTooSmall.into());
-        }
+        check_empty_acct(mint_account)?;
+
         InitializeMint2 {
             mint: mint_account,
             decimals: decimals,
-            mint_authority: mint_authority.key(),
-            freeze_authority: freeze_authority,
+            mint_authority: mint_authority,
+            freeze_authority: freeze_authority_opt,
             token_program: token_program.key(),
         }
         .invoke()?;
@@ -121,6 +115,12 @@ impl<'a> Token2022InitMint<'a> {
         let total_mint_size = Mint::LEN + EXTENSIONS_PADDING_AND_OFFSET + extension_size;        */
         Ok(())
     }
+    pub fn init_if_needed(self) -> ProgramResult {
+        match check_empty_acct(self.mint_account) {
+            Ok(_) => Self::init(self),
+            Err(_) => Ok(()),
+        }
+    }
 }
 impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
     type Error = ProgramError;
@@ -128,23 +128,26 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
     fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
         let (data, accounts) = value;
 
-        let [payer, mint_authority, mint_account, token_program, _] = accounts else {
+        let [payer, mint_account, token_program, _] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
-        let data_iter = data.iter();
-        if data.len() == 0 {
+        if data.len() < 33 {
             return Err(ProgramError::AccountDataTooSmall);
         }
         let decimals = data[0];
 
-        //TODO: extract freeze_authority, name, symbol, uri with decimals from data
+        //TODO: extract freeze_authority_opt, name, symbol, uri with decimals from data
+        let mint_authority = &data[1..]; // [u8; 32]
+        let freeze_authority_opt = None;
         Ok(Self {
             payer,
-            mint_authority,
+            mint_authority: mint_authority
+                .try_into()
+                .expect("invalid mint authority size"),
             mint_account,
             token_program,
-            freeze_authority_opt: None,
+            freeze_authority_opt,
             name: "token_name",
             symbol: "token_symbol",
             uri: "token_uri",

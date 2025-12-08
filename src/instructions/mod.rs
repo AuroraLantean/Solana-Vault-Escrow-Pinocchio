@@ -36,7 +36,7 @@ pub enum ProgramIx {
 //-------------==
 /// Parse a u64 from instruction data.
 /// amount must be non-zero,
-fn parse_amount_u64(data: &[u8]) -> Result<u64, ProgramError> {
+pub fn parse_amount_u64(data: &[u8]) -> Result<u64, ProgramError> {
     // Verify the data length matches a u64 (8 bytes)
     if data.len() != core::mem::size_of::<u64>() {
         return Err(ProgramError::InvalidInstructionData);
@@ -53,25 +53,31 @@ fn parse_amount_u64(data: &[u8]) -> Result<u64, ProgramError> {
 }
 
 /// Derive the vault PDA for an owner -> (pda, bump)
-fn derive_vault_pda(owner: &AccountInfo) -> Result<(Pubkey, u8), ProgramError> {
+pub fn derive_vault_pda(owner: &AccountInfo) -> Result<(Pubkey, u8), ProgramError> {
     //find_program_address(&[b"vault", owner.key().as_ref()], &crate::ID)
     // let (pda, _bump) =
     try_find_program_address(&[b"vault", owner.key().as_ref()], &crate::ID)
         .ok_or(ProgramError::InvalidSeeds)
 }
-fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
+pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
     if !account.is_signer() {
         return Err(ProgramError::InvalidAccountOwner);
     }
     Ok(())
 }
-fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
+pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
     if !account.is_owned_by(&crate::ID) {
         return Err(ProgramError::InvalidAccountOwner);
     }
     Ok(())
 }
-fn check_str_len(s: &str, min_len: usize, max_len: usize) -> Result<(), ProgramError> {
+pub fn check_empty_acct(account: &AccountInfo) -> Result<(), ProgramError> {
+    if account.lamports() == 0 {
+        return Ok(());
+    }
+    Err(ProgramError::AccountAlreadyInitialized)
+}
+pub fn check_str_len(s: &str, min_len: usize, max_len: usize) -> Result<(), ProgramError> {
     if s.len() < min_len {
         return Err(ProgramError::AccountDataTooSmall);
     }
