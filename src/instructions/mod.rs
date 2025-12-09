@@ -5,12 +5,16 @@ use pinocchio::{
 };
 #[allow(non_snake_case)]
 pub mod depositSol;
-pub mod tok22initmint;
+#[allow(non_snake_case)]
+pub mod tok22InitMint;
+#[allow(non_snake_case)]
+pub mod tok22InitTokAcct;
 #[allow(non_snake_case)]
 pub mod withdrawSol;
 
 pub use depositSol::*;
-pub use tok22initmint::*;
+pub use tok22InitMint::*;
+pub use tok22InitTokAcct::*;
 pub use withdrawSol::*;
 
 use shank::ShankInstruction;
@@ -61,7 +65,7 @@ pub fn derive_vault_pda(owner: &AccountInfo) -> Result<(Pubkey, u8), ProgramErro
 }
 pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
     if !account.is_signer() {
-        return Err(ProgramError::InvalidAccountOwner);
+        return Err(ProgramError::MissingRequiredSignature);
     }
     Ok(())
 }
