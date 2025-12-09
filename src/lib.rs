@@ -41,6 +41,9 @@ fn process_instruction(
         Token2022InitTokAcct::DISCRIMINATOR => {
             Token2022InitTokAcct::try_from((data, accounts))?.process()
         }
+        Token2022MintToken::DISCRIMINATOR => {
+            Token2022MintToken::try_from((data, accounts))?.process()
+        }
         _ => Err(ProgramError::InvalidArgument),
     }
 }

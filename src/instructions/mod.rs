@@ -2,6 +2,7 @@ use pinocchio::{
     account_info::AccountInfo,
     program_error::ProgramError,
     pubkey::{try_find_program_address, Pubkey},
+    sysvars::{rent::Rent, Sysvar},
 };
 #[allow(non_snake_case)]
 pub mod depositSol;
@@ -10,11 +11,15 @@ pub mod tok22InitMint;
 #[allow(non_snake_case)]
 pub mod tok22InitTokAcct;
 #[allow(non_snake_case)]
+pub mod tok22MintToken;
+#[allow(non_snake_case)]
 pub mod withdrawSol;
 
 pub use depositSol::*;
+use pinocchio_token_2022::state::{Mint, TokenAccount};
 pub use tok22InitMint::*;
 pub use tok22InitTokAcct::*;
+pub use tok22MintToken::*;
 pub use withdrawSol::*;
 
 use shank::ShankInstruction;
@@ -40,7 +45,7 @@ pub enum ProgramIx {
 //-------------==
 /// Parse a u64 from instruction data.
 /// amount must be non-zero,
-pub fn parse_amount_u64(data: &[u8]) -> Result<u64, ProgramError> {
+pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
     // Verify the data length matches a u64 (8 bytes)
     if data.len() != core::mem::size_of::<u64>() {
         return Err(ProgramError::InvalidInstructionData);
@@ -75,11 +80,29 @@ pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
     }
     Ok(())
 }
-pub fn check_empty_acct(account: &AccountInfo) -> Result<(), ProgramError> {
+pub fn empty_acct(account: &AccountInfo) -> Result<(), ProgramError> {
     if account.lamports() == 0 {
         return Ok(());
     }
     Err(ProgramError::AccountAlreadyInitialized)
+}
+pub fn writable_acct(account: &AccountInfo) -> Result<(), ProgramError> {
+    if !account.is_writable() {
+        return Err(ProgramError::InvalidAccountData);
+    }
+    Ok(())
+}
+pub fn rent_exampt(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
+    if acc_type == 0 && account.lamports() < Rent::get()?.minimum_balance(Mint::BASE_LEN) {
+        return Err(ProgramError::AccountNotRentExempt);
+    }
+    if acc_type == 1 && account.lamports() < Rent::get()?.minimum_balance(TokenAccount::BASE_LEN) {
+        return Err(ProgramError::AccountNotRentExempt);
+    }
+    if acc_type > 1 {
+        return Err(ProgramError::InvalidArgument);
+    }
+    Ok(())
 }
 pub fn check_str_len(s: &str, min_len: usize, max_len: usize) -> Result<(), ProgramError> {
     if s.len() < min_len {

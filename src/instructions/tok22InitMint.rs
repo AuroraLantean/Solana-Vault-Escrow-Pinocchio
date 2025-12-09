@@ -9,7 +9,7 @@ use pinocchio::{
 use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
-use crate::{check_empty_acct, instructions::check_signer};
+use crate::{empty_acct, instructions::check_signer, writable_acct};
 use pinocchio_token_2022::{instructions::InitializeMint2, state::Mint};
 
 //Initiate Token2022 Mint Account
@@ -30,9 +30,9 @@ impl<'a> Token2022InitMint<'a> {
     pub fn process(self) -> ProgramResult {
         let Token2022InitMint {
             payer,
-            mint_authority,
             mint_account,
             token_program,
+            mint_authority,
             freeze_authority_opt,
             //name,symbol,uri,
             decimals,
@@ -46,7 +46,7 @@ impl<'a> Token2022InitMint<'a> {
         //check_str_len(symbol, 3, 20)?;
         //check_str_len(uri, 3, 20)?;
 
-        check_empty_acct(mint_account)?;
+        empty_acct(mint_account)?;
         /*if rent_sysvar.key != &solana_program::sysvar::rent::ID {
             return Err(ProgramError::InvalidAccountData);
         }*/
@@ -60,15 +60,13 @@ impl<'a> Token2022InitMint<'a> {
         }
         .invoke()?;
 
-        if !mint_account.is_writable() {
-            return Err(ProgramError::InvalidAccountData);
-        }
+        writable_acct(mint_account)?;
 
         log!("Init Mint");
         InitializeMint2 {
             mint: mint_account,
             decimals: decimals,
-            mint_authority: mint_authority,
+            mint_authority,
             freeze_authority: freeze_authority_opt,
             token_program: token_program.key(),
         }
@@ -110,7 +108,7 @@ impl<'a> Token2022InitMint<'a> {
         Ok(())
     }
     pub fn init_if_needed(self) -> ProgramResult {
-        match check_empty_acct(self.mint_account) {
+        match empty_acct(self.mint_account) {
             Ok(_) => Self::process(self),
             Err(_) => Ok(()),
         }

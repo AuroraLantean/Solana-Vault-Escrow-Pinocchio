@@ -7,7 +7,7 @@ use pinocchio::{
 };
 use pinocchio_log::log;
 
-use crate::instructions::{check_pda, check_signer, derive_vault_pda, parse_amount_u64};
+use crate::instructions::{check_pda, check_signer, derive_vault_pda, parse_u64};
 
 //  vault is owned by the program, matches the PDA derived from the owner, and the owner is the signer of the withdraw transaction. The withdrawn amount is everything above the rent minimum.
 pub struct WithdrawSol<'a> {
@@ -86,7 +86,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for WithdrawSol<'a> {
         let owner = &accounts[0];
         let vault = &accounts[1];
 
-        let amount = parse_amount_u64(data)?;
+        let amount = parse_u64(data)?;
         Ok(Self {
             owner,
             vault,

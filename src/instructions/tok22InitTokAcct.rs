@@ -8,13 +8,16 @@ use pinocchio::{
 use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
-use crate::{check_empty_acct, instructions::check_signer};
-use pinocchio_token_2022::{instructions::InitializeAccount3, state::TokenAccount};
+use crate::{empty_acct, instructions::check_signer, rent_exampt, writable_acct};
+use pinocchio_token_2022::{
+    instructions::InitializeAccount3,
+    state::{Mint, TokenAccount},
+};
 
 /// Token2022 Init Token Account
 pub struct Token2022InitTokAcct<'a> {
     pub payer: &'a AccountInfo,
-    pub owner: &'a AccountInfo,
+    pub tok_acc_owner: &'a AccountInfo,
     pub mint_account: &'a AccountInfo,
     pub token_account: &'a AccountInfo,
     pub token_program: &'a AccountInfo,
@@ -25,13 +28,14 @@ impl<'a> Token2022InitTokAcct<'a> {
     pub fn process(self) -> ProgramResult {
         let Token2022InitTokAcct {
             payer,
-            owner,
+            tok_acc_owner,
             mint_account,
             token_account,
             token_program,
         } = self;
         check_signer(payer)?;
-        check_empty_acct(token_account)?;
+        empty_acct(token_account)?;
+        rent_exampt(mint_account, 0)?;
 
         log!("Make Token Account");
         CreateAccount {
@@ -43,20 +47,19 @@ impl<'a> Token2022InitTokAcct<'a> {
         }
         .invoke()?;
 
-        if !token_account.is_writable() {
-            return Err(ProgramError::InvalidAccountData);
-        }
+        writable_acct(token_account)?;
+
         log!("Init Token Account");
         InitializeAccount3 {
             account: token_account,
             mint: mint_account,
-            owner: owner.key(),
+            owner: tok_acc_owner.key(),
             token_program: token_program.key(),
         };
         Ok(())
     }
     pub fn init_if_needed(self) -> ProgramResult {
-        match check_empty_acct(self.token_account) {
+        match empty_acct(self.token_account) {
             Ok(_) => Self::process(self),
             Err(_) => Ok(()),
         }
@@ -68,7 +71,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitTokAcct<'a> {
     fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
         let (data, accounts) = value;
 
-        let [payer, owner, mint_account, token_account, token_program, _] = accounts else {
+        let [payer, tok_acc_owner, mint_account, token_account, token_program, _] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
@@ -78,7 +81,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitTokAcct<'a> {
 
         Ok(Self {
             payer,
-            owner,
+            tok_acc_owner,
             mint_account,
             token_account,
             token_program,

@@ -10,7 +10,7 @@ use pinocchio::{
 use pinocchio_log::log;
 use pinocchio_system::instructions::{CreateAccount, Transfer as SystemTransfer};
 
-use crate::instructions::{check_pda, check_signer, derive_vault_pda, parse_amount_u64};
+use crate::instructions::{check_pda, check_signer, derive_vault_pda, parse_u64};
 
 // Deposit SOL to program PDA
 // make and rent-funds the vault PDA
@@ -57,7 +57,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for DepositSol<'a> {
         let vault = &accounts[1];
         //let [owner, vault, _system_program, _] = accounts else { return Err(ProgramError::NotEnoughAccountKeys);}
 
-        let amount = parse_amount_u64(data)?;
+        let amount = parse_u64(data)?;
         Ok(Self {
             owner,
             vault,
