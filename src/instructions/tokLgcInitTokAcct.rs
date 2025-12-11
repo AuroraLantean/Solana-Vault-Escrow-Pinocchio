@@ -8,53 +8,61 @@ use pinocchio::{
 use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
-use crate::{empty_lamport, instructions::check_signer, rent_exempt, writable};
+use crate::{empty_data, empty_lamport, instructions::check_signer, rent_exempt, writable};
 use pinocchio_token_2022::{instructions::InitializeAccount3, state::TokenAccount};
 
-/// Token2022 Init Token Account
-pub struct Token2022InitTokAcct<'a> {
+/// Token Legacy Init Token Account
+pub struct TokenLgcInitTokAcct<'a> {
     pub payer: &'a AccountInfo,
-    pub tok_acc_owner: &'a AccountInfo,
     pub mint: &'a AccountInfo,
+    pub owner: &'a AccountInfo,
     pub token_account: &'a AccountInfo,
     pub token_program: &'a AccountInfo,
 }
-impl<'a> Token2022InitTokAcct<'a> {
-    pub const DISCRIMINATOR: &'a u8 = &6;
+impl<'a> TokenLgcInitTokAcct<'a> {
+    pub const DISCRIMINATOR: &'a u8 = &3;
 
     pub fn process(self) -> ProgramResult {
-        let Token2022InitTokAcct {
-            payer,
-            tok_acc_owner,
+        let TokenLgcInitTokAcct {
+            payer, //signer
+            owner,
             mint,
             token_account,
             token_program,
         } = self;
+        log!("TokenLgcInitTokAcct process()");
         check_signer(payer)?;
         empty_lamport(token_account)?;
+        empty_data(token_account)?;
         rent_exempt(mint, 0)?;
-        /*find token_account from tok_acc_owner & token mint"
+
+        /*find token_account from owner & token mint"
         cargo add spl-associated-token-account
         use spl_associated_token_account::get_associated_token_address;
         let ata = get_associated_token_address(&wallet, &mint);
         */
+        log!("TokenLgcInitTokAcct 2");
+        let lamports = Rent::get()?.minimum_balance(TokenAccount::BASE_LEN);
+        let space = TokenAccount::BASE_LEN as u64;
+        log!("lamports: {}, space: {}", lamports, space);
+
         log!("Make Token Account");
         CreateAccount {
             from: payer,
             to: token_account,
             owner: token_program.key(),
-            lamports: Rent::get()?.minimum_balance(TokenAccount::BASE_LEN),
-            space: TokenAccount::BASE_LEN as u64,
+            lamports,
+            space,
         }
         .invoke()?;
-
+        log!("TokenLgcInitTokAcct 7");
         writable(token_account)?;
 
         log!("Init Token Account");
         InitializeAccount3 {
             account: token_account,
             mint: mint,
-            owner: tok_acc_owner.key(),
+            owner: owner.key(),
             token_program: token_program.key(),
         };
         Ok(())
@@ -66,24 +74,28 @@ impl<'a> Token2022InitTokAcct<'a> {
         }
     }
 }
-impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitTokAcct<'a> {
+impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitTokAcct<'a> {
     type Error = ProgramError;
 
     fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
+        log!("TokenLgcInitTokAcct try_from");
         let (data, accounts) = value;
+        log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-        let [payer, tok_acc_owner, mint, token_account, token_program, _] = accounts else {
+        if accounts.len() < 7 {
             return Err(ProgramError::NotEnoughAccountKeys);
-        };
-
-        if data.len() < 1 {
-            return Err(ProgramError::AccountDataTooSmall);
         }
-
+        let payer = &accounts[0];
+        let mint = &accounts[1];
+        let owner = &accounts[2];
+        let token_account = &accounts[3];
+        let token_program = &accounts[4];
+        //let [payer, mint, _] = accounts else {  does not work };
+        log!("TokenLgcInitTokAcct try_from end");
         Ok(Self {
             payer,
-            tok_acc_owner,
             mint,
+            owner,
             token_account,
             token_program,
         })

@@ -12,7 +12,7 @@ use pinocchio_system::instructions::CreateAccount;
 use crate::{derive_pda1, empty_data, empty_lamport, instructions::check_signer, writable};
 use pinocchio_token::{instructions::InitializeMint2, state::Mint};
 
-//Initiate TokenLgc Mint Account
+//TokenLgc Init Mint Account
 pub struct TokenLgcInitMint<'a> {
     pub payer: &'a AccountInfo, //signer
     pub mint: &'a AccountInfo,
@@ -34,7 +34,7 @@ impl<'a> TokenLgcInitMint<'a> {
             decimals,
         } = self;
         log!("TokenLgcInitMint process()");
-        check_signer(mint_authority)?;
+        check_signer(payer)?;
         log!("TokenLgcInitMint 2");
         empty_lamport(mint)?;
         log!("TokenLgcInitMint 3");
@@ -44,7 +44,7 @@ impl<'a> TokenLgcInitMint<'a> {
             return Err(ProgramError::InvalidArgument);
         }
         log!("TokenLgcInitMint 4");
-        /*let toklgc = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        /*TODO: let toklgc = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         .as_bytes()
         .try_into()
         .expect("token addr");*/
@@ -54,10 +54,9 @@ impl<'a> TokenLgcInitMint<'a> {
         log!("TokenLgcInitMint 6");
         let space = Mint::LEN as u64;
         log!("lamports: {}, space: {}", lamports, space);
-        log!("payer: {}", payer.key());
-        log!("mint: {}", mint.key());
-        log!("token_program: {}", token_program.key());
+        //log!("payer: {}", payer.key());
         //let mint = Keypair::new();
+
         let (mint_exp, bump) = derive_pda1(payer, b"mint")?;
         if mint.key() != &mint_exp {
             return Err(ProgramError::InvalidAccountData);
@@ -71,10 +70,9 @@ impl<'a> TokenLgcInitMint<'a> {
 
         log!("Make Mint Account");
         CreateAccount {
-            from: payer,
-            to: mint,
-            //owner: &crate::ID,
-            owner: token_program.key(),
+            from: payer,                // keypair
+            to: mint,                   // Address
+            owner: token_program.key(), //address("TokenXYZ");
             lamports,
             space,
         }
@@ -83,7 +81,7 @@ impl<'a> TokenLgcInitMint<'a> {
         log!("TokenLgcInitMint 7");
         writable(mint)?;
 
-        log!("Init Mint");
+        log!("Init Mint"); //authority: Address
         InitializeMint2 {
             mint,
             decimals,

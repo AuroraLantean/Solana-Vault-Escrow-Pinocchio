@@ -79,3 +79,7 @@ You'll see a clients/js/src/generated/ folder in our project with the program ty
 - Bun Js Test: <https://bun.com/docs/test>
 - Solana Kit: <https://www.solanakit.com/>
 - Quicknode: <https://www.quicknode.com/guides/solana-development/pinocchio/how-to-build-and-deploy-a-solana-program-using-pinocchio>
+- Create Token Mint via Rust and JavaScript: <https://solana.com/docs/tokens/basics/create-mint>
+- Create and Mint SPL Tokens via Anchor: <https://www.quicknode.com/guides/solana-development/anchor/create-tokens>
+- Create Token Account via Anchor: <https://www.anchor-lang.com/docs/tokens/basics/create-token-account>
+- Get Token Account: <https://solana.com/developers/cookbook/tokens/get-token-account>

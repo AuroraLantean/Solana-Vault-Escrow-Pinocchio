@@ -1,7 +1,6 @@
 import assert from "node:assert";
 import {
 	type Address,
-	address,
 	appendTransactionMessageInstruction,
 	assertIsTransactionWithBlockhashLifetime,
 	createTransactionMessage,
@@ -19,12 +18,6 @@ import * as vault from "../clients/js/src/generated/index";
 
 export const ll = console.log;
 
-export const TOKEN_PROGRAM_LEGACY = address(
-	"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-);
-export const TOKEN_PROGRAM_2022 = address(
-	"TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
-);
 export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
 
 export const findPda = async (

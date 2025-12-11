@@ -2,6 +2,7 @@ import assert from "node:assert";
 import { before, describe, it } from "node:test";
 //import { test, expect, mock } from "bun:test";
 import {
+	type Address,
 	airdropFactory,
 	createSolanaRpc,
 	createSolanaRpcSubscriptions,
@@ -9,14 +10,12 @@ import {
 	lamports,
 } from "@solana/kit";
 import { SYSTEM_PROGRAM_ADDRESS } from "@solana-program/system";
-import * as vault from "../clients/js/src/generated/index";
 import {
-	findPda,
-	ll,
-	sendTxn,
-	TOKEN_PROGRAM_LEGACY,
-	vaultProgAddr,
-} from "./utils";
+	findAssociatedTokenPda,
+	TOKEN_PROGRAM_ADDRESS,
+} from "@solana-program/token";
+import * as vault from "../clients/js/src/generated/index";
+import { findPda, ll, sendTxn, vaultProgAddr } from "./utils";
 
 const ACCOUNT_DISCRIMINATOR_SIZE = 8; // same as Anchor/Rust
 const U64_SIZE = 8; // u64 is 8 bytes
@@ -29,24 +28,37 @@ const amtAirdrop = BigInt(100) * baseSOL;
 const amtDeposit = BigInt(10) * baseSOL;
 const amtWithdraw = BigInt(9) * baseSOL;
 
+// biome-ignore lint/suspicious/noExplicitAny: <>
 let rpc: any;
+// biome-ignore lint/suspicious/noExplicitAny: <>
+let rpcSubscriptions: any;
 const httpProvider = "http://127.0.0.1:8899";
 const wssProvider = "ws://127.0.0.1:8900";
 
-const getSol = async (account: any, name: string) => {
+//https://www.solanakit.com/docs/getting-started/signers
+const adminKp = await generateKeyPairSigner(); //KeyPairSigner<string>;
+const mintAuthorityKp = await generateKeyPairSigner();
+const user1Kp = await generateKeyPairSigner();
+const hackerKp = await generateKeyPairSigner();
+//import secret from './my-keypair.json';
+//const user2 = await createKeyPairSignerFromBytes(new Uint8Array(secret));
+const adminAddr = adminKp.address;
+const mintAuthority = mintAuthorityKp.address;
+const user1Addr = user1Kp.address;
+ll(`✅ adminAddr ${adminAddr}`);
+ll(`✅ mintAuthority: ${mintAuthority}`);
+ll(`✅ user1Addr: ${user1Addr}`);
+
+let vaultPDA: Address;
+let vaultRent: bigint;
+
+const getSol = async (account: Address, name: string) => {
 	const { value: balc } = await rpc.getBalance(account.toString()).send();
 	ll(name, "balc:", balc);
 	return balc;
 };
 //BunJs Tests: https://bun.com/docs/test/writing-tests
 describe("Vault Program", () => {
-	let rpcSubscriptions: any;
-	let signerKp: any;
-	let signerAddr: any;
-	let vaultRent: bigint;
-	let vaultPDA: any;
-	let airdrop: any;
-
 	//https://bun.com/docs/test: beforeAll, beforeEach
 	before(async () => {
 		// Establish connection to Solana cluster
@@ -67,28 +79,30 @@ describe("Vault Program", () => {
     const decoded = ammConfigDecoder.decode(bytes);
     ll(decoded);*/
 
-		//https://www.solanakit.com/docs/getting-started/signers
-		// Generate signers
-		signerKp = await generateKeyPairSigner();
-		//import secret from './my-keypair.json';
-		//const user2 = await createKeyPairSignerFromBytes(new Uint8Array(secret));
-		signerAddr = await signerKp.address;
-		ll(`✅ - New signer address: ${signerAddr}`);
-
-		// Airdrop SOL to signer
-		airdrop = airdropFactory({ rpc, rpcSubscriptions });
+		// Airdrop SOL to admin
+		const airdrop = airdropFactory({ rpc, rpcSubscriptions });
 		await airdrop({
 			commitment: "confirmed",
 			lamports: lamports(amtAirdrop),
-			recipientAddress: signerAddr,
+			recipientAddress: adminAddr,
 		});
-		ll(`✅ - Airdropped SOL to Signer: ${signerAddr}`);
+		await airdrop({
+			commitment: "confirmed",
+			lamports: lamports(amtAirdrop),
+			recipientAddress: user1Addr,
+		});
+		await airdrop({
+			commitment: "confirmed",
+			lamports: lamports(amtAirdrop),
+			recipientAddress: hackerKp.address,
+		});
+		ll(`✅ - Airdropped SOL to Admin and user1Addr`);
 
 		// get vault rent
 		vaultRent = await rpc.getMinimumBalanceForRentExemption(VAULT_SIZE).send();
 
 		// Get vault PDA
-		const pda_bump = await findPda(signerAddr, "vault");
+		const pda_bump = await findPda(adminAddr, "vault");
 		vaultPDA = pda_bump.pda;
 		ll(`✅ - Vault PDA: ${vaultPDA}`);
 	});
@@ -98,7 +112,7 @@ describe("Vault Program", () => {
 		ll("------== To Deposit");
 		const methodIx = vault.getDepositInstruction(
 			{
-				owner: signerKp,
+				owner: adminKp,
 				vault: vaultPDA,
 				program: vaultProgAddr,
 				systemProgram: SYSTEM_PROGRAM_ADDRESS,
@@ -109,7 +123,7 @@ describe("Vault Program", () => {
 			},
 		);
 
-		await sendTxn(methodIx, signerKp, rpc, rpcSubscriptions);
+		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 
 		ll("Vault Rent:", vaultRent);
 		ll("amtDeposit:", amtDeposit);
@@ -129,13 +143,13 @@ describe("Vault Program", () => {
 		await getSol(vaultPDA, "Vault");
 
 		const methodIx = vault.getWithdrawInstruction({
-			owner: signerKp,
+			owner: adminKp,
 			vault: vaultPDA,
 			program: vaultProgAddr,
 			amount: lamports(amtWithdraw),
 		});
 
-		await sendTxn(methodIx, signerKp, rpc, rpcSubscriptions);
+		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 
 		ll("Vault Rent:", vaultRent);
 		ll("Vault amtWithdraw:", amtWithdraw);
@@ -146,9 +160,6 @@ describe("Vault Program", () => {
 	//------------------==
 	//test.failing("fail test",)_=>{...})
 	it("doesn't allow other users to withdraw from the vault", async () => {
-		// signer that DOES NOT own the vault
-		const hackerKp = await generateKeyPairSigner();
-
 		const methodIx = vault.getWithdrawInstruction({
 			owner: hackerKp,
 			vault: vaultPDA,
@@ -161,18 +172,18 @@ describe("Vault Program", () => {
 
 	it("init LgcMint", async () => {
 		ll("------== Init LgcMint");
-		ll("mint_auth & payer:", signerAddr);
-		const pda_bump = await findPda(signerAddr, "mint");
+		ll("payer:", adminAddr);
+		ll("mint_auth:", mintAuthority);
+		const pda_bump = await findPda(adminAddr, "mint");
 		const mint = pda_bump.pda;
 
-		// unauthorized signer or writable account
 		const methodIx = vault.getTokenLgcInitMintInstruction(
 			{
-				payer: signerKp,
+				payer: adminKp,
 				mint: mint,
-				mintAuthority: signerAddr,
-				freezeAuthorityOpt: signerAddr,
-				tokenProgram: TOKEN_PROGRAM_LEGACY,
+				mintAuthority: mintAuthority,
+				freezeAuthorityOpt: mintAuthority,
+				tokenProgram: TOKEN_PROGRAM_ADDRESS,
 				program: vaultProgAddr,
 				systemProgram: SYSTEM_PROGRAM_ADDRESS,
 				decimals: 9,
@@ -181,19 +192,39 @@ describe("Vault Program", () => {
 				programAddress: vaultProgAddr,
 			},
 		);
-		/*		const methodIx = vault.getDepositInstruction(
+		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
+	});
+
+	it("init Lgc token acct", async () => {
+		ll("------== Init LgcTokenAcct");
+		ll("payer:", adminAddr);
+		ll("mint_auth:", mintAuthority);
+		const pda_bump = await findPda(adminAddr, "mint");
+		const mint = pda_bump.pda;
+		const owner = adminAddr;
+		ll("owner:", owner);
+		const [ata] = await findAssociatedTokenPda({
+			mint,
+			owner,
+			tokenProgram: TOKEN_PROGRAM_ADDRESS,
+		});
+		ll("token_account ata:", ata);
+
+		const methodIx = vault.getTokenLgcInitTokAcctInstruction(
 			{
-				owner: signerKp,
-				vault: vaultPDA,
+				payer: adminKp,
+				mint: mint,
+				owner: owner,
+				tokenAccount: ata,
+				tokenProgram: TOKEN_PROGRAM_ADDRESS,
 				program: vaultProgAddr,
 				systemProgram: SYSTEM_PROGRAM_ADDRESS,
-				amount: lamports(amtDeposit),
 			},
 			{
 				programAddress: vaultProgAddr,
 			},
-		); */
-		await sendTxn(methodIx, signerKp, rpc, rpcSubscriptions);
+		);
+		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 	});
 
 	/*it("init Tok22 Mint", async () => {
@@ -202,21 +233,21 @@ describe("Vault Program", () => {
 
 		const [ata] = await findAssociatedTokenPda({
 			mint: mintKp.address,
-			owner: signerAddr,
+			owner: adminAddr,
 			tokenProgram: TOKEN_PROGRAM_LEGACY,
 		});
 		ll("ata: ", ata);
 
 		// unauthorized signer or writable account
 		const methodIx = vault.getToken2022InitMintInstruction({
-			mintAuthority: signerKp,
+			mintAuthority: adminKp,
 			mint: mintKp.address,
 			tokenProgram: TOKEN_PROGRAM_LEGACY,
-			freezeAuthorityOpt: signerAddr,
+			freezeAuthorityOpt: adminAddr,
 			decimals: 9,
 		});
 
-		await sendTxn(methodIx, signerKp, rpc, rpcSubscriptions);
+		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 	});
 	it("xyz", async () => {
 		ll("------== To Xyz");
