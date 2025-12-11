@@ -3,11 +3,21 @@ import { before, describe, it } from "node:test";
 //import { test, expect, mock } from "bun:test";
 import {
 	type Address,
+	addSignersToTransactionMessage,
 	airdropFactory,
+	appendTransactionMessageInstruction,
+	assertIsTransactionWithBlockhashLifetime,
 	createSolanaRpc,
 	createSolanaRpcSubscriptions,
+	createTransactionMessage,
 	generateKeyPairSigner,
+	type KeyPairSigner,
 	lamports,
+	pipe,
+	sendAndConfirmTransactionFactory,
+	setTransactionMessageFeePayer,
+	setTransactionMessageLifetimeUsingBlockhash,
+	signTransactionMessageWithSigners,
 } from "@solana/kit";
 import { SYSTEM_PROGRAM_ADDRESS } from "@solana-program/system";
 import {
@@ -36,16 +46,20 @@ const httpProvider = "http://127.0.0.1:8899";
 const wssProvider = "ws://127.0.0.1:8900";
 
 //https://www.solanakit.com/docs/getting-started/signers
+let ownerKp: KeyPairSigner<string>;
 const adminKp = await generateKeyPairSigner(); //KeyPairSigner<string>;
 const mintAuthorityKp = await generateKeyPairSigner();
 const user1Kp = await generateKeyPairSigner();
 const hackerKp = await generateKeyPairSigner();
+const mintKp = await generateKeyPairSigner();
 //import secret from './my-keypair.json';
 //const user2 = await createKeyPairSignerFromBytes(new Uint8Array(secret));
 const adminAddr = adminKp.address;
+const mint = mintKp.address;
 const mintAuthority = mintAuthorityKp.address;
 const user1Addr = user1Kp.address;
 ll(`✅ adminAddr ${adminAddr}`);
+ll(`✅ mint: ${mint}`);
 ll(`✅ mintAuthority: ${mintAuthority}`);
 ll(`✅ user1Addr: ${user1Addr}`);
 
@@ -85,6 +99,11 @@ describe("Vault Program", () => {
 			commitment: "confirmed",
 			lamports: lamports(amtAirdrop),
 			recipientAddress: adminAddr,
+		});
+		await airdrop({
+			commitment: "confirmed",
+			lamports: lamports(amtAirdrop),
+			recipientAddress: mintAuthorityKp.address,
 		});
 		await airdrop({
 			commitment: "confirmed",
@@ -174,8 +193,7 @@ describe("Vault Program", () => {
 		ll("------== Init LgcMint");
 		ll("payer:", adminAddr);
 		ll("mint_auth:", mintAuthority);
-		const mintKp = await generateKeyPairSigner();
-		ll("mint:", mintKp.address);
+		ll("mint:", mint);
 
 		const methodIx = vault.getTokenLgcInitMintInstruction(
 			{
@@ -195,44 +213,142 @@ describe("Vault Program", () => {
 		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 	});
 
-	it("init Lgc token acct", async () => {
-		ll("------== Init LgcTokenAcct");
+	it("mint Lgc token", async () => {
+		ll("------== Mint Lgc Token");
 		ll("payer:", adminAddr);
-		ll("mint_auth:", mintAuthority);
-		const pda_bump = await findPda(adminAddr, "mint");
-		const mint = pda_bump.pda;
-		const owner = adminAddr;
-		ll("owner:", owner);
+		ownerKp = adminKp;
+		ll("owner:", ownerKp.address);
+		ll("mint:", mint);
+		ll("mintAuthorityKp:", mintAuthorityKp.address);
+
 		const [ata] = await findAssociatedTokenPda({
-			mint,
-			owner,
+			mint: mint,
+			owner: ownerKp.address,
 			tokenProgram: TOKEN_PROGRAM_ADDRESS,
 		});
 		ll("token_account ata:", ata);
 
-		const methodIx = vault.getTokenLgcInitTokAcctInstruction(
+		const methodIx = vault.getTokLgcMintTokenInstruction(
 			{
-				payer: adminKp,
+				mintAuthority: mintAuthorityKp,
 				mint: mint,
-				owner: owner,
-				tokenAccount: ata,
+				toWallet: ownerKp.address,
 				tokenProgram: TOKEN_PROGRAM_ADDRESS,
-				program: vaultProgAddr,
 				systemProgram: SYSTEM_PROGRAM_ADDRESS,
+				tokenAccount: ata,
+				decimals: 9,
+				amount: 100,
 			},
 			{
 				programAddress: vaultProgAddr,
 			},
 		);
-		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
+		await sendTxn(methodIx, mintAuthorityKp, rpc, rpcSubscriptions);
 	});
 
-	/*it("init Tok22 Mint", async () => {
+	it("init Lgc token acct", async () => {
+		ll("------== Init LgcTokenAcct");
+		ll("payer:", adminAddr);
+		const destAddr = user1Addr;
+		ll("destAddr:", destAddr);
+		ll("mint:", mint);
+		const payerKp = adminKp;
+
+		const [ata, bump] = await findAssociatedTokenPda({
+			mint: mint,
+			owner: destAddr,
+			tokenProgram: TOKEN_PROGRAM_ADDRESS,
+		});
+		ll("ata:", ata, "bump:", bump);
+
+		const methodIx = vault.getTokenLgcInitTokAcctInstruction(
+			{
+				payer: payerKp,
+				toWallet: destAddr,
+				mint: mint,
+				tokenAccount: ata,
+				tokenProgram: TOKEN_PROGRAM_ADDRESS,
+				systemProgram: SYSTEM_PROGRAM_ADDRESS,
+				bump,
+			},
+			{
+				programAddress: vaultProgAddr,
+			},
+		);
+		await sendTxn(methodIx, payerKp, rpc, rpcSubscriptions);
+		const _balcTok = await rpc.getTokenAccountBalance(ata).send();
+		//expect(balcTok.value.uiAmountString.toString()).toBe("100");
+	});
+
+	//------------------==
+	it("init Lgc token acct LOW LEVEL", async () => {
+		ll("------== Init LgcTokenAcct LOW LEVEL");
+		ll("payer:", adminAddr);
+		const destAddr = user1Addr;
+		ll("destAddr:", destAddr);
+		ll("mint:", mint);
+		const payerKp = adminKp;
+
+		const [ata, bump] = await findAssociatedTokenPda({
+			mint: mint,
+			owner: destAddr,
+			tokenProgram: TOKEN_PROGRAM_ADDRESS,
+		});
+		ll("ata:", ata, "bump:", bump);
+
+		const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+		const transaction = pipe(
+			createTransactionMessage({
+				version: 0,
+			}),
+			(tx) => setTransactionMessageFeePayer(payerKp.address, tx),
+			(tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+			(tx) =>
+				appendTransactionMessageInstruction(
+					vault.getTokenLgcInitTokAcctInstruction(
+						{
+							payer: payerKp,
+							toWallet: destAddr,
+							mint: mint,
+							tokenAccount: ata,
+							tokenProgram: TOKEN_PROGRAM_ADDRESS,
+							systemProgram: SYSTEM_PROGRAM_ADDRESS,
+							bump,
+						},
+						{
+							programAddress: vaultProgAddr,
+						},
+					),
+					tx,
+				),
+			(tx) => addSignersToTransactionMessage([payerKp], tx),
+		);
+
+		const signedTransaction =
+			await signTransactionMessageWithSigners(transaction);
+		assertIsTransactionWithBlockhashLifetime(signedTransaction);
+
+		const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
+			rpc,
+			rpcSubscriptions,
+		});
+		await sendAndConfirmTransaction(signedTransaction, {
+			commitment: "confirmed",
+		});
+	});
+	/*
+	const _balcTok = await rpc.getTokenAccountBalance(ata).send();
+	//expect(balcTok.value.uiAmountString.toString()).toBe("100");
+
+  amount: 100 * 10 ** 9,
+  
+	it("init Tok22 Mint", async () => {
 		ll("------== Init Tok22 Mint");
 		const mintKp = await generateKeyPairSigner();
 
 		const [ata] = await findAssociatedTokenPda({
-			mint: mintKp.address,
+			mint: mint,
 			owner: adminAddr,
 			tokenProgram: TOKEN_PROGRAM_LEGACY,
 		});
@@ -240,14 +356,14 @@ describe("Vault Program", () => {
 
 		// unauthorized signer or writable account
 		const methodIx = vault.getToken2022InitMintInstruction({
-			mintAuthority: adminKp,
-			mint: mintKp.address,
-			tokenProgram: TOKEN_PROGRAM_LEGACY,
+			mintAuthority: mintAuthority,
+			mint: mint,
+			tokenProgram: TOKEN_PROGRAM_2022,
 			freezeAuthorityOpt: adminAddr,
 			decimals: 9,
 		});
 
-		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
+		await sendTxn(methodIx, mintAuthority, rpc, rpcSubscriptions);
 	});
 	it("xyz", async () => {
 		ll("------== To Xyz");

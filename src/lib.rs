@@ -39,6 +39,7 @@ fn process_instruction(
         TokenLgcInitTokAcct::DISCRIMINATOR => {
             TokenLgcInitTokAcct::try_from((data, accounts))?.process()
         }
+        TokLgcMintToken::DISCRIMINATOR => TokLgcMintToken::try_from((data, accounts))?.process(),
         Token2022InitMint::DISCRIMINATOR => {
             Token2022InitMint::try_from((data, accounts))?.process()
         }

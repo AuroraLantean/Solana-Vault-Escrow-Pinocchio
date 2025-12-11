@@ -1,7 +1,6 @@
 use core::convert::TryFrom;
 use pinocchio::{
     account_info::AccountInfo,
-    instruction::{Seed, Signer},
     program_error::ProgramError,
     sysvars::{rent::Rent, Sysvar},
     ProgramResult,
@@ -9,7 +8,7 @@ use pinocchio::{
 use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
-use crate::{derive_pda1, empty_data, empty_lamport, instructions::check_signer, writable};
+use crate::{empty_data, empty_lamport, instructions::check_signer, writable};
 use pinocchio_token::{instructions::InitializeMint2, state::Mint};
 
 //TokenLgc Init Mint Account

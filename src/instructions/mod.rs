@@ -17,6 +17,8 @@ pub mod tokLgcInitMint;
 #[allow(non_snake_case)]
 pub mod tokLgcInitTokAcct;
 #[allow(non_snake_case)]
+pub mod tokLgcMintToken;
+#[allow(non_snake_case)]
 pub mod withdrawSol;
 
 pub use depositSol::*;
@@ -26,6 +28,7 @@ pub use tok22InitTokAcct::*;
 pub use tok22MintToken::*;
 pub use tokLgcInitMint::*;
 pub use tokLgcInitTokAcct::*;
+pub use tokLgcMintToken::*;
 pub use withdrawSol::*;
 
 use shank::ShankInstruction;
@@ -60,15 +63,23 @@ pub enum ProgramIx {
     #[account(6, name = "system_program", desc = "System Program")]
     TokenLgcInitMint { decimals: u8 },
 
-    /// TokLgc Init Token Acct
+    /// TokLgc Init Associated Token Acct
     #[account(0, signer, writable, name = "payer", desc = "Payer")]
-    #[account(1, name = "mint", desc = "Mint")]
-    #[account(2, name = "owner", desc = "Token Account Owner")]
-    #[account(3, name = "token_account", desc = "Token Account")]
+    #[account(1, name = "to_wallet", desc = "To Wallet")]
+    #[account(2, name = "mint", desc = "Mint")]
+    #[account(3, writable, name = "token_account", desc = "Token Account")]
     #[account(4, name = "token_program", desc = "Token Program")]
-    #[account(5, name = "program", desc = "This Program")]
-    #[account(6, name = "system_program", desc = "System Program")]
-    TokenLgcInitTokAcct {},
+    #[account(5, name = "system_program", desc = "System Program")]
+    TokenLgcInitTokAcct { bump: u8 },
+
+    /// TokLgc Mint Token
+    #[account(0, signer, writable, name = "mint_authority", desc = "Mint Authority")]
+    #[account(1, writable, name = "mint", desc = "Mint")]
+    #[account(2, name = "to_wallet", desc = "ToWallet")]
+    #[account(3, name = "token_program", desc = "Token Program")]
+    #[account(4, name = "system_program", desc = "System Program")]
+    #[account(5, writable, name = "token_account", desc = "Token Account")]
+    TokLgcMintToken { decimals: u8, amount: u64 },
 
     /// Token2022 Init Mint
     #[account(0, signer, writable, name = "mint_authority", desc = "Mint Authority")]
@@ -166,6 +177,7 @@ pub fn executable(account: &AccountInfo) -> Result<(), ProgramError> {
     }
     Ok(())
 }
+//TODO: does Mint and TokenAcct sizes differ between TokenLgc and Token2022?
 pub fn rent_exempt(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
     if acc_type == 0 && account.lamports() < Rent::get()?.minimum_balance(Mint::BASE_LEN) {
         return Err(ProgramError::AccountNotRentExempt);

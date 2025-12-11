@@ -1,23 +1,22 @@
+use crate::{empty_data, empty_lamport, instructions::check_signer, rent_exempt, writable};
 use core::convert::TryFrom;
 use pinocchio::{
     account_info::AccountInfo,
+    instruction::{Seed, Signer},
     program_error::ProgramError,
-    sysvars::{rent::Rent, Sysvar},
     ProgramResult,
 };
 use pinocchio_log::log;
-use pinocchio_system::instructions::CreateAccount;
 
-use crate::{empty_data, empty_lamport, instructions::check_signer, rent_exempt, writable};
-use pinocchio_token_2022::{instructions::InitializeAccount3, state::TokenAccount};
-
-/// Token Legacy Init Token Account
+/// Token Legacy Init Token Account: not working in test... but we do not need this function because MintToChecked() will auto make such account!
 pub struct TokenLgcInitTokAcct<'a> {
     pub payer: &'a AccountInfo,
+    pub to_wallet: &'a AccountInfo,
     pub mint: &'a AccountInfo,
-    pub owner: &'a AccountInfo,
     pub token_account: &'a AccountInfo,
     pub token_program: &'a AccountInfo,
+    pub system_program: &'a AccountInfo,
+    pub bump: u8,
 }
 impl<'a> TokenLgcInitTokAcct<'a> {
     pub const DISCRIMINATOR: &'a u8 = &3;
@@ -25,10 +24,12 @@ impl<'a> TokenLgcInitTokAcct<'a> {
     pub fn process(self) -> ProgramResult {
         let TokenLgcInitTokAcct {
             payer, //signer
-            owner,
+            to_wallet,
             mint,
             token_account,
             token_program,
+            system_program,
+            bump,
         } = self;
         log!("TokenLgcInitTokAcct process()");
         check_signer(payer)?;
@@ -36,18 +37,25 @@ impl<'a> TokenLgcInitTokAcct<'a> {
         empty_data(token_account)?;
         rent_exempt(mint, 0)?;
 
-        /*find token_account from owner & token mint"
+        /*find token_account from to_wallet & token mint"
         cargo add spl-associated-token-account
         use spl_associated_token_account::get_associated_token_address;
-        let ata = get_associated_token_address(&wallet, &mint);
-        */
-        log!("TokenLgcInitTokAcct 2");
-        let lamports = Rent::get()?.minimum_balance(TokenAccount::BASE_LEN);
-        let space = TokenAccount::BASE_LEN as u64;
-        log!("lamports: {}, space: {}", lamports, space);
+        let ata = get_associated_token_address(&to_wallet, &mint);*/
 
         log!("Make Token Account");
-        CreateAccount {
+        pinocchio_associated_token_account::instructions::Create {
+            funding_account: payer,
+            account: token_account,
+            wallet: to_wallet,
+            mint: mint,
+            system_program: system_program,
+            token_program: token_program,
+        }
+        .invoke()?;
+        //.invoke_signed(&[signer])?;An account required by the instruction is missin
+        //.invoke()?;
+        writable(token_account)?;
+        /*CreateAccount {
             from: payer,
             to: token_account,
             owner: token_program.key(),
@@ -62,9 +70,8 @@ impl<'a> TokenLgcInitTokAcct<'a> {
         InitializeAccount3 {
             account: token_account,
             mint: mint,
-            owner: owner.key(),
-            token_program: token_program.key(),
-        };
+            owner: to_wallet.key(),
+        };*/
         Ok(())
     }
     pub fn init_if_needed(self) -> ProgramResult {
@@ -82,22 +89,33 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitTokAcct<'a> {
         let (data, accounts) = value;
         log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-        if accounts.len() < 7 {
+        if accounts.len() < 6 {
             return Err(ProgramError::NotEnoughAccountKeys);
         }
         let payer = &accounts[0];
-        let mint = &accounts[1];
-        let owner = &accounts[2];
+        let to_wallet = &accounts[1];
+        let mint = &accounts[2];
         let token_account = &accounts[3];
         let token_program = &accounts[4];
+        let system_program = &accounts[5];
         //let [payer, mint, _] = accounts else {  does not work };
+
+        //1+8: u8 takes 1, u64 takes 8 bytes
+        if data.len() < 1 {
+            return Err(ProgramError::AccountDataTooSmall);
+        }
+        let bump = data[0];
+        log!("bump: {}", bump);
+
         log!("TokenLgcInitTokAcct try_from end");
         Ok(Self {
             payer,
+            to_wallet,
             mint,
-            owner,
             token_account,
             token_program,
+            system_program,
+            bump,
         })
     }
 }
