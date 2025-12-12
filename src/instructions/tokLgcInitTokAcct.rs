@@ -1,11 +1,6 @@
 use crate::{empty_data, empty_lamport, instructions::check_signer, rent_exempt, writable};
 use core::convert::TryFrom;
-use pinocchio::{
-    account_info::AccountInfo,
-    instruction::{Seed, Signer},
-    program_error::ProgramError,
-    ProgramResult,
-};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
 /// Token Legacy Init Token Account: not working in test... but we do not need this function because MintToChecked() will auto make such account!
@@ -29,7 +24,7 @@ impl<'a> TokenLgcInitTokAcct<'a> {
             token_account,
             token_program,
             system_program,
-            bump,
+            bump: _,
         } = self;
         log!("TokenLgcInitTokAcct process()");
         check_signer(payer)?;
@@ -46,7 +41,7 @@ impl<'a> TokenLgcInitTokAcct<'a> {
         pinocchio_associated_token_account::instructions::Create {
             funding_account: payer,
             account: token_account,
-            wallet: to_wallet,
+            wallet: to_wallet, //tried addr, Kp
             mint: mint,
             system_program: system_program,
             token_program: token_program,

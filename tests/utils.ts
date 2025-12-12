@@ -1,4 +1,3 @@
-import assert from "node:assert";
 import {
 	type Address,
 	appendTransactionMessageInstruction,
@@ -42,7 +41,6 @@ export const sendTxn = async (
 	signerKp: any,
 	rpc: any,
 	rpcSubscriptions: any,
-	shouldSucceed = true,
 	isVerbose = false,
 ) => {
 	ll("sendTxn() ...");
@@ -64,21 +62,11 @@ export const sendTxn = async (
 	});
 
 	//lastValidBlockHeight
-	if (shouldSucceed) {
-		await sendAndConfirmTransaction(signedTransaction, {
-			commitment: "confirmed",
-		}); //"confirmRecentTransaction" | "rpc" | "transaction"
 
-		const signature = getSignatureFromTransaction(signedTransaction);
-		ll("Transaction signature:", signature);
-	} else {
-		await assert.rejects(
-			sendAndConfirmTransaction(signedTransaction, {
-				commitment: "confirmed",
-			}),
-			{
-				message: "Transaction simulation failed",
-			},
-		);
-	}
+	await sendAndConfirmTransaction(signedTransaction, {
+		commitment: "confirmed",
+	}); //"confirmRecentTransaction" | "rpc" | "transaction"
+
+	const signature = getSignatureFromTransaction(signedTransaction);
+	ll("Transaction signature:", signature);
 };

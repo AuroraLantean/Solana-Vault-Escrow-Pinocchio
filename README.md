@@ -16,9 +16,9 @@ The only dependencies are types from the Solana SDK. This mitigates dependency i
 
 ### Environment
 
-Rust: 1.91.1 (ed61e7d7e 2025-11-07);
+Rust: 1.92.0 (ded5c06cf 2025-12-08);
 solana-cli: 3.0.12 or 2.3.13;
-BunJs:  1.3.3; PNPM: 10.24.0
+BunJs:  1.3.3; PNPM: 10.25.0
 
 ## Setup a new Pinocchio project
 
@@ -26,6 +26,7 @@ BunJs:  1.3.3; PNPM: 10.24.0
 cargo new program-name --lib --edition 2021
 cd program-name
 cargo add pinocchio pinocchio-system pinocchio-log pinocchio-pubkey shank
+bun init
 ```
 
 Add config in `Cargo.toml`
