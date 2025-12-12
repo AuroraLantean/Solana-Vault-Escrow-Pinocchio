@@ -8,7 +8,11 @@ import {
 	lamports,
 } from "@solana/kit";
 import { SYSTEM_PROGRAM_ADDRESS } from "@solana-program/system";
-import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
+import {
+	findAssociatedTokenPda,
+	TOKEN_PROGRAM_ADDRESS,
+} from "@solana-program/token";
+import { TOKEN_2022_PROGRAM_ADDRESS } from "@solana-program/token-2022";
 import * as vault from "../clients/js/src/generated/index";
 import { findPda, ll, sendTxn, vaultProgAddr } from "./utils";
 
@@ -184,10 +188,10 @@ describe("Vault Program", () => {
 		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 	}, 10000);
 
-	/*test("mint Lgc token", async () => {
+	test.skip("mint Lgc token", async () => {
 		ll("------== Mint Lgc Token");
 		ll("payer:", adminAddr);
-		ownerKp = adminKp;
+		const ownerKp = adminKp;
 		ll("owner:", ownerKp.address);
 		ll("mint:", mint);
 		ll("mintAuthorityKp:", mintAuthorityKp.address);
@@ -217,7 +221,7 @@ describe("Vault Program", () => {
 		await sendTxn(methodIx, mintAuthorityKp, rpc, rpcSubscriptions);
 	});
 
-	test("init Lgc token acct", async () => {
+	test.skip("init Lgc token acct", async () => {
 		ll("------== Init LgcTokenAcct");
 		ll("payer:", adminAddr);
 		const destAddr = user1Addr;
@@ -249,10 +253,10 @@ describe("Vault Program", () => {
 		await sendTxn(methodIx, user1Kp, rpc, rpcSubscriptions);
 		const _balcTok = await rpc.getTokenAccountBalance(ata).send();
 		//expect(balcTok.value.uiAmountString.toString()).toBe("100");
-	});*/
+	});
 
 	//------------------==
-	/*test("init Lgc token acct LOW LEVEL", async () => {
+	/*test.skip("init Lgc token acct LOW LEVEL", async () => {
 		ll("------== Init LgcTokenAcct LOW LEVEL");
 		ll("payer:", adminAddr);
 		const destAddr = user1Addr;
@@ -311,33 +315,35 @@ describe("Vault Program", () => {
 	
 	const _balcTok = await rpc.getTokenAccountBalance(ata).send();
 	//expect(balcTok.value.uiAmountString.toString()).toBe("100");
+  //amount: 100 * 10 ** 9,*/
 
-  amount: 100 * 10 ** 9,
-  
 	test("init Tok22 Mint", async () => {
 		ll("------== Init Tok22 Mint");
-		const mintKp = await generateKeyPairSigner();
+		ll("payer:", adminAddr);
+		ll("mint_auth:", mintAuthority);
+		const mint22Kp = await generateKeyPairSigner();
+		ll("mint22:", mint22Kp.address);
 
-		const [ata] = await findAssociatedTokenPda({
-			mint: mint,
-			owner: adminAddr,
-			tokenProgram: TOKEN_PROGRAM_LEGACY,
-		});
-		ll("ata: ", ata);
+		const methodIx = vault.getToken2022InitMintInstruction(
+			{
+				payer: adminKp,
+				mint: mint22Kp,
+				mintAuthority: mintAuthority,
+				freezeAuthorityOpt: mintAuthority,
+				tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+				program: vaultProgAddr,
+				systemProgram: SYSTEM_PROGRAM_ADDRESS,
+				decimals: 9,
+			},
+			{
+				programAddress: vaultProgAddr,
+			},
+		);
 
-		// unauthorized signer or writable account
-		const methodIx = vault.getToken2022InitMintInstruction({
-			mintAuthority: mintAuthority,
-			mint: mint,
-			tokenProgram: TOKEN_PROGRAM_2022,
-			freezeAuthorityOpt: adminAddr,
-			decimals: 9,
-		});
-
-		await sendTxn(methodIx, mintAuthority, rpc, rpcSubscriptions);
+		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 	});
 	test("xyz", async () => {
 		ll("------== To Xyz");
-	});*/
+	});
 });
 //if error: Attempt to load a program that does not exist. You have to deploy the program first before running this test!

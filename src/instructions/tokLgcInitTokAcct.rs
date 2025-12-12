@@ -39,9 +39,9 @@ impl<'a> TokenLgcInitTokAcct<'a> {
 
         log!("Make Token Account");
         pinocchio_associated_token_account::instructions::Create {
-            funding_account: payer,
+            funding_account: payer, // Keypair
             account: token_account,
-            wallet: to_wallet, //tried addr, Kp
+            wallet: to_wallet, //tried addr and Kp
             mint: mint,
             system_program: system_program,
             token_program: token_program,

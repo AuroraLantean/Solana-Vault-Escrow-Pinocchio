@@ -82,10 +82,13 @@ pub enum ProgramIx {
     TokLgcMintToken { decimals: u8, amount: u64 },
 
     /// Token2022 Init Mint
-    #[account(0, signer, writable, name = "mint_authority", desc = "Mint Authority")]
-    #[account(1, writable, name = "mint", desc = "Mint")]
-    #[account(2, name = "token_program", desc = "Token Program")]
-    #[account(3, name = "freeze_authority_opt", desc = "Freeze Authority")]
+    #[account(0, signer, writable, name = "payer", desc = "Payer")]
+    #[account(1, signer, writable, name = "mint", desc = "Mint")]
+    #[account(2, name = "mint_authority", desc = "Mint Authority")]
+    #[account(3, name = "token_program", desc = "Token Program")]
+    #[account(4, name = "freeze_authority_opt", desc = "Freeze Authority")]
+    #[account(5, name = "program", desc = "This Program")]
+    #[account(6, name = "system_program", desc = "System Program")]
     Token2022InitMint { decimals: u8 },
 
     /// Token2022 Init Token Acct

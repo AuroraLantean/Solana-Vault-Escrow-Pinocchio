@@ -8,7 +8,7 @@ use pinocchio::{
 use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
-use crate::{empty_data, empty_lamport, instructions::check_signer, writable};
+use crate::{empty_data, empty_lamport, executable, instructions::check_signer, writable};
 use pinocchio_token::{instructions::InitializeMint2, state::Mint};
 
 //TokenLgc Init Mint Account
@@ -38,6 +38,7 @@ impl<'a> TokenLgcInitMint<'a> {
         empty_lamport(mint)?;
         log!("TokenLgcInitMint 3");
         empty_data(mint)?;
+        executable(token_program)?;
 
         if decimals > 18 {
             return Err(ProgramError::InvalidArgument);
@@ -58,7 +59,7 @@ impl<'a> TokenLgcInitMint<'a> {
 
         log!("Make Mint Account"); //payer and mint are both keypairs!
         CreateAccount {
-            from: payer,
+            from: payer, //Keypair
             to: mint,
             owner: token_program.key(), //address("TokenXYZ");
             lamports,
@@ -71,7 +72,7 @@ impl<'a> TokenLgcInitMint<'a> {
 
         log!("Init Mint");
         InitializeMint2 {
-            mint,
+            mint, //Keypair
             decimals,
             mint_authority: mint_authority.key(),
             freeze_authority: freeze_authority_opt,
@@ -113,11 +114,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitMint<'a> {
         }
         let decimals = data[0];
         log!("decimals: {}", decimals);
-        //let mint_authority = &data[1..];
         Ok(Self {
             payer,
-            mint_authority, //.try_into()
             mint,
+            mint_authority, //.try_into()
             token_program,
             freeze_authority_opt,
             decimals,
