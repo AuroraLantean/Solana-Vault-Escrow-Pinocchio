@@ -3,8 +3,8 @@ use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
-/// Token Legacy Init Token Account: not working in test... but we do not need this function because MintToChecked() will auto make such account!
-pub struct TokenLgcInitTokAcct<'a> {
+/// Token Legacy Init ATA(Associated Token Account)
+pub struct TokenLgcInitAta<'a> {
     pub payer: &'a AccountInfo,
     pub to_wallet: &'a AccountInfo,
     pub mint: &'a AccountInfo,
@@ -13,11 +13,11 @@ pub struct TokenLgcInitTokAcct<'a> {
     pub system_program: &'a AccountInfo,
     pub bump: u8,
 }
-impl<'a> TokenLgcInitTokAcct<'a> {
+impl<'a> TokenLgcInitAta<'a> {
     pub const DISCRIMINATOR: &'a u8 = &3;
 
     pub fn process(self) -> ProgramResult {
-        let TokenLgcInitTokAcct {
+        let TokenLgcInitAta {
             payer, //signer
             to_wallet,
             mint,
@@ -26,7 +26,7 @@ impl<'a> TokenLgcInitTokAcct<'a> {
             system_program,
             bump: _,
         } = self;
-        log!("TokenLgcInitTokAcct process()");
+        log!("TokenLgcInitAta process()");
         check_signer(payer)?;
         empty_lamport(token_account)?;
         empty_data(token_account)?;
@@ -58,7 +58,7 @@ impl<'a> TokenLgcInitTokAcct<'a> {
             space,
         }
         .invoke()?;
-        log!("TokenLgcInitTokAcct 7");
+        log!("TokenLgcInitAta 7");
         writable(token_account)?;
 
         log!("Init Token Account");
@@ -76,11 +76,11 @@ impl<'a> TokenLgcInitTokAcct<'a> {
         }
     }
 }
-impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitTokAcct<'a> {
+impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitAta<'a> {
     type Error = ProgramError;
 
     fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
-        log!("TokenLgcInitTokAcct try_from");
+        log!("TokenLgcInitAta try_from");
         let (data, accounts) = value;
         log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
@@ -103,7 +103,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitTokAcct<'a> {
         let bump = data[0];
         log!("bump: {}", bump);
 
-        log!("TokenLgcInitTokAcct try_from end");
+        log!("TokenLgcInitAta try_from end");
         Ok(Self {
             payer,
             to_wallet,

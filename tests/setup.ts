@@ -21,6 +21,8 @@ console.log(`✅ - Established connection to ${httpProvider}`);
 export const adminKp = await generateKeyPairSigner();
 export const mintAuthorityKp = await generateKeyPairSigner();
 export const user1Kp = await generateKeyPairSigner();
+export const user2Kp = await generateKeyPairSigner();
+export const user3Kp = await generateKeyPairSigner();
 export const hackerKp = await generateKeyPairSigner();
 export const mintKp = await generateKeyPairSigner();
 //import secret from './my-keypair.json';
@@ -29,12 +31,18 @@ export const adminAddr = adminKp.address;
 export const mint = mintKp.address;
 export const mintAuthority = mintAuthorityKp.address;
 export const user1Addr = user1Kp.address;
+export const user2Addr = user2Kp.address;
+export const user3Addr = user3Kp.address;
+export const hackerAddr = hackerKp.address;
 
 const ll = console.log;
-ll(`✅ adminAddr ${adminAddr}`);
 ll(`✅ mint: ${mint}`);
 ll(`✅ mintAuthority: ${mintAuthority}`);
+ll(`✅ adminAddr ${adminAddr}`);
 ll(`✅ user1Addr: ${user1Addr}`);
+ll(`✅ user2Addr: ${user2Addr}`);
+ll(`✅ user3Addr: ${user3Addr}`);
+ll(`✅ hackerAddr: ${hackerAddr}`);
 
 // Airdrop SOL to admin
 const airdrop = airdropFactory({ rpc, rpcSubscriptions });

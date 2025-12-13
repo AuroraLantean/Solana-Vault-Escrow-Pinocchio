@@ -54,6 +54,7 @@ export const sendTxn = async (
 		(tx) => setTransactionMessageFeePayer(signerKp.address, tx),
 		(tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
 		(tx) => appendTransactionMessageInstruction(methodIx, tx),
+		//(tx) => addSignersToTransactionMessage([signerKp], tx), //do we need this?
 	);
 	// Sign and send transaction
 	const signedTransaction = await signTransactionMessageWithSigners(txnMesg);

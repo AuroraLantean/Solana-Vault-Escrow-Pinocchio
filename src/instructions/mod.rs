@@ -13,9 +13,9 @@ pub mod tok22InitTokAcct;
 #[allow(non_snake_case)]
 pub mod tok22MintToken;
 #[allow(non_snake_case)]
-pub mod tokLgcInitMint;
+pub mod tokLgcInitATA;
 #[allow(non_snake_case)]
-pub mod tokLgcInitTokAcct;
+pub mod tokLgcInitMint;
 #[allow(non_snake_case)]
 pub mod tokLgcMintToken;
 #[allow(non_snake_case)]
@@ -26,8 +26,8 @@ use pinocchio_token_2022::state::{Mint, TokenAccount};
 pub use tok22InitMint::*;
 pub use tok22InitTokAcct::*;
 pub use tok22MintToken::*;
+pub use tokLgcInitATA::*;
 pub use tokLgcInitMint::*;
-pub use tokLgcInitTokAcct::*;
 pub use tokLgcMintToken::*;
 pub use withdrawSol::*;
 
@@ -63,11 +63,11 @@ pub enum ProgramIx {
     #[account(6, name = "system_program", desc = "System Program")]
     TokenLgcInitMint { decimals: u8 },
 
-    /// TokLgc Init Associated Token Acct
+    /// TokLgc Init ATA(Associated Token Acct)
     #[account(0, signer, writable, name = "payer", desc = "Payer")]
     #[account(1, name = "to_wallet", desc = "To Wallet")]
     #[account(2, name = "mint", desc = "Mint")]
-    #[account(3, writable, name = "token_account", desc = "Token Account")]
+    #[account(3, writable, name = "token_account", desc = "ATA Token Account")]
     #[account(4, name = "token_program", desc = "Token Program")]
     #[account(5, name = "program", desc = "This Program")]
     #[account(6, name = "system_program", desc = "System Program")]

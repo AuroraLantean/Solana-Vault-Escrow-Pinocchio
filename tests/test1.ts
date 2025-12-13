@@ -18,7 +18,6 @@ import {
 	rpc,
 	rpcSubscriptions,
 	user1Addr,
-	user1Kp,
 } from "./setup";
 import { makeATA } from "./tokens";
 import { findPda, ll, makeSolAmt, sendTxn, vaultProgAddr } from "./utils";
@@ -142,9 +141,10 @@ describe("Vault Program", () => {
 		await sendTxn(methodIx, adminKp, rpc, rpcSubscriptions);
 	}, 10000);
 
-	test("init Lgc token acct", async () => {
-		ll("------== Init LgcTokenAcct");
-		ll("payer:", adminAddr);
+	test("init Lgc ata", async () => {
+		ll("------== Init Lgc Ata");
+		const payer = adminKp;
+		ll("payer:", payer);
 		const destAddr = user1Addr;
 		ll("destAddr:", destAddr);
 		ll("mint:", mint);
@@ -158,7 +158,7 @@ describe("Vault Program", () => {
 
 		const methodIx = vault.getTokenLgcInitTokAcctInstruction(
 			{
-				payer: user1Kp, // must be a system account ???
+				payer: payer, // must be a system account ???
 				toWallet: destAddr,
 				mint: mint,
 				tokenAccount: ata,
@@ -171,7 +171,7 @@ describe("Vault Program", () => {
 				programAddress: vaultProgAddr,
 			},
 		);
-		await sendTxn(methodIx, user1Kp, rpc, rpcSubscriptions);
+		await sendTxn(methodIx, payer, rpc, rpcSubscriptions);
 		const _balcTok = await rpc.getTokenAccountBalance(ata).send();
 		//expect(balcTok.value.uiAmountString.toString()).toBe("100");
 	});
@@ -184,8 +184,8 @@ describe("Vault Program", () => {
 		ll("mint:", mint);
 		ll("mintAuthorityKp:", mintAuthorityKp.address);
 
-		const out = await makeATA(mintAuthorityKp, destAddr, mint);
-		const ata = out.ata;
+		const ataAndBump = await makeATA(mintAuthorityKp, destAddr, mint);
+		const ata = ataAndBump.ata;
 
 		const methodIx = vault.getTokLgcMintTokenInstruction(
 			{
@@ -207,6 +207,7 @@ describe("Vault Program", () => {
 		const balcTok = await rpc.getTokenAccountBalance(ata).send();
 		expect(balcTok.value.uiAmountString.toString()).toBe("100");
 	});
+	//TODO: LiteSVM https://rareskills.io/post/litesvm ; Bankrun: https://www.quicknode.com/guides/solana-development/tooling/bankrun
 	//------------------==
 	/*test.skip("init Lgc token acct LOW LEVEL", async () => {
 		ll("------== Init LgcTokenAcct LOW LEVEL");

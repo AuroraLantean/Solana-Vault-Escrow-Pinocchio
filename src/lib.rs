@@ -36,9 +36,7 @@ fn process_instruction(
         DepositSol::DISCRIMINATOR => DepositSol::try_from((data, accounts))?.process(),
         WithdrawSol::DISCRIMINATOR => WithdrawSol::try_from((data, accounts))?.process(),
         TokenLgcInitMint::DISCRIMINATOR => TokenLgcInitMint::try_from((data, accounts))?.process(),
-        TokenLgcInitTokAcct::DISCRIMINATOR => {
-            TokenLgcInitTokAcct::try_from((data, accounts))?.process()
-        }
+        TokenLgcInitAta::DISCRIMINATOR => TokenLgcInitAta::try_from((data, accounts))?.process(),
         TokLgcMintToken::DISCRIMINATOR => TokLgcMintToken::try_from((data, accounts))?.process(),
         Token2022InitMint::DISCRIMINATOR => {
             Token2022InitMint::try_from((data, accounts))?.process()

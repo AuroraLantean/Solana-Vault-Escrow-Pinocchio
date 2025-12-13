@@ -161,7 +161,7 @@ export const makeATA = async (
 	mint: Address,
 ) => {
 	// Use findAssociatedTokenPda to derive the ATA address
-	const [associatedTokenAddress] = await findAssociatedTokenPda({
+	const [associatedTokenAddress, bump] = await findAssociatedTokenPda({
 		mint: mint,
 		owner: tokenOwner,
 		tokenProgram: TOKEN_PROGRAM_ADDRESS,
@@ -200,5 +200,5 @@ export const makeATA = async (
 	// Get transaction signature
 	const transactionSignature2 = getSignatureFromTransaction(signedTransaction2);
 	ll("Transaction Signature:", transactionSignature2);
-	return { ata: associatedTokenAddress };
+	return { ata: associatedTokenAddress, bump };
 };

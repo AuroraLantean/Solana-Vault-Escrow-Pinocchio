@@ -73,12 +73,21 @@ Codama takes the Shank IDL and emits a TypeScript client. The generated code inc
 
 You'll see a clients/js/src/generated/ folder in our project with the program types our client code uses to send transactions to our program.
 
+### LiteSVM
+
+Fast and lightweight library for testing Solana programs.
+
+```bash
+pnpm add litesvm @solana/web3.js @solana/spl-token
+```
 
 ### Reference
 
 - Pinocchio: <https://github.com/anza-xyz/pinocchio>
 - Bun Js Test: <https://bun.com/docs/test>
 - Solana Kit: <https://www.solanakit.com/>
+- LiteSVM: <https://github.com/LiteSVM/litesvm>
+- Gill: <https://www.gillsdk.com/docs/guides/tokens/create-token>
 - Quicknode: <https://www.quicknode.com/guides/solana-development/pinocchio/how-to-build-and-deploy-a-solana-program-using-pinocchio>
 - Create Token Mint via Rust and JavaScript: <https://solana.com/docs/tokens/basics/create-mint>
 - Create and Mint SPL Tokens via Anchor: <https://www.quicknode.com/guides/solana-development/anchor/create-tokens>
