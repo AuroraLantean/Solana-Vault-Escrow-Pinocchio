@@ -11,6 +11,8 @@ import * as vault from "../clients/js/src/generated/index";
 
 export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
 ll("vaultProgAddr:", vaultProgAddr);
+export const ATokenGPvbd =
+	"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" as Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">;
 
 export const decimalsSOL = BigInt(9);
 export const baseSOL = BigInt(10) ** decimalsSOL;

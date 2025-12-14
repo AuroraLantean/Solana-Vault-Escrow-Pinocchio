@@ -11,7 +11,9 @@ import * as vault from "../clients/js/src/generated/index";
 import {
 	adminAddr,
 	adminKp,
+	checkProgram,
 	getSol,
+	getTokBalc,
 	hackerKp,
 	mint,
 	mintAuthority,
@@ -24,7 +26,7 @@ import {
 	vaultRent,
 } from "./httpws";
 import { makeATA } from "./tokens";
-import { findPda, ll, makeSolAmt } from "./utils";
+import { ATokenGPvbd, findPda, ll, makeSolAmt } from "./utils";
 
 export const pda_bump = await findPda(adminAddr, "vault");
 export const vaultPDA: Address = pda_bump.pda;
@@ -40,6 +42,10 @@ const amtWithdraw = makeSolAmt(9);
 
 //BunJs Tests: https://bun.com/docs/test/writing-tests  expect(true).toBe(true);
 describe("Vault Program", () => {
+	test("programs exist", async () => {
+		await checkProgram(vaultProgAddr, "Vault");
+		await checkProgram(ATokenGPvbd, "ATokenGPvbd");
+	});
 	test.skip("can deposit to vault", async () => {
 		ll("------== To Deposit");
 		const methodIx = vault.getDepositInstruction(
@@ -95,7 +101,7 @@ describe("Vault Program", () => {
 			await sendTxn(methodIx, hackerKp);
 		},
 	);
-
+	//------------------==
 	test("init lgc mint", async () => {
 		ll("------== Init Lgc Mint");
 		ll("payer:", adminAddr);
@@ -119,11 +125,11 @@ describe("Vault Program", () => {
 		);
 		await sendTxn(methodIx, adminKp);
 	}, 10000);
-
+	//------------------==
 	test("init Lgc ata", async () => {
 		ll("------== Init Lgc Ata");
 		const payer = adminKp;
-		ll("payer:", payer);
+		ll("payer:", payer.address);
 		const destAddr = user1Addr;
 		ll("destAddr:", destAddr);
 		ll("mint:", mint);
@@ -137,24 +143,23 @@ describe("Vault Program", () => {
 
 		const methodIx = vault.getTokenLgcInitTokAcctInstruction(
 			{
-				payer: payer, // must be a system account ???
+				payer: payer,
 				toWallet: destAddr,
 				mint: mint,
 				tokenAccount: ata,
 				tokenProgram: TOKEN_PROGRAM_ADDRESS,
-				program: vaultProgAddr,
 				systemProgram: SYSTEM_PROGRAM_ADDRESS,
-				bump,
+				atokenProgram: ATokenGPvbd,
 			},
 			{
 				programAddress: vaultProgAddr,
 			},
 		);
 		await sendTxn(methodIx, payer);
-		const _balcTok = await rpc.getTokenAccountBalance(ata).send();
-		//expect(balcTok.value.uiAmountString.toString()).toBe("100");
+		const balcTok = await getTokBalc(ata);
+		expect(balcTok).toBe("0");
 	});
-
+	//------------------==
 	test("mint Lgc token", async () => {
 		ll("------== Mint Lgc Token");
 		ll("payer:", adminAddr);

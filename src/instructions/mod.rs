@@ -69,9 +69,9 @@ pub enum ProgramIx {
     #[account(2, name = "mint", desc = "Mint")]
     #[account(3, writable, name = "token_account", desc = "ATA Token Account")]
     #[account(4, name = "token_program", desc = "Token Program")]
-    #[account(5, name = "program", desc = "This Program")]
-    #[account(6, name = "system_program", desc = "System Program")]
-    TokenLgcInitTokAcct { bump: u8 },
+    #[account(5, name = "system_program", desc = "System Program")]
+    #[account(6, name = "atoken_program", desc = "AToken Program")]
+    TokenLgcInitTokAcct {},
 
     /// TokLgc Mint Token
     #[account(0, signer, writable, name = "mint_authority", desc = "Mint Authority")]

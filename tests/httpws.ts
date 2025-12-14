@@ -90,18 +90,28 @@ export const vaultRent = await rpc
 	.getMinimumBalanceForRentExemption(BigInt(VAULT_SIZE))
 	.send();
 
-const { value } = await rpc
-	.getAccountInfo(vaultProgAddr, { encoding: "base64" })
-	.send();
-if (!value || !value?.data) {
-	throw new Error(`Program does not exist: ${vaultProgAddr.toString()}`);
-}
-ll("✅ - Program exits!");
+export const checkProgram = async (
+	programAddr: Address,
+	programName: string,
+) => {
+	const { value } = await rpc
+		.getAccountInfo(programAddr, { encoding: "base64" })
+		.send();
+	if (!value || !value?.data) {
+		throw new Error(`Program does not exist: ${programAddr.toString()}`);
+	}
+	ll(`✅ - ${programName} program exits!`);
+};
 
 export const getSol = async (account: Address, name: string) => {
 	const { value: balc } = await rpc.getBalance(account).send();
 	ll(name, "balc:", balc);
 	return balc;
+};
+export const getTokBalc = async (ata: Address, name: string = "") => {
+	const { value } = await rpc.getTokenAccountBalance(ata).send();
+	ll(name, "balc:", value.amount);
+	return value.amount.toString();
 };
 
 //https://www.solanakit.com/docs/getting-started/send-transaction#confirmation-strategies
