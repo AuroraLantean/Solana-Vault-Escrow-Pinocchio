@@ -90,17 +90,16 @@ export const vaultRent = await rpc
 	.getMinimumBalanceForRentExemption(BigInt(VAULT_SIZE))
 	.send();
 
-export const checkProgram = async (
-	programAddr: Address,
-	programName: string,
-) => {
+export const checkAcct = async (target: Address, name: string) => {
 	const { value } = await rpc
-		.getAccountInfo(programAddr, { encoding: "base64" })
+		.getAccountInfo(target, { encoding: "base64" })
 		.send();
 	if (!value || !value?.data) {
-		throw new Error(`Program does not exist: ${programAddr.toString()}`);
+		ll(`${name} does not exist`);
+		return false;
 	}
-	ll(`✅ - ${programName} program exits!`);
+	ll(`✅ - ${name} program exits!`);
+	return true;
 };
 
 export const getSol = async (account: Address, name: string) => {

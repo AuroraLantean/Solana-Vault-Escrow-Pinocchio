@@ -2,16 +2,13 @@ import { describe, expect, test } from "bun:test";
 import type { Address } from "@solana/kit";
 import { generateKeyPairSigner, lamports } from "@solana/kit";
 import { SYSTEM_PROGRAM_ADDRESS } from "@solana-program/system";
-import {
-	findAssociatedTokenPda,
-	TOKEN_PROGRAM_ADDRESS,
-} from "@solana-program/token";
+import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
 import { TOKEN_2022_PROGRAM_ADDRESS } from "@solana-program/token-2022";
 import * as vault from "../clients/js/src/generated/index";
 import {
 	adminAddr,
 	adminKp,
-	checkProgram,
+	checkAcct,
 	getSol,
 	getTokBalc,
 	hackerKp,
@@ -19,13 +16,13 @@ import {
 	mintAuthority,
 	mintAuthorityKp,
 	mintKp,
-	rpc,
 	sendTxn,
 	user1Addr,
+	user1Kp,
 	vaultProgAddr,
 	vaultRent,
 } from "./httpws";
-import { makeATA } from "./tokens";
+import { getAta, makeATA } from "./tokens";
 import { ATokenGPvbd, findPda, ll, makeSolAmt } from "./utils";
 
 export const pda_bump = await findPda(adminAddr, "vault");
@@ -43,8 +40,11 @@ const amtWithdraw = makeSolAmt(9);
 //BunJs Tests: https://bun.com/docs/test/writing-tests  expect(true).toBe(true);
 describe("Vault Program", () => {
 	test("programs exist", async () => {
-		await checkProgram(vaultProgAddr, "Vault");
-		await checkProgram(ATokenGPvbd, "ATokenGPvbd");
+		const out1 = await checkAcct(vaultProgAddr, "Vault");
+		const out2 = await checkAcct(ATokenGPvbd, "ATokenGPvbd");
+		if (!out1 || !out2) {
+			throw new Error(`Program does not exist`);
+		}
 	});
 	test.skip("can deposit to vault", async () => {
 		ll("------== To Deposit");
@@ -134,12 +134,8 @@ describe("Vault Program", () => {
 		ll("destAddr:", destAddr);
 		ll("mint:", mint);
 
-		const [ata, bump] = await findAssociatedTokenPda({
-			mint: mint,
-			owner: destAddr,
-			tokenProgram: TOKEN_PROGRAM_ADDRESS,
-		});
-		ll("ata:", ata, "bump:", bump);
+		const atabump = await getAta(mint, destAddr);
+		const ata = atabump.ata;
 
 		const methodIx = vault.getTokenLgcInitTokAcctInstruction(
 			{
@@ -168,17 +164,19 @@ describe("Vault Program", () => {
 		ll("mint:", mint);
 		ll("mintAuthorityKp:", mintAuthorityKp.address);
 
-		const ataAndBump = await makeATA(mintAuthorityKp, destAddr, mint);
-		const ata = ataAndBump.ata;
+		const atabump = await makeATA(user1Kp, destAddr, mint);
+		const ata = atabump.ata;
 
+		ll("before calling program");
 		const methodIx = vault.getTokLgcMintTokenInstruction(
 			{
 				mintAuthority: mintAuthorityKp,
-				mint: mint,
 				toWallet: destAddr,
+				mint: mint,
+				tokenAccount: ata,
 				tokenProgram: TOKEN_PROGRAM_ADDRESS,
 				systemProgram: SYSTEM_PROGRAM_ADDRESS,
-				tokenAccount: ata,
+				atokenProgram: ATokenGPvbd,
 				decimals: 9,
 				amount: 100,
 			},
@@ -188,8 +186,8 @@ describe("Vault Program", () => {
 		);
 		await sendTxn(methodIx, mintAuthorityKp);
 
-		const balcTok = await rpc.getTokenAccountBalance(ata).send();
-		expect(balcTok.value.uiAmountString.toString()).toBe("100");
+		const balcTok = await getTokBalc(ata);
+		expect(balcTok).toBe("100");
 	});
 	//TODO: LiteSVM https://rareskills.io/post/litesvm ; Bankrun: https://www.quicknode.com/guides/solana-development/tooling/bankrun
 	//------------------==
@@ -201,12 +199,7 @@ describe("Vault Program", () => {
 		ll("mint:", mint);
 		const payerKp = adminKp;
 
-		const [ata, bump] = await findAssociatedTokenPda({
-			mint: mint,
-			owner: destAddr,
-			tokenProgram: TOKEN_PROGRAM_ADDRESS,
-		});
-		ll("ata:", ata, "bump:", bump);
+    const atabump = await getAta(mint, destAddr);
 
 		const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 

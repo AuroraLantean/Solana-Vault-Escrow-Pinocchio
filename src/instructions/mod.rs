@@ -75,11 +75,12 @@ pub enum ProgramIx {
 
     /// TokLgc Mint Token
     #[account(0, signer, writable, name = "mint_authority", desc = "Mint Authority")]
-    #[account(1, name = "mint", desc = "Mint")]
-    #[account(2, name = "to_wallet", desc = "ToWallet")]
-    #[account(3, name = "token_program", desc = "Token Program")]
-    #[account(4, name = "system_program", desc = "System Program")]
-    #[account(5, writable, name = "token_account", desc = "Token Account")]
+    #[account(1, name = "to_wallet", desc = "ToWallet")]
+    #[account(2, name = "mint", desc = "Mint")]
+    #[account(3, writable, name = "token_account", desc = "ATA Token Account")]
+    #[account(4, name = "token_program", desc = "Token Program")]
+    #[account(5, name = "system_program", desc = "System Program")]
+    #[account(6, name = "atoken_program", desc = "AToken Program")]
     TokLgcMintToken { decimals: u8, amount: u64 },
 
     /// Token2022 Init Mint
@@ -182,6 +183,7 @@ pub fn executable(account: &AccountInfo) -> Result<(), ProgramError> {
     Ok(())
 }
 //TODO: does Mint and TokenAcct sizes differ between TokenLgc and Token2022?
+/// acc_type: 0 Mint, 1 TokenAccount
 pub fn rent_exempt(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
     if acc_type == 0 && account.lamports() < Rent::get()?.minimum_balance(Mint::BASE_LEN) {
         return Err(ProgramError::AccountNotRentExempt);

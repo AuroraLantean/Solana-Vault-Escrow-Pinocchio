@@ -11,11 +11,12 @@ use pinocchio_token::{
 /// TokLgc Mint Tokens
 pub struct TokLgcMintToken<'a> {
     pub mint_authority: &'a AccountInfo, //signer
-    pub mint: &'a AccountInfo,
     pub to_wallet: &'a AccountInfo,
+    pub mint: &'a AccountInfo,
+    pub token_account: &'a AccountInfo,
     pub token_program: &'a AccountInfo,
     pub system_program: &'a AccountInfo,
-    pub token_account: &'a AccountInfo,
+    pub atoken_program: &'a AccountInfo,
     pub decimals: u8,
     pub amount: u64,
 }
@@ -25,11 +26,12 @@ impl<'a> TokLgcMintToken<'a> {
     pub fn process(self) -> ProgramResult {
         let TokLgcMintToken {
             mint_authority,
-            mint,
             to_wallet,
+            mint,
+            token_account,
             token_program,
             system_program,
-            token_account,
+            atoken_program,
             decimals,
             amount,
         } = self;
@@ -37,8 +39,6 @@ impl<'a> TokLgcMintToken<'a> {
         check_signer(mint_authority)?;
         log!("TokLgcMintToken 1");
         rent_exempt(mint, 0)?;
-        //writable(mint)?;
-        writable(token_account)?;
 
         if !token_program.executable() {
             return Err(ProgramError::IncorrectProgramId);
@@ -70,6 +70,7 @@ impl<'a> TokLgcMintToken<'a> {
                 token_program,
             }
             .invoke()?;
+            //Please upgrade to SPL Token 2022 for immutable owner support
         } else {
             log!("token_account has data");
             let token_account_info = TokenAccount::from_account_info(token_account)?;
@@ -77,10 +78,19 @@ impl<'a> TokLgcMintToken<'a> {
                 return Err(ProgramError::InvalidAccountData);
             }
         }
-        log!("Token Account exists");
+        writable(token_account)?;
         rent_exempt(token_account, 1)?;
+        log!("Token Account found/verified");
 
+        log!("Drop Borrowed Reference");
+        drop(mint);
+        drop(token_account);
+        drop(mint_authority);
+        drop(token_program);
+        drop(system_program);
+        drop(atoken_program);
         log!("Mint Tokens");
+        //instruction tries to borrow reference for an account which is already borrowed
         MintToChecked {
             mint,
             account: token_account,
@@ -100,7 +110,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcMintToken<'a> {
         let (data, accounts) = value;
         log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-        let [mint_authority, mint, to_wallet, token_program, system_program, token_account] =
+        let [mint_authority, to_wallet, mint, token_account, token_program, system_program, atoken_program] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -115,11 +125,12 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcMintToken<'a> {
         log!("decimals: {}, amount: {}", decimals, amount);
         Ok(Self {
             mint_authority,
-            mint,
             to_wallet,
+            mint,
+            token_account,
             token_program,
             system_program,
-            token_account,
+            atoken_program,
             decimals,
             amount,
         })

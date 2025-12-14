@@ -25,11 +25,20 @@ import {
 	getTokenSize,
 	TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
-import { rpc, rpcSubscriptions } from "./httpws";
+import { checkAcct, rpc, rpcSubscriptions } from "./httpws";
 import { ll } from "./utils";
 
 // https://solana.com/docs/tokens/basics/create-token-account
 
+export const getAta = async (mint: Address, dest: Address) => {
+	const [ata, bump] = await findAssociatedTokenPda({
+		mint: mint,
+		owner: dest,
+		tokenProgram: TOKEN_PROGRAM_ADDRESS,
+	});
+	ll("ata:", ata, ", bump:", bump);
+	return { ata, bump };
+};
 export const makeMint = async (
 	feePayerKp: KeyPairSigner<string>,
 	mintKp: KeyPairSigner<string>,
@@ -160,15 +169,18 @@ export const makeATA = async (
 	tokenOwner: Address,
 	mint: Address,
 ) => {
-	// Use findAssociatedTokenPda to derive the ATA address
-	const [associatedTokenAddress, bump] = await findAssociatedTokenPda({
+	ll("makeATA 1");
+	const [ata, bump] = await findAssociatedTokenPda({
 		mint: mint,
 		owner: tokenOwner,
 		tokenProgram: TOKEN_PROGRAM_ADDRESS,
 	});
-
-	ll("ATA:", associatedTokenAddress.toString());
-
+	ll("ATA:", ata.toString());
+	const out = await checkAcct(ata, "ATA");
+	if (out) {
+		ll("ATA already exists");
+		return { ata, bump };
+	}
 	// Get a fresh blockhash for the second transaction
 	const { value: latestBlockhash2 } = await rpc.getLatestBlockhash().send();
 
@@ -191,6 +203,7 @@ export const makeATA = async (
 	const signedTransaction2 =
 		await signTransactionMessageWithSigners(transactionMessage2);
 	assertIsTransactionWithBlockhashLifetime(signedTransaction2);
+
 	// Send and confirm transaction
 	await sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(
 		signedTransaction2,
@@ -200,5 +213,5 @@ export const makeATA = async (
 	// Get transaction signature
 	const transactionSignature2 = getSignatureFromTransaction(signedTransaction2);
 	ll("Transaction Signature:", transactionSignature2);
-	return { ata: associatedTokenAddress, bump };
+	return { ata, bump };
 };
