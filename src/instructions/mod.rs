@@ -15,6 +15,8 @@ pub mod tok22InitMint;
 #[allow(non_snake_case)]
 pub mod tok22MintToken;
 #[allow(non_snake_case)]
+pub mod tokLgcDeposit;
+#[allow(non_snake_case)]
 pub mod tokLgcInitATA;
 #[allow(non_snake_case)]
 pub mod tokLgcInitMint;
@@ -27,6 +29,7 @@ pub use depositSol::*;
 pub use tok22InitATA::*;
 pub use tok22InitMint::*;
 pub use tok22MintToken::*;
+pub use tokLgcDeposit::*;
 pub use tokLgcInitATA::*;
 pub use tokLgcInitMint::*;
 pub use tokLgcMintToken::*;
@@ -83,6 +86,17 @@ pub enum ProgramIx {
     #[account(5, name = "system_program", desc = "System Program")]
     #[account(6, name = "atoken_program", desc = "AToken Program")]
     TokLgcMintToken { decimals: u8, amount: u64 },
+
+    /// TokLgc Deposit Token
+    #[account(0, signer, name = "authority", desc = "Authority")]
+    #[account(1, writable, name = "from", desc = "From ATA")]
+    #[account(2, writable, name = "to", desc = "To ATA")]
+    #[account(3, writable, name = "to_wallet", desc = "To Wallet")]
+    #[account(4, name = "mint", desc = "Mint")]
+    #[account(5, name = "token_program", desc = "Token Program")]
+    #[account(6, name = "system_program", desc = "System Program")]
+    #[account(7, name = "atoken_program", desc = "AToken Program")]
+    TokLgcDeposit { decimals: u8, amount: u64 },
 
     /// Token2022 Init Mint
     #[account(0, signer, writable, name = "payer", desc = "Payer")]
@@ -147,19 +161,30 @@ pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
     }
     Ok(())
 }
-pub fn check_mint(mint: &AccountInfo, mint_authority: &AccountInfo) -> Result<(), ProgramError> {
+pub fn check_mint(
+    mint: &AccountInfo,
+    mint_authority: &AccountInfo,
+    decimals: u8,
+) -> Result<(), ProgramError> {
     let mint_info = pinocchio_token::state::Mint::from_account_info(mint)?;
-
     if mint_info
         .mint_authority()
         .is_some_and(|authority| !mint_authority.key().eq(authority))
     {
         return Err(ProgramError::IncorrectAuthority);
     }
+    if decimals != mint_info.decimals() {
+        return Err(ProgramError::InvalidArgument);
+    }
+    //TODO: over mint supply?
     Ok(())
 }
 /// returns different error type than check_mint()... thus cannot be combined with it
-pub fn check_mint22(mint: &AccountInfo, mint_authority: &AccountInfo) -> Result<(), ProgramError> {
+pub fn check_mint22(
+    mint: &AccountInfo,
+    mint_authority: &AccountInfo,
+    decimals: u8,
+) -> Result<(), ProgramError> {
     let mint_info = pinocchio_token_2022::state::Mint::from_account_info(mint)?;
 
     if mint_info
@@ -168,19 +193,20 @@ pub fn check_mint22(mint: &AccountInfo, mint_authority: &AccountInfo) -> Result<
     {
         return Err(ProgramError::IncorrectAuthority);
     }
+    if decimals != mint_info.decimals() {
+        return Err(ProgramError::InvalidArgument);
+    }
+    //TODO: over mint supply?
     Ok(())
 }
-//TODO
-pub fn check_tok_acct(
-    account: &AccountInfo,
-    user: &AccountInfo,
-    mint: &AccountInfo,
-) -> Result<(), ProgramError> {
-    empty_lamport(account)?;
-    empty_lamport(user)?;
-    empty_lamport(mint)?;
+pub fn check_decimals(mint: &AccountInfo, decimals: u8) -> Result<(), ProgramError> {
+    let mint_info = pinocchio_token::state::Mint::from_account_info(mint)?;
+    if decimals != mint_info.decimals() {
+        return Err(ProgramError::InvalidArgument);
+    }
     Ok(())
 }
+
 pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
     if !account.is_owned_by(&crate::ID) {
         return Err(ProgramError::InvalidAccountOwner);

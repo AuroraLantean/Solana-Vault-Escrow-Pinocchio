@@ -45,6 +45,7 @@ fn process_instruction(
         Token2022MintToken::DISCRIMINATOR => {
             Token2022MintToken::try_from((data, accounts))?.process()
         }
+        TokLgcDeposit::DISCRIMINATOR => TokLgcDeposit::try_from((data, accounts))?.process(),
         _ => Err(ProgramError::InvalidArgument),
     }
 }

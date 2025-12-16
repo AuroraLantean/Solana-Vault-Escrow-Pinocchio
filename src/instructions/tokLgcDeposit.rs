@@ -2,60 +2,64 @@ use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
-use crate::{check_mint, executable, instructions::check_signer, parse_u64, rent_exempt, writable};
+use crate::{
+    check_decimals, executable, instructions::check_signer, parse_u64, rent_exempt, writable,
+};
 use pinocchio_token::state::TokenAccount;
 
-/// TokLgc Mint Tokens
-pub struct TokLgcMintToken<'a> {
-    pub mint_authority: &'a AccountInfo, //signer
+/// TokLgc Deposit Tokens
+pub struct TokLgcDeposit<'a> {
+    pub authority: &'a AccountInfo, //signer
+    pub from_ata: &'a AccountInfo,
+    pub to_ata: &'a AccountInfo,
     pub to_wallet: &'a AccountInfo,
     pub mint: &'a AccountInfo,
-    pub token_account: &'a AccountInfo,
     pub token_program: &'a AccountInfo,
     pub system_program: &'a AccountInfo,
     pub atoken_program: &'a AccountInfo,
     pub decimals: u8,
     pub amount: u64,
 }
-impl<'a> TokLgcMintToken<'a> {
-    pub const DISCRIMINATOR: &'a u8 = &4;
+impl<'a> TokLgcDeposit<'a> {
+    pub const DISCRIMINATOR: &'a u8 = &8;
 
     pub fn process(self) -> ProgramResult {
-        let TokLgcMintToken {
-            mint_authority,
+        let TokLgcDeposit {
+            authority,
+            from_ata,
+            to_ata,
             to_wallet,
             mint,
-            token_account,
             token_program,
             system_program,
             atoken_program: _,
             decimals,
             amount,
         } = self;
-        log!("TokLgcMintToken process()");
-        check_signer(mint_authority)?;
+        log!("TokLgcDeposit process()");
+        check_signer(authority)?;
         executable(token_program)?;
 
-        log!("TokLgcMintToken 1");
+        log!("TokLgcDeposit 1");
         rent_exempt(mint, 0)?;
-        writable(mint)?;
-        check_mint(mint, mint_authority, decimals)?;
+        //writable(mint)?;
+        check_decimals(mint, decimals)?;
 
-        log!("TokLgcMintToken 4");
+        log!("TokLgcDeposit 4");
         if !mint.is_owned_by(token_program.key()) {
             return Err(ProgramError::InvalidAccountData);
         }
 
-        log!("TokLgcMintToken 5");
+        log!("TokLgcDeposit 5");
         if !system_program.key().eq(&pinocchio_system::ID) {
             return Err(ProgramError::IncorrectProgramId);
         }
 
-        if token_account.data_is_empty() {
-            log!("Make token_account");
+        if to_ata.data_is_empty() {
+            log!("Make to_ata");
             pinocchio_associated_token_account::instructions::Create {
-                funding_account: mint_authority,
-                account: token_account,
+                funding_account: authority,
+                account: to_ata,
                 wallet: to_wallet,
                 mint,
                 system_program,
@@ -64,37 +68,44 @@ impl<'a> TokLgcMintToken<'a> {
             .invoke()?;
             //Please upgrade to SPL Token 2022 for immutable owner support
         } else {
-            log!("token_account has data");
-            let token_account_info = TokenAccount::from_account_info(token_account)?;
-            if !token_account_info.owner().eq(to_wallet.key()) {
+            log!("to_ata has data");
+            let to_ata_info = TokenAccount::from_account_info(to_ata)?;
+            if !to_ata_info.owner().eq(to_wallet.key()) {
                 return Err(ProgramError::InvalidAccountData);
             }
         }
-        writable(token_account)?;
-        rent_exempt(token_account, 1)?;
-        log!("Token Account found/verified");
+        writable(to_ata)?;
+        rent_exempt(to_ata, 1)?;
+        log!("T=_ATA is found/verified");
 
-        log!("Mint Tokens");
-        pinocchio_token::instructions::MintToChecked {
+        log!("Transfer Tokens");
+        pinocchio_token::instructions::TransferChecked {
+            from: from_ata,
             mint,
-            account: token_account,
-            mint_authority,
-            amount,
+            to: to_ata,
+            authority,
+            amount, // unsafe { *(data.as_ptr().add(1 + 8) as *const u64)}
             decimals,
         }
         .invoke()?;
+        /*  pinocchio_token::instructions::Transfer {
+            from: vault,
+            to: to_ata,
+            authority: escrow,
+            amount: vault_account.amount(),
+        }.invoke_signed(&[seeds.clone()])?; */
         Ok(())
     }
 }
-impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcMintToken<'a> {
+impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcDeposit<'a> {
     type Error = ProgramError;
 
     fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
-        log!("TokLgcMintToken try_from");
+        log!("TokLgcDeposit try_from");
         let (data, accounts) = value;
         log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-        let [mint_authority, to_wallet, mint, token_account, token_program, system_program, atoken_program] =
+        let [authority, from_ata, to_ata, to_wallet, mint, token_program, system_program, atoken_program] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -108,10 +119,11 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcMintToken<'a> {
         let amount = parse_u64(&data[1..])?;
         log!("decimals: {}, amount: {}", decimals, amount);
         Ok(Self {
-            mint_authority,
+            authority,
+            from_ata,
+            to_ata,
             to_wallet,
             mint,
-            token_account,
             token_program,
             system_program,
             atoken_program,
@@ -120,25 +132,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcMintToken<'a> {
         })
     }
 }
-/*Transfer mint_x from user ata to vault
-      pinocchio_token::instructions::Transfer {
-          from: maker_ata,
-          to: vault,
-          authority: maker,
-          amount: unsafe { *(data.as_ptr().add(1 + 8) as *const u64)},
-      }.invoke()?;
-
-//----------==
-  pinocchio_token::instructions::Transfer {
-      from: vault,
-      to: taker_ata_x,
-      authority: escrow,
-      amount: vault_account.amount(),
-  }.invoke_signed(&[seeds.clone()])?;
-
-  pinocchio_token::instructions::CloseAccount {
-      account: vault,
-      destination: maker,
-      authority: escrow,
-  }.invoke_signed(&[seeds])?;
-     */
+/*  pinocchio_token::instructions::CloseAccount {
+    account: vault,
+    destination: maker,
+    authority: escrow,
+}.invoke_signed(&[seeds])?;  */

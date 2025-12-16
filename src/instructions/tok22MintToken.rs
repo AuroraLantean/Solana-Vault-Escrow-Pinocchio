@@ -40,10 +40,8 @@ impl<'a> Token2022MintToken<'a> {
 
         log!("Token2022MintToken 1");
         rent_exempt(mint, 0)?;
-        log!("Token2022MintToken 2");
         writable(mint)?;
-        log!("Token2022MintToken 3");
-        check_mint22(mint, mint_authority)?;
+        check_mint22(mint, mint_authority, decimals)?;
 
         log!("Token2022MintToken 4");
         if !mint.is_owned_by(token_program.key()) {
