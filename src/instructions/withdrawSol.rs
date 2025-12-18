@@ -78,11 +78,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for WithdrawSol<'a> {
 
     fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
         let (data, accounts) = value;
-        if accounts.len() < 2 {
+        let [user, vault] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
-        }
-        let user = &accounts[0];
-        let vault = &accounts[1];
+        };
 
         let amount = parse_u64(data)?;
         Ok(Self {

@@ -1,3 +1,8 @@
+import {
+	ACCOUNT_SIZE,
+	AccountLayout,
+	TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import type { Keypair } from "@solana/web3.js";
 import {
 	LAMPORTS_PER_SOL,
@@ -14,6 +19,9 @@ export const vaultProgAddr = new PublicKey(
 	"7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e",
 );
 export const systemProgram = new PublicKey("11111111111111111111111111111111");
+export const usdcMint = new PublicKey(
+	"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+);
 export const ll = console.log;
 ll("vaultProgAddr:", vaultProgAddr.toBase58());
 
@@ -80,6 +88,38 @@ export const makeAccount = (
 	tx.add(...ixs);
 	tx.sign(payer);
 	svm.sendTransaction(tx);
+};
+export const makeUsdcMint = (
+	owner: PublicKey,
+	ata: PublicKey,
+	usdcToOwn: bigint,
+) => {
+	const tokenAccData = Buffer.alloc(ACCOUNT_SIZE);
+	AccountLayout.encode(
+		{
+			mint: usdcMint,
+			owner,
+			amount: usdcToOwn,
+			delegateOption: 0,
+			delegate: PublicKey.default,
+			delegatedAmount: 0n,
+			state: 1,
+			isNativeOption: 0,
+			isNative: 0n,
+			closeAuthorityOption: 0,
+			closeAuthority: PublicKey.default,
+		},
+		tokenAccData,
+	);
+	const svm = new LiteSVM();
+	svm.setAccount(ata, {
+		lamports: 1_000_000_000,
+		data: tokenAccData,
+		owner: TOKEN_PROGRAM_ID,
+		executable: false,
+	});
+	const rawAccount = svm.getAccount(ata);
+	return rawAccount;
 };
 //note-litesvm/tests/utils.ts...
 export function getLamports(svm: LiteSVM, address: PublicKey): number | null {

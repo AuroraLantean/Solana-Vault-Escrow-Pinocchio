@@ -53,13 +53,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for DepositSol<'a> {
 
     fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
         let (data, accounts) = value;
-        if accounts.len() < 2 {
+        let [user, vault, _systemProgram] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
-        }
-        let user = &accounts[0];
-        let vault = &accounts[1];
-        //let [user, vault, _system_program, _] = accounts else { return Err(ProgramError::NotEnoughAccountKeys);}
-
+        };
         let amount = parse_u64(data)?;
         Ok(Self {
             user,

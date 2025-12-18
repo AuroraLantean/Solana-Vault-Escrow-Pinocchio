@@ -24,7 +24,7 @@ pub struct Token2022InitMint<'a> {
     pub decimals: u8,
 }
 impl<'a> Token2022InitMint<'a> {
-    pub const DISCRIMINATOR: &'a u8 = &51;
+    pub const DISCRIMINATOR: &'a u8 = &8;
 
     pub fn process(self) -> ProgramResult {
         let Token2022InitMint {
@@ -103,19 +103,17 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
         log!("accounts len: {}, data len: {}", accounts.len(), data.len());
         //accounts len: 5, data len: 1
 
-        if accounts.len() < 4 {
+        let [payer, mint, mint_authority, token_program, freeze_authority_opt1, _system_program] =
+            accounts
+        else {
             return Err(ProgramError::NotEnoughAccountKeys);
-        }
-        let payer = &accounts[0];
-        let mint = &accounts[1];
-        let mint_authority = &accounts[2];
-        let token_program = &accounts[3];
-        let freeze_authority_opt: Option<&'a [u8; 32]>;
-        if accounts.len() > 4 {
-            freeze_authority_opt = Some(&accounts[4].key());
+        };
+
+        let freeze_authority_opt: Option<&'a [u8; 32]> = if freeze_authority_opt1 == token_program {
+            Some(freeze_authority_opt1.key())
         } else {
-            freeze_authority_opt = None;
-        }
+            None
+        };
 
         if data.len() < 1 {
             return Err(ProgramError::AccountDataTooSmall);

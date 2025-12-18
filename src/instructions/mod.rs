@@ -4,7 +4,6 @@ use pinocchio::{
     pubkey::{try_find_program_address, Pubkey},
     sysvars::{rent::Rent, Sysvar},
 };
-use pinocchio_token::state::TokenAccount;
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 
 #[allow(non_snake_case)]
@@ -126,17 +125,16 @@ pub enum ProgramIx {
     TokLgcRedeem { decimals: u8, amount: u64 },
 
     //---------== Token2022
-    /// 51 Token2022 Init Mint
+    /// 8 Token2022 Init Mint
     #[account(0, signer, writable, name = "payer", desc = "Payer")]
     #[account(1, signer, writable, name = "mint", desc = "Mint")]
     #[account(2, name = "mint_authority", desc = "Mint Authority")]
     #[account(3, name = "token_program", desc = "Token Program")]
     #[account(4, name = "freeze_authority_opt", desc = "Freeze Authority")]
-    #[account(5, name = "program", desc = "This Program")]
-    #[account(6, name = "system_program", desc = "System Program")]
+    #[account(5, name = "system_program", desc = "System Program")]
     Token2022InitMint { decimals: u8 },
 
-    /// 52 Token2022 Init ATA(Associated Token Acct)
+    /// 9 Token2022 Init ATA(Associated Token Acct)
     #[account(0, signer, writable, name = "payer", desc = "Payer")]
     #[account(1, name = "to_wallet", desc = "To Wallet")]
     #[account(2, name = "mint", desc = "Mint")]
@@ -146,7 +144,7 @@ pub enum ProgramIx {
     #[account(6, name = "atoken_program", desc = "AToken Program")]
     Token2022InitATA {},
 
-    /// 53 Token2022 Mint Token
+    /// 10 Token2022 Mint Token
     #[account(0, signer, writable, name = "mint_authority", desc = "Mint Authority")]
     #[account(1, name = "to_wallet", desc = "ToWallet")]
     #[account(2, writable, name = "mint", desc = "Mint")]
@@ -254,7 +252,21 @@ pub fn check_ata(
     owner: &AccountInfo,
     mint: &AccountInfo,
 ) -> Result<(), ProgramError> {
-    let ata_info = TokenAccount::from_account_info(ata)?;
+    let ata_info = pinocchio_token::state::TokenAccount::from_account_info(ata)?;
+    if !ata_info.owner().eq(owner.key()) {
+        return Err(ProgramError::InvalidAccountOwner);
+    }
+    if !ata_info.mint().eq(mint.key()) {
+        return Err(ProgramError::InvalidAccountData);
+    }
+    Ok(())
+}
+pub fn check_ata22(
+    ata: &AccountInfo,
+    owner: &AccountInfo,
+    mint: &AccountInfo,
+) -> Result<(), ProgramError> {
+    let ata_info = TokenAccount22::from_account_info(ata)?;
     if !ata_info.owner().eq(owner.key()) {
         return Err(ProgramError::InvalidAccountOwner);
     }

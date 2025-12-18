@@ -95,19 +95,17 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitMint<'a> {
         let (data, accounts) = value;
         log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-        if accounts.len() < 4 {
+        let [payer, mint, mint_authority, token_program, freeze_authority_opt1, systemProgram] =
+            accounts
+        else {
             return Err(ProgramError::NotEnoughAccountKeys);
-        }
-        let payer = &accounts[0];
-        let mint = &accounts[1];
-        let mint_authority = &accounts[2];
-        let token_program = &accounts[3];
-        let freeze_authority_opt: Option<&'a [u8; 32]>;
-        if accounts.len() > 4 {
-            freeze_authority_opt = Some(&accounts[4].key());
+        };
+
+        let freeze_authority_opt: Option<&'a [u8; 32]> = if freeze_authority_opt1 == systemProgram {
+            Some(freeze_authority_opt1.key())
         } else {
-            freeze_authority_opt = None;
-        }
+            None
+        };
 
         if data.len() < 1 {
             return Err(ProgramError::AccountDataTooSmall);

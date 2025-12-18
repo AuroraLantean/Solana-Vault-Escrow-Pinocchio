@@ -3,7 +3,7 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-    check_ata, check_mint22, check_sysprog, executable, instructions::check_signer, parse_u64,
+    check_ata22, check_mint22, check_sysprog, executable, instructions::check_signer, parse_u64,
     rent_exempt, writable,
 };
 
@@ -20,7 +20,7 @@ pub struct Token2022MintToken<'a> {
     pub amount: u64,
 }
 impl<'a> Token2022MintToken<'a> {
-    pub const DISCRIMINATOR: &'a u8 = &53;
+    pub const DISCRIMINATOR: &'a u8 = &10;
 
     pub fn process(self) -> ProgramResult {
         let Token2022MintToken {
@@ -60,8 +60,9 @@ impl<'a> Token2022MintToken<'a> {
             //Please upgrade to SPL Token 2022 for immutable owner support
         } else {
             log!("token_account has data");
-            check_ata(token_account, to_wallet, mint)?;
+            check_ata22(token_account, to_wallet, mint)?;
         }
+        log!("here 07");
         writable(token_account)?;
         rent_exempt(token_account, 1)?;
         log!("Token Account found/verified");

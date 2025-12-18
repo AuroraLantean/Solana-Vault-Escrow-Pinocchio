@@ -15,17 +15,13 @@ import {
 	sendTxn,
 	user1Addr,
 	user1Kp,
-	vaultProgAddr,
 } from "./httpws";
 import { getAta, makeATA } from "./tokens";
-import { ATokenGPvbd, findPda, ll, makeSolAmt } from "./utils";
+import { ATokenGPvbd, findPda, ll } from "./utils";
 
 export const pda_bump = await findPda(adminAddr, "vault");
 export const vaultPDA: Address = pda_bump.pda;
 ll(`✅ - Vault PDA: ${vaultPDA}`);
-
-const _amtDeposit = makeSolAmt(10);
-const _amtWithdraw = makeSolAmt(9);
 
 describe("Vault Program", () => {
 	test("tok22 init mint", async () => {
@@ -34,21 +30,15 @@ describe("Vault Program", () => {
 		ll("mint_auth:", mintAuthority);
 		ll("mint22:", mint22);
 
-		const methodIx = vault.getToken2022InitMintInstruction(
-			{
-				payer: adminKp,
-				mint: mint22Kp,
-				mintAuthority: mintAuthority,
-				freezeAuthorityOpt: mintAuthority,
-				tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
-				program: vaultProgAddr,
-				systemProgram: SYSTEM_PROGRAM_ADDRESS,
-				decimals: 9,
-			},
-			{
-				programAddress: vaultProgAddr,
-			},
-		);
+		const methodIx = vault.getToken2022InitMintInstruction({
+			payer: adminKp,
+			mint: mint22Kp,
+			mintAuthority: mintAuthority,
+			freezeAuthorityOpt: mintAuthority,
+			tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+			systemProgram: SYSTEM_PROGRAM_ADDRESS,
+			decimals: 9,
+		});
 		await sendTxn(methodIx, adminKp);
 		ll("program execution successful");
 		await checkAcct(mint22, "mint22");
@@ -67,20 +57,15 @@ describe("Vault Program", () => {
 		const atabump = await getAta(mint22, destAddr, true);
 		const ata = atabump.ata;
 
-		const methodIx = vault.getToken2022InitATAInstruction(
-			{
-				payer: payer,
-				toWallet: destAddr,
-				mint: mint22,
-				tokenAccount: ata,
-				tokenProgram: tokenProg,
-				systemProgram: SYSTEM_PROGRAM_ADDRESS,
-				atokenProgram: ATokenGPvbd,
-			},
-			{
-				programAddress: vaultProgAddr,
-			},
-		);
+		const methodIx = vault.getToken2022InitATAInstruction({
+			payer: payer,
+			toWallet: destAddr,
+			mint: mint22,
+			tokenAccount: ata,
+			tokenProgram: tokenProg,
+			systemProgram: SYSTEM_PROGRAM_ADDRESS,
+			atokenProgram: ATokenGPvbd,
+		});
 		await sendTxn(methodIx, payer);
 		ll("program execution successful");
 		//await sleep(3000);
@@ -105,22 +90,17 @@ describe("Vault Program", () => {
 		ll("after makeATA");
 
 		ll("before calling program");
-		const methodIx = vault.getTok22MintTokenInstruction(
-			{
-				mintAuthority: mintAuthorityKp,
-				toWallet: destAddr,
-				mint: mint22,
-				tokenAccount: ata,
-				tokenProgram: tokenProg,
-				systemProgram: SYSTEM_PROGRAM_ADDRESS,
-				atokenProgram: ATokenGPvbd,
-				decimals: 9,
-				amount: amount * 10 ** 9,
-			},
-			{
-				programAddress: vaultProgAddr,
-			},
-		);
+		const methodIx = vault.getTok22MintTokenInstruction({
+			mintAuthority: mintAuthorityKp,
+			toWallet: destAddr,
+			mint: mint22,
+			tokenAccount: ata,
+			tokenProgram: tokenProg,
+			systemProgram: SYSTEM_PROGRAM_ADDRESS,
+			atokenProgram: ATokenGPvbd,
+			decimals: 9,
+			amount: amount * 10 ** 9,
+		});
 		await sendTxn(methodIx, mintAuthorityKp);
 		ll("program execution successful");
 

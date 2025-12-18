@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: <> */
 import { expect, test } from "bun:test";
 import {
 	Keypair,
@@ -8,6 +9,7 @@ import {
 } from "@solana/web3.js";
 //Node-LiteSVM uses web3.js! https://github.com/LiteSVM/litesvm/tree/master/crates/node-litesvm
 import { LiteSVM } from "litesvm";
+
 /*import {
 	getAssociatedTokenAddressSync,
 	AccountLayout,
@@ -18,12 +20,18 @@ import { LiteSVM } from "litesvm";
 //import * as vault from "../clients/js/src/generated/index";
 
 import {
+	AccountLayout,
+	getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
+import {
 	bigintToBytes,
 	findPda1,
 	getLamports,
 	helloworldProgram,
 	ll,
+	makeUsdcMint,
 	systemProgram,
+	usdcMint,
 	vaultProgram,
 } from "./litesvm-utils";
 
@@ -131,6 +139,16 @@ test("User1 Deposits SOL to vault1", () => {
 	//expect(BigInt(lamports2a)).toEqual(amtLam);
 });
 
+test("infinite usdc mint", () => {
+	const adminUsdcAta = getAssociatedTokenAddressSync(usdcMint, adminAddr, true);
+	const usdcToOwn = 1_000_000_000_000n;
+	const rawAccount = makeUsdcMint(adminAddr, adminUsdcAta, usdcToOwn);
+
+	expect(rawAccount).not.toBeNull();
+	const rawAccountData = rawAccount?.data;
+	const decoded = AccountLayout.decode(rawAccountData!);
+	expect(decoded.amount).toStrictEqual(usdcToOwn);
+});
 /*const c = svm.getClock();
     svm.setClock(
       new Clock(c.slot, c.epochStartTimestamp, c.epoch, c.leaderScheduleEpoch, BigInt(quarterTime))    );*/

@@ -68,18 +68,11 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitAta<'a> {
         let (data, accounts) = value;
         log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-        if accounts.len() < 7 {
+        let [payer, to_wallet, mint, token_account, token_program, system_program, atoken_program] =
+            accounts
+        else {
             return Err(ProgramError::NotEnoughAccountKeys);
-        }
-        let payer = &accounts[0];
-        let to_wallet = &accounts[1];
-        let mint = &accounts[2];
-        let token_account = &accounts[3];
-        let token_program = &accounts[4];
-        let system_program = &accounts[5];
-        let atoken_program = &accounts[6];
-        //let [payer, mint, _] = accounts else {  does not work };
-
+        };
         log!("TokenLgcInitAta try_from end");
         Ok(Self {
             payer,
