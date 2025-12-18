@@ -8,8 +8,8 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::{
-    check_ata, check_decimals, check_sysprog, derive_pda1, executable, instructions::check_signer,
-    parse_u64, rent_exempt, writable,
+    check_ata, check_decimals, check_mint0a, check_sysprog, derive_pda1, executable,
+    instructions::check_signer, parse_u64, rent_exempt, writable,
 };
 
 /// TokLgc: Users to Withdraw Tokens
@@ -49,7 +49,8 @@ impl<'a> TokLgcWithdraw<'a> {
 
         log!("TokLgcWithdraw 1");
         rent_exempt(mint, 0)?;
-        check_decimals(mint, token_program, decimals)?;
+        check_decimals(mint, decimals)?;
+        check_mint0a(mint, token_program)?;
 
         log!("TokLgcWithdraw 5");
         check_sysprog(system_program)?;

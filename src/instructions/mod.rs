@@ -159,17 +159,21 @@ pub enum ProgramIx {
 /// Parse a u64 from instruction data.
 /// amount must be non-zero,
 pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
-    // Verify the data length matches a u64 (8 bytes)
     if data.len() != core::mem::size_of::<u64>() {
         return Err(ProgramError::InvalidInstructionData);
     }
+
+    let bytes: [u8; 8] = data
+        .try_into()
+        .or_else(|_e| Err(ProgramError::Custom(100)))?;
+
     // Convert the byte slice to a u64
-    let amt = u64::from_le_bytes(data.try_into().expect("invalid_argument"));
+    let amt = u64::from_le_bytes(bytes);
     // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]]);
 
     // Validate the amount (e.g., not zero)
     if amt == 0 {
-        return Err(ProgramError::InvalidInstructionData);
+        return Err(ProgramError::InvalidArgument);
     }
     Ok(amt)
 }
@@ -187,7 +191,18 @@ pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
     }
     Ok(())
 }
-pub fn check_mint(
+pub fn check_mint0a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<(), ProgramError> {
+    //if !mint.is_owned_by(mint_authority)
+    if mint.data_len() != pinocchio_token::state::Mint::LEN {
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if !token_program.key().eq(&pinocchio_token::ID) {
+        return Err(ProgramError::InvalidAccountOwner);
+    }
+    Ok(())
+}
+
+pub fn check_mint0b(
     mint: &AccountInfo,
     mint_authority: &AccountInfo,
     token_program: &AccountInfo,
@@ -203,14 +218,21 @@ pub fn check_mint(
     if decimals != mint_info.decimals() {
         return Err(ProgramError::InvalidArgument);
     }
-    if !mint.is_owned_by(token_program.key()) {
-        return Err(ProgramError::InvalidAccountData);
-    }
+    check_mint0a(mint, token_program)?;
     //TODO: over mint supply?
     Ok(())
 }
-/// returns different error type than check_mint()... thus cannot be combined with it
-pub fn check_mint22(
+pub fn check_mint22a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<(), ProgramError> {
+    //if !mint.is_owned_by(mint_authority)
+    if mint.data_len() != pinocchio_token_2022::state::Mint::BASE_LEN {
+        return Err(ProgramError::InvalidAccountData);
+    }
+    if !token_program.key().eq(&pinocchio_token_2022::ID) {
+        return Err(ProgramError::InvalidAccountOwner);
+    }
+    Ok(())
+}
+pub fn check_mint22b(
     mint: &AccountInfo,
     mint_authority: &AccountInfo,
     token_program: &AccountInfo,
@@ -227,23 +249,14 @@ pub fn check_mint22(
     if decimals != mint_info.decimals() {
         return Err(ProgramError::InvalidArgument);
     }
-    if !mint.is_owned_by(token_program.key()) {
-        return Err(ProgramError::InvalidAccountData);
-    }
+    check_mint22a(mint, token_program)?;
     //TODO: over mint supply?
     Ok(())
 }
-pub fn check_decimals(
-    mint: &AccountInfo,
-    token_program: &AccountInfo,
-    decimals: u8,
-) -> Result<(), ProgramError> {
+pub fn check_decimals(mint: &AccountInfo, decimals: u8) -> Result<(), ProgramError> {
     let mint_info = pinocchio_token::state::Mint::from_account_info(mint)?;
     if decimals != mint_info.decimals() {
         return Err(ProgramError::InvalidArgument);
-    }
-    if !mint.is_owned_by(token_program.key()) {
-        return Err(ProgramError::InvalidAccountData);
     }
     Ok(())
 }
@@ -252,6 +265,12 @@ pub fn check_ata(
     owner: &AccountInfo,
     mint: &AccountInfo,
 ) -> Result<(), ProgramError> {
+    if ata
+        .data_len()
+        .ne(&pinocchio_token::state::TokenAccount::LEN)
+    {
+        return Err(ProgramError::InvalidAccountData);
+    }
     let ata_info = pinocchio_token::state::TokenAccount::from_account_info(ata)?;
     if !ata_info.owner().eq(owner.key()) {
         return Err(ProgramError::InvalidAccountOwner);
@@ -266,6 +285,7 @@ pub fn check_ata22(
     owner: &AccountInfo,
     mint: &AccountInfo,
 ) -> Result<(), ProgramError> {
+    // token2022 ata has first 165 bytes the same as the legacy ata, but then some more data //log!("ata22 len:{}", ata.data_len());
     let ata_info = TokenAccount22::from_account_info(ata)?;
     if !ata_info.owner().eq(owner.key()) {
         return Err(ProgramError::InvalidAccountOwner);

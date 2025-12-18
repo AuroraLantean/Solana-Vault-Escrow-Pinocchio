@@ -1,5 +1,6 @@
 use crate::{
-    empty_data, empty_lamport, executable, instructions::check_signer, rent_exempt, writable,
+    check_mint0a, empty_data, empty_lamport, executable, instructions::check_signer, rent_exempt,
+    writable,
 };
 use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
@@ -34,6 +35,7 @@ impl<'a> TokenLgcInitAta<'a> {
 
         log!("TokenLgcInitAta 1");
         rent_exempt(mint, 0)?;
+        check_mint0a(mint, token_program)?;
         //writable(mint)?;//Shank IDL definition
 
         log!("TokenLgcInitAta 2");
@@ -88,4 +90,20 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitAta<'a> {
 /*find token_account from to_wallet & token mint ... but ignored because this make the program bigger
 cargo add spl-associated-token-account
 use spl_associated_token_account::get_associated_token_address;
-let ata = get_associated_token_address(&to_wallet, &mint);*/
+let ata = get_associated_token_address(&to_wallet, &mint);
+
+        CreateAccount {
+            from: payer,
+            to: account,
+            lamports,
+            space: pinocchio_token::state::TokenAccount::LEN as u64,
+            owner: &pinocchio_token::ID,
+        }.invoke()?;
+
+        // Initialize the Token Account
+        InitializeAccount3 {
+            account,
+            mint,
+            owner,
+        }.invoke()
+*/

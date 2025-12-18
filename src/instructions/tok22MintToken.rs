@@ -3,7 +3,7 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-    check_ata22, check_mint22, check_sysprog, executable, instructions::check_signer, parse_u64,
+    check_ata22, check_mint22b, check_sysprog, executable, instructions::check_signer, parse_u64,
     rent_exempt, writable,
 };
 
@@ -41,7 +41,7 @@ impl<'a> Token2022MintToken<'a> {
         log!("Token2022MintToken 1");
         rent_exempt(mint, 0)?;
         writable(mint)?;
-        check_mint22(mint, mint_authority, token_program, decimals)?;
+        check_mint22b(mint, mint_authority, token_program, decimals)?;
 
         log!("Token2022MintToken 5");
         check_sysprog(system_program)?;

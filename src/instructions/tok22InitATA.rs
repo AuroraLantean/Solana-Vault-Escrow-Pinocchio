@@ -3,7 +3,8 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-    empty_data, empty_lamport, executable, instructions::check_signer, rent_exempt, writable,
+    check_mint22a, empty_data, empty_lamport, executable, instructions::check_signer, rent_exempt,
+    writable,
 };
 
 /// Token2022 Init ATA(Associated Token Account)
@@ -35,6 +36,7 @@ impl<'a> Token2022InitAta<'a> {
 
         log!("Token2022InitAta 1");
         rent_exempt(mint, 0)?;
+        check_mint22a(mint, token_program)?;
         //writable(mint)?;//Shank IDL definition
 
         log!("Token2022InitAta 2");

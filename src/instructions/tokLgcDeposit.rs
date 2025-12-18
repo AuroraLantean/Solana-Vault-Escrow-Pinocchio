@@ -3,8 +3,8 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-    check_ata, check_decimals, check_sysprog, executable, instructions::check_signer, parse_u64,
-    rent_exempt, writable,
+    check_ata, check_decimals, check_mint0a, check_sysprog, executable, instructions::check_signer,
+    parse_u64, rent_exempt, writable,
 };
 
 /// TokLgc: Users to Deposit Tokens
@@ -44,7 +44,8 @@ impl<'a> TokLgcDeposit<'a> {
 
         log!("TokLgcDeposit 1");
         rent_exempt(mint, 0)?;
-        check_decimals(mint, token_program, decimals)?;
+        check_decimals(mint, decimals)?;
+        check_mint0a(mint, token_program)?;
 
         log!("TokLgcDeposit 5");
         check_sysprog(system_program)?;
