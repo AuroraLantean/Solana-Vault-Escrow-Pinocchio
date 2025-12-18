@@ -94,7 +94,3 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitAta<'a> {
         })
     }
 }
-/*find token_account from to_wallet & token mint"
-cargo add spl-associated-token-account
-use spl_associated_token_account::get_associated_token_address;
-let ata = get_associated_token_address(&wallet, &mint); */
