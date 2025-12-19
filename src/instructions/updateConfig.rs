@@ -2,7 +2,7 @@ use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
-use crate::{check_pda, instructions::check_signer, parse_u64, writable};
+use crate::{check_pda, instructions::check_signer, parse_u32, parse_u64, writable};
 pub struct UpdateConfigStatus<'a> {
   pub authority: &'a AccountInfo,
 }
@@ -18,11 +18,10 @@ pub struct UpdateConfig<'a> {
   pub authority: &'a AccountInfo,
   pub pda1: &'a AccountInfo,
   pub pda2: &'a AccountInfo,
-  pub datalen: usize,
-  pub num8a: u8,
-  pub num8b: u8,
-  pub num64a: u64,
-  pub num64b: u64,
+  pub u8s: [u8; 8],
+  pub u32s: [u32; 4],
+  pub u64s: [u64; 4],
+  //pub datalen: usize,
 }
 impl<'a> UpdateConfig<'a> {
   pub const DISCRIMINATOR: &'a u8 = &13;
@@ -32,11 +31,10 @@ impl<'a> UpdateConfig<'a> {
       authority,
       pda1,
       pda2,
-      datalen: _,
-      num8a: _,
-      num8b: _,
-      num64a: _,
-      num64b: _,
+      u8s,
+      u32s,
+      u64s: _,
+      //datalen: _,
     } = self;
     log!("UpdateConfig process()");
     check_signer(authority)?;
@@ -51,12 +49,12 @@ impl<'a> UpdateConfig<'a> {
     log!("UpdateConfig 4");
 
     log!("UpdateConfig 5");
-    match self.datalen as usize {
+    /*match self.datalen as usize {
       len if len == size_of::<UpdateConfigStatus>() => self.update_status()?,
       len if len == size_of::<UpdateConfigFee>() => self.update_fee()?,
       len if len == size_of::<UpdateConfigAuthority>() => self.update_authority()?,
-      _ => return Err(ProgramError::InvalidInstructionData),
-    }
+      _ => return Err(ProgramError::Custom(500)),
+    }*/
     Ok(())
   }
   pub fn update_status(self) -> ProgramResult {
@@ -81,26 +79,33 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     let [authority, pda1, pda2] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
-    let num8a = data[0];
-    let num8b = data[1];
-    let num64a = parse_u64(&data[2..10])?;
-    let num64b = parse_u64(&data[11..19])?;
-    log!(
-      "num8a: {}, num8b: {}, num64a: {}, num64b: {}",
-      num8a,
-      num8b,
-      num64a,
-      num64b
-    );
+
+    //TODO: check all data size in every function
+    let u64size = core::mem::size_of::<u64>();
+    if data.len() != (u64size * 2 + 2) {
+      return Err(ProgramError::InvalidInstructionData);
+    }
+    let u8s = [
+      data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
+    ];
+    let u32a = parse_u32(&data[8..12])?;
+    let u32b = parse_u32(&data[12..16])?;
+    let u32c = parse_u32(&data[16..20])?;
+    let u32d = parse_u32(&data[20..24])?;
+    let u32s = [u32a, u32b, u32c, u32d];
+    let num64a = parse_u64(&data[24..32])?;
+    let num64b = parse_u64(&data[32..40])?;
+    let num64c = parse_u64(&data[40..48])?;
+    let num64d = parse_u64(&data[48..56])?;
+    let u64s = [num64a, num64b, num64c, num64d];
+    log!("u8s: {}, u32s: {}, u64s: {}", &u8s, &u32s, &u64s);
     Ok(Self {
       authority,
       pda1,
       pda2,
-      datalen,
-      num8a,
-      num8b,
-      num64a,
-      num64b,
+      u8s,
+      u32s,
+      u64s,
     })
   }
 }
