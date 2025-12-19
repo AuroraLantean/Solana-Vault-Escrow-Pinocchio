@@ -48,7 +48,7 @@ fn process_instruction(
         Token2022MintToken::DISCRIMINATOR => {
             Token2022MintToken::try_from((data, accounts))?.process()
         }
-        // ConfigPda::DISCRIMINATOR => ConfigPda::try_from((data, accounts))?.init(),
+        InitConfig::DISCRIMINATOR => InitConfig::try_from((data, accounts))?.process(),
         CloseConfigPda::DISCRIMINATOR => CloseConfigPda::try_from((data, accounts))?.process(),
         _ => Err(ProgramError::Custom(0)),
     }

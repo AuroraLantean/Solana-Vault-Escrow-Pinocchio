@@ -12,6 +12,8 @@ pub mod closeConfig;
 #[allow(non_snake_case)]
 pub mod depositSol;
 #[allow(non_snake_case)]
+pub mod initConfig;
+#[allow(non_snake_case)]
 pub mod tok22InitATA;
 #[allow(non_snake_case)]
 pub mod tok22InitMint;
@@ -35,6 +37,7 @@ pub mod withdrawSol;
 
 pub use closeConfig::*;
 pub use depositSol::*;
+pub use initConfig::*;
 pub use tok22InitATA::*;
 pub use tok22InitMint::*;
 pub use tok22MintToken::*;
@@ -55,7 +58,7 @@ use shank::ShankInstruction;
 /// writable(to be modified):, name= signer, token_account, pda
 /// non writable: program, system_program, mint
 #[derive(ShankInstruction)]
-pub enum ProgramIx {
+pub enum ProgramIx<'a> {
     /// 0 Deposit lamports into the vault.
     #[account(0, signer, writable, name = "user", desc = "User")]
     #[account(1, writable, name = "vault", desc = "VaultPDA")]
@@ -163,9 +166,8 @@ pub enum ProgramIx {
     /// 11 Init Config PDA
     #[account(0, signer, writable, name = "authority", desc = "Authority")]
     #[account(1, name = "pda", desc = "PDA")]
-    #[account(2, name = "dest", desc = "Destination")]
-    //#[account(5, name = "system_program", desc = "System Program")]
-    InitConfigPda {},
+    #[account(2, name = "system_program", desc = "System Program")]
+    InitConfigPda { seeds: &'a str, space: u32 },
 
     /// 12 Close Config PDA
     #[account(0, signer, writable, name = "authority", desc = "Authority")]

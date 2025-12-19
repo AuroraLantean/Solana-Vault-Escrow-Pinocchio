@@ -2,7 +2,7 @@ use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
-use crate::{instructions::check_signer, rent_exempt, writable};
+use crate::{instructions::check_signer, writable};
 
 /// Close PDA
 pub struct CloseConfigPda<'a> {
