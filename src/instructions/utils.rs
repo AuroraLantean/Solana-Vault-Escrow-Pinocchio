@@ -66,6 +66,14 @@ pub enum MyError {
   InputStrSliceOverMax,
   #[error("InputU8InvalidForBool")]
   InputU8InvalidForBool,
+  #[error("U64ByteSizeInvalid")]
+  U64ByteSizeInvalid,
+  #[error("U32ByteSizeInvalid")]
+  U32ByteSizeInvalid,
+  #[error("U16ByteSizeInvalid")]
+  U16ByteSizeInvalid,
+  #[error("U8ByteSizeInvalid")]
+  U8ByteSizeInvalid,
 }
 impl From<MyError> for ProgramError {
   fn from(e: MyError) -> Self {
@@ -107,6 +115,10 @@ impl TryFrom<u32> for MyError {
       26 => Ok(MyError::InputDataLengthOverMax),
       27 => Ok(MyError::InputStrSliceOverMax),
       28 => Ok(MyError::InputU8InvalidForBool),
+      29 => Ok(MyError::U64ByteSizeInvalid),
+      30 => Ok(MyError::U32ByteSizeInvalid),
+      31 => Ok(MyError::U16ByteSizeInvalid),
+      32 => Ok(MyError::U8ByteSizeInvalid),
       _ => Err(ProgramError::InvalidArgument),
     }
   }
@@ -144,6 +156,10 @@ impl ToStr for MyError {
       MyError::InputDataLengthOverMax => "InputDataLengthOverMax",
       MyError::InputStrSliceOverMax => "InputStrSliceOverMax",
       MyError::InputU8InvalidForBool => "InputU8InvalidForBool",
+      MyError::U64ByteSizeInvalid => "U64ByteSizeInvalid",
+      MyError::U32ByteSizeInvalid => "U32ByteSizeInvalid",
+      MyError::U16ByteSizeInvalid => "U16ByteSizeInvalid",
+      MyError::U8ByteSizeInvalid => "U8ByteSizeInvalid",
     }
   }
 }
@@ -154,13 +170,10 @@ impl ToStr for MyError {
 pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
   let bytes: [u8; 8] = data
     .try_into()
-    .or_else(|_e| Err(ProgramError::Custom(501)))?;
-  //TODO: fix Custom 501
-  // Convert the byte slice to a u64
+    .or_else(|_e| Err(MyError::U64ByteSizeInvalid))?;
+
   let amt = u64::from_le_bytes(bytes);
   // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]]);
-
-  // Validate the amount (e.g., not zero)
   if amt == 0 {
     return Err(ProgramError::InvalidArgument);
   }
@@ -169,13 +182,10 @@ pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
 pub fn parse_u32(data: &[u8]) -> Result<u32, ProgramError> {
   let bytes: [u8; 4] = data
     .try_into()
-    .or_else(|_e| Err(ProgramError::Custom(502)))?;
+    .or_else(|_e| Err(MyError::U32ByteSizeInvalid))?;
 
-  // Convert the byte slice to a u64
   let amt = u32::from_le_bytes(bytes);
   // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3]]);
-
-  // Validate the amount (e.g., not zero)
   if amt == 0 {
     return Err(MyError::ZeroAsInput.into());
   }
