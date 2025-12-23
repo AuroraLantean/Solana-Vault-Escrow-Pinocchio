@@ -4,7 +4,7 @@ use crate::MyError;
 
 //#[derive(BorshSerialize, BorshDeserialize, Debug)]
 #[derive(Clone, Copy, Debug)]
-#[repr(C)]
+#[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct Config {
   pub authority: Pubkey,      //32
   pub fee: [u8; 8],           //u64,

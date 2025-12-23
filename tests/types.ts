@@ -33,3 +33,19 @@ export type GetTokenAccountsByOwner = {
 	context: { apiVersion: string; slot: bigint };
 	value: [];
 };
+
+export type DecodedConfigAcct = {
+	executable: boolean;
+	lamports: bigint;
+	programAddress: string;
+	space: bigint;
+	address: string;
+	data: {
+		authority: string;
+		fee: bigint;
+		solBalance: bigint;
+		tokenBalance: bigint;
+		bump: number;
+	};
+	exists: true;
+};

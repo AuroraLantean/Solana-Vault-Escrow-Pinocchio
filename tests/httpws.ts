@@ -2,12 +2,14 @@ import {
 	type Address,
 	airdropFactory,
 	appendTransactionMessageInstruction,
+	assertAccountExists,
 	assertIsTransactionWithBlockhashLifetime,
 	createSolanaRpc,
 	createSolanaRpcSubscriptions,
 	createTransactionMessage,
+	decodeAccount,
+	fetchEncodedAccount,
 	generateKeyPairSigner,
-	getBase64Encoder,
 	getSignatureFromTransaction,
 	lamports,
 	pipe,
@@ -18,8 +20,9 @@ import {
 } from "@solana/kit";
 import { LAMPORTS_PER_SOL } from "gill";
 import * as vault from "../clients/js/src/generated/index";
+import { configAcctDecoder } from "./decoder";
 import { getAta } from "./tokens";
-import type { Data1 } from "./types";
+import type { Data1, DecodedConfigAcct } from "./types";
 import { findPda, llbalc } from "./utils";
 
 export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
@@ -121,33 +124,55 @@ export const vaultRent = await rpc
 	.getMinimumBalanceForRentExemption(BigInt(VAULT_SIZE))
 	.send();
 
-export const readAcctData = async (target: Address, name: string) => {
+export const acctExists = async (target: Address, name: string) => {
 	const { value } = await rpc
 		.getAccountInfo(target, { encoding: "base64" })
 		.send();
 	if (!value || !value?.data) {
 		ll(`${name} does not exist`);
-		return { data: null };
+		return null;
 	}
 	ll(`${name} exits!`);
-	const base64Encoder = getBase64Encoder();
-	const _bytes = base64Encoder.encode(value.data[0]);
-	//const _decoded = ammConfigDecoder.decode(bytes);
-	return { data: value.data };
+	return value;
 };
-/*export const ammConfigDecoder: FixedSizeDecoder<Config> = getStructDecoder([
-	["anchorDiscriminator", fixDecoderSize(getBytesDecoder(), 8)],
-	["bump", getU8Decoder()],
-	["index", getU16Decoder()],
-	["owner", getAddressDecoder()],
-	["protocolFeeRate", getU32Decoder()],
-	["tradeFeeRate", getU32Decoder()],
-	["tickSpacing", getU16Decoder()],
-	["fundFeeRate", getU32Decoder()],
-	["paddingU32", getU32Decoder()],
-	["fundOwner", getAddressDecoder()],
-	["padding", getArrayDecoder(getU64Decoder(), { size: 3 })],
-]);*/
+export const readAcctData = async (target: Address, _name: string) => {
+	const myAccount = await fetchEncodedAccount(rpc, target);
+	assertAccountExists(myAccount);
+	//myAccount satisfies MaybeEncodedAccount<>;
+
+	const decoded = decodeAccount(myAccount, configAcctDecoder);
+	//decoded satisfies Account<ConfigAcct, target>;
+
+	/*const _authorityBytes = value.data.slice(8, 8 + 32); const _authorityPubkey = Address(authorityBytes);
+	const feeBytes = value.data.slice(40, 48); // bytes 40..48
+	const _fee = Number(
+		feeBytes.readBigUInt64LE(0), // read as little-endian
+	);*/
+	ll("decoded:", decoded);
+	const acct = decoded as unknown as DecodedConfigAcct;
+	return acct.data;
+};
+/*export const getAccounts = async () => {
+	const accounts = await rpc
+		.getProgramAccounts(vaultProgAddr, {
+			commitment: "finalized",
+			encoding: "jsonParsed",
+			filters: [
+				// {
+				// 	dataSize: BigInt(17),
+				// },
+				{
+					memcmp: {
+						bytes: "" as Base58EncodedBytes, //bs58.encode(Buffer.from(OFFER_DISCRIMINATOR))//"Base58EncodedBytes", // | Base64EncodedBytes'
+						offset: 0n, //BigInt(4),
+						//encoding: "base58" or "base64"
+					},
+				},
+			],
+		})
+		.send();
+	ll("accounts:", accounts);
+};*/
 
 export const getSol = async (account: Address, name: string) => {
 	const { value: lamports } = await rpc.getBalance(account).send();

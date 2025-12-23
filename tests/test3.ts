@@ -2,6 +2,7 @@ import { test } from "bun:test";
 import { SYSTEM_PROGRAM_ADDRESS } from "@solana-program/system";
 import * as vault from "../clients/js/src/generated/index";
 import {
+	acctExists,
 	adminAddr,
 	adminKp,
 	configPDA,
@@ -20,9 +21,9 @@ import {
 
 //describe("Vault Program", () => {});
 test("programs exist", async () => {
-	const out1 = await readAcctData(vaultProgAddr, "Vault");
-	const out2 = await readAcctData(ATokenGPvbd, "ATokenGPvbd");
-	if (!out1.data || !out2.data) {
+	const out1 = await acctExists(vaultProgAddr, "Vault");
+	const out2 = await acctExists(ATokenGPvbd, "ATokenGPvbd");
+	if (!out1 || !out2) {
 		throw new Error(`Program does not exist`);
 	}
 });
@@ -42,8 +43,7 @@ test("InitConfig", async () => {
 	await sendTxn(methodIx, adminKp);
 	ll("program execution successful");
 
-	const acct = await readAcctData(configPDA, "configPDA");
-	ll("configPDA:", acct.data);
+	const _configData = await readAcctData(configPDA, "configPDA");
 }, 10000);
 
 test("UpdateConfig", async () => {

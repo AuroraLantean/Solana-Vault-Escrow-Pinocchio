@@ -4,6 +4,7 @@ import { SYSTEM_PROGRAM_ADDRESS } from "@solana-program/system";
 import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
 import * as vault from "../clients/js/src/generated/index";
 import {
+	acctExists,
 	adminAddr,
 	adminKp,
 	getSol,
@@ -13,7 +14,6 @@ import {
 	mintAuthority,
 	mintAuthorityKp,
 	mintKp,
-	readAcctData,
 	sendTxn,
 	user1Addr,
 	user1Kp,
@@ -37,9 +37,9 @@ const amtWithdraw = makeSolAmt(9);
 //BunJs Tests: https://bun.com/docs/test/writing-tests  expect(true).toBe(true);
 describe("Vault Program", () => {
 	test("programs exist", async () => {
-		const out1 = await readAcctData(vaultProgAddr, "Vault");
-		const out2 = await readAcctData(ATokenGPvbd, "ATokenGPvbd");
-		if (!out1.data || !out2.data) {
+		const out1 = await acctExists(vaultProgAddr, "Vault");
+		const out2 = await acctExists(ATokenGPvbd, "ATokenGPvbd");
+		if (!out1 || !out2) {
 			throw new Error(`Program does not exist`);
 		}
 	});

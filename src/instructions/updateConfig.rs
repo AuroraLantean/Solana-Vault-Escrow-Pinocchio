@@ -1,4 +1,4 @@
-use core::{convert::TryFrom, ops::Add};
+use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
@@ -43,7 +43,7 @@ impl<'a> UpdateConfig<'a> {
   pub fn update_status(self) -> ProgramResult {
     Ok(())
   }
-  //TODO: WHY did this update_fee() run twice??
+  //TODO: WHY do tests run twice??
   pub fn update_fee(self) -> ProgramResult {
     log!("UpdateConfig update_fee()");
     let fee = u64::from_le_bytes(self.config.fee);
