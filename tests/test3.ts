@@ -31,7 +31,7 @@ test("programs exist", async () => {
 test("InitConfig", async () => {
 	ll("------== InitConfig");
 	ll("payer:", adminAddr);
-	const fee = getLam(111);
+	const fee: bigint = getLam(111);
 
 	const methodIx = vault.getInitConfigInstruction({
 		authority: adminKp,
@@ -59,15 +59,17 @@ test("UpdateConfig", async () => {
 	const u8array = strToU8Array(str1);
 	const _str1b = u8ArrayToStr(u8array);
 	const newFee = getLam(137);
+	const newToken = getLam(243);
 
 	const methodIx = vault.getUpdateConfigInstruction({
 		authority: adminKp,
-		pda1: configPDA,
-		pda2: configPDA,
+		configPda: configPDA,
+		account1: configPDA,
+		account2: configPDA,
 		bools,
 		u8s,
 		u32s: [time, time + 1, time + 2, time + 3],
-		u64s: [newFee, getLam(38), getLam(39), getLam(40)],
+		u64s: [newFee, newToken, getLam(39), getLam(40)],
 		strU8: u8array,
 	});
 	await sendTxn(methodIx, adminKp);
@@ -76,4 +78,5 @@ test("UpdateConfig", async () => {
 	const configData = await readAcctData(configPDA, "configPDA");
 	expect(configData.authority).toEqual(adminAddr);
 	expect(configData.fee).toEqual(newFee);
+	expect(configData.tokenBalance).toEqual(newToken);
 });

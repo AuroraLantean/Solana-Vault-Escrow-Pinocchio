@@ -85,6 +85,10 @@ pub enum MyError {
   ConfigPDA,
   #[error("InputStatus")]
   InputStatus,
+  #[error("MathOverflow")]
+  MathOverflow,
+  #[error("MathUnderflow")]
+  MathUnderflow,
 }
 impl From<MyError> for ProgramError {
   fn from(e: MyError) -> Self {
@@ -135,6 +139,8 @@ impl TryFrom<u32> for MyError {
       35 => Ok(MyError::FunctionSelector),
       36 => Ok(MyError::ConfigPDA),
       37 => Ok(MyError::InputStatus),
+      38 => Ok(MyError::MathOverflow),
+      39 => Ok(MyError::MathUnderflow),
       _ => Err(ProgramError::InvalidArgument),
     }
   }
@@ -181,6 +187,8 @@ impl ToStr for MyError {
       MyError::FunctionSelector => "FunctionSelector",
       MyError::ConfigPDA => "ConfigPDA",
       MyError::InputStatus => "InputStatus",
+      MyError::MathOverflow => "MathOverflow",
+      MyError::MathUnderflow => "MathUnderflow",
     }
   }
 }

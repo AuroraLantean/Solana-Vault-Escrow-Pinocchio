@@ -12,6 +12,7 @@ pub struct UpdateConfig<'a> {
   pub authority: &'a AccountInfo,
   pub config_pda: &'a AccountInfo,
   pub account1: &'a AccountInfo,
+  pub account2: &'a AccountInfo,
   pub bools: [bool; 4],
   pub u8s: [u8; 4],
   pub u32s: [u32; 4],
@@ -19,6 +20,7 @@ pub struct UpdateConfig<'a> {
   pub str_u8array: &'a [u8; 32], //pub str_u8: &'a [u8], //pub datalen: usize,
   pub config: &'a mut Config,
 }
+//impl<'a> Copy for UpdateConfig<'a> {}
 impl<'a> UpdateConfig<'a> {
   pub const DISCRIMINATOR: &'a u8 = &13;
 
@@ -32,9 +34,17 @@ impl<'a> UpdateConfig<'a> {
     }
   }
 
+  pub fn add_tokens(self) -> ProgramResult {
+    log!("UpdateConfig add_tokens()");
+    let mutated_state = u64::from_le_bytes(self.config.token_balance)
+      .checked_add(self.u64s[1])
+      .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
+    self.config.token_balance = mutated_state.to_le_bytes();
+    Ok(())
+  }
+
   pub fn update_status(self) -> ProgramResult {
     log!("UpdateConfig update_status()");
-    //self.config.status = self.u8s[1]; //StatusEnum::from(self.u8s[1]);
     Ok(())
   }
   //TODO: WHY do tests run twice??
@@ -43,6 +53,8 @@ impl<'a> UpdateConfig<'a> {
     self.config.fee = self.u64s[0].to_le_bytes();
     //self.config.status = self.u8s[1];
     self.config.status = StatusEnum::from(self.u8s[1]);
+    self.add_tokens()?;
+    //self.update_authority()?;
     Ok(())
   }
   pub fn update_authority(self) -> ProgramResult {
@@ -58,7 +70,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [authority, config_pda, account1] = accounts else {
+    let [authority, config_pda, account1, account2] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
 
@@ -115,6 +127,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
       authority,
       config_pda,
       account1,
+      account2,
       u8s,
       bools,
       u32s,

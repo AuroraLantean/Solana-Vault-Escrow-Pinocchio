@@ -180,8 +180,9 @@ pub enum ProgramIx<'a> {
 
   /// 13 Update Config PDA
   #[account(0, signer, writable, name = "authority", desc = "Authority")]
-  #[account(1, writable, name = "pda1", desc = "PDA1")]
-  #[account(2, name = "pda2", desc = "PDA2")]
+  #[account(1, writable, name = "config_pda", desc = "Config PDA")]
+  #[account(2, name = "account1", desc = "Account1")]
+  #[account(3, name = "account2", desc = "Account2")]
   UpdateConfig {
     bools: [u8; 4],
     u8s: [u8; 4],
