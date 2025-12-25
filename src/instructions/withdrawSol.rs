@@ -9,7 +9,7 @@ use pinocchio_log::log;
 
 use crate::{
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  VAULT_SEED,
+  MyError, VAULT_SEED,
 };
 
 //  vault is owned by the program, matches the PDA derived from user. The withdrawn amount is everything above the rent minimum.
@@ -35,7 +35,7 @@ impl<'a> WithdrawSol<'a> {
 
     let (expected_vault_pda, _bump) = derive_pda1(user, VAULT_SEED)?;
     if vault.key() != &expected_vault_pda {
-      return Err(ProgramError::InvalidAccountData);
+      return Err(MyError::VaultPDA.into());
     }
 
     // Compute how much can be withdrawn while keeping the account rent-exempt
@@ -46,14 +46,14 @@ impl<'a> WithdrawSol<'a> {
     let current = vault.lamports();
     log!("vault balc: {}", current);
     if current <= min_balance {
-      return Err(ProgramError::AccountNotRentExempt);
+      return Err(MyError::NotRentExamptPDA.into());
     }
     if current
       <= min_balance
         .checked_add(amount)
         .ok_or_else(|| ProgramError::ArithmeticOverflow)?
     {
-      return Err(ProgramError::InsufficientFunds);
+      return Err(MyError::InsufficientFundNominal.into());
     }
 
     // Transfer SOL from vault to user
@@ -62,7 +62,7 @@ impl<'a> WithdrawSol<'a> {
 
       *vault_lamports = vault_lamports
         .checked_sub(amount)
-        .ok_or_else(|| ProgramError::InsufficientFunds)?;
+        .ok_or_else(|| MyError::MathUnderflow)?;
     }
 
     {
@@ -70,7 +70,7 @@ impl<'a> WithdrawSol<'a> {
 
       *admin_lamports = admin_lamports
         .checked_add(amount)
-        .ok_or_else(|| ProgramError::InsufficientFunds)?;
+        .ok_or_else(|| MyError::MathOverflow)?;
     }
     log!("{} lamports withdrawn from vault", amount);
     Ok(())

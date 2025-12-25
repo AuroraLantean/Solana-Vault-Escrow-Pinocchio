@@ -89,6 +89,20 @@ pub enum MyError {
   MathOverflow,
   #[error("MathUnderflow")]
   MathUnderflow,
+  #[error("NotRentExamptMint22")]
+  NotRentExamptMint22,
+  #[error("NotRentExamptTokAcct22")]
+  NotRentExamptTokAcct22,
+  #[error("NotRentExamptPDA")]
+  NotRentExamptPDA,
+  #[error("MintOrMintAuthority")]
+  MintOrMintAuthority,
+  #[error("ErrorValue")]
+  ErrorValue,
+  #[error("PdaAuthority")]
+  PdaAuthority,
+  #[error("InsufficientFundNominal")]
+  InsufficientFundNominal,
 }
 impl From<MyError> for ProgramError {
   fn from(e: MyError) -> Self {
@@ -141,7 +155,13 @@ impl TryFrom<u32> for MyError {
       37 => Ok(MyError::InputStatus),
       38 => Ok(MyError::MathOverflow),
       39 => Ok(MyError::MathUnderflow),
-      _ => Err(ProgramError::InvalidArgument),
+      40 => Ok(MyError::NotRentExamptMint22),
+      41 => Ok(MyError::NotRentExamptTokAcct22),
+      42 => Ok(MyError::NotRentExamptPDA),
+      43 => Ok(MyError::MintOrMintAuthority),
+      44 => Ok(MyError::PdaAuthority),
+      45 => Ok(MyError::InsufficientFundNominal),
+      _ => Err(MyError::ErrorValue.into()),
     }
   }
 }
@@ -149,6 +169,7 @@ impl TryFrom<u32> for MyError {
 impl ToStr for MyError {
   fn to_str<E>(&self) -> &'static str {
     match self {
+      MyError::ErrorValue => "ErrorValue",
       MyError::InvalidDiscriminator => "InvalidDiscriminator",
       MyError::NotSigner => "NotSigner",
       MyError::NotWritable => "NotWritable",
@@ -189,6 +210,12 @@ impl ToStr for MyError {
       MyError::InputStatus => "InputStatus",
       MyError::MathOverflow => "MathOverflow",
       MyError::MathUnderflow => "MathUnderflow",
+      MyError::NotRentExamptMint22 => "NotRentExamptMint22",
+      MyError::NotRentExamptTokAcct22 => "NotRentExamptTokAcct22",
+      MyError::NotRentExamptPDA => "NotRentExamptPDA",
+      MyError::MintOrMintAuthority => "MintOrMintAuthority",
+      MyError::PdaAuthority => "PdaAuthority",
+      MyError::InsufficientFundNominal => "InsufficientFundNominal",
     }
   }
 }
@@ -203,7 +230,7 @@ pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
   let amt = u64::from_le_bytes(bytes);
   // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]]);
   if amt == 0 {
-    return Err(ProgramError::InvalidArgument);
+    return Err(MyError::ZeroAsInput.into());
   }
   Ok(amt)
 }

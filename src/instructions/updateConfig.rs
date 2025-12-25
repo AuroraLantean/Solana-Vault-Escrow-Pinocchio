@@ -119,7 +119,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
 
     let config = Config::load(&config_pda)?;
     if config.authority != *authority.key() {
-      return Err(ProgramError::IncorrectAuthority);
+      return Err(MyError::PdaAuthority.into());
     }
     // cannot use self in "0 => Self.process(),
     Ok(Self {

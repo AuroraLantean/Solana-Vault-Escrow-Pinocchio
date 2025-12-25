@@ -11,6 +11,8 @@ pub mod closeConfig;
 #[allow(non_snake_case)]
 pub mod depositSol;
 #[allow(non_snake_case)]
+pub mod escrowTokMake;
+#[allow(non_snake_case)]
 pub mod initConfig;
 #[allow(non_snake_case)]
 pub mod tok22InitATA;
@@ -38,6 +40,7 @@ pub mod withdrawSol;
 //file names start with a lower case + Camel cases, but struct names start with Upper case + Camel cases!
 pub use closeConfig::*;
 pub use depositSol::*;
+pub use escrowTokMake::*;
 pub use initConfig::*;
 pub use tok22InitATA::*;
 pub use tok22InitMint::*;
@@ -197,6 +200,18 @@ pub enum ProgramIx<'a> {
   #[account(2, name = "dest", desc = "Destination")]
   //#[account(5, name = "system_program", desc = "System Program")]
   CloseConfigPda {},
+
+  /// 15 Escrow Token Make Offer
+  #[account(0, signer, writable, name = "maker", desc = "Maker")]
+  #[account(1, writable, name = "from", desc = "From ATA")]
+  #[account(2, writable, name = "to", desc = "To ATA")]
+  #[account(3, name = "to_wallet", desc = "To Wallet")]
+  #[account(4, name = "mint_maker", desc = "Mint Maker")]
+  #[account(5, name = "mint_taker", desc = "Mint Taker")]
+  #[account(6, name = "token_program", desc = "Token Program")]
+  #[account(7, name = "system_program", desc = "System Program")]
+  #[account(8, name = "atoken_program", desc = "AToken Program")]
+  EscrowTokMake { decimals: u8, bump: u8, amount: u64 },
 } //update here and lib.rs for new functions
 
 /// Seed of the vault account PDA.
@@ -231,7 +246,7 @@ pub fn check_mint0b(
     .mint_authority()
     .is_some_and(|authority| !mint_authority.key().eq(authority))
   {
-    return Err(ProgramError::IncorrectAuthority);
+    return Err(MyError::MintOrMintAuthority.into());
   }
   if decimals != mint_info.decimals() {
     return Err(MyError::DecimalsValue.into());
@@ -262,7 +277,7 @@ pub fn check_mint22b(
     .mint_authority()
     .is_some_and(|authority| !mint_authority.key().eq(authority))
   {
-    return Err(ProgramError::IncorrectAuthority);
+    return Err(MyError::MintOrMintAuthority.into());
   }
   if decimals != mint_info.decimals() {
     return Err(MyError::DecimalsValue.into());
@@ -298,7 +313,7 @@ pub fn check_ata(
   }
   let ata_info = pinocchio_token::state::TokenAccount::from_account_info(ata)?;
   if !ata_info.owner().eq(owner.key()) {
-    return Err(ProgramError::InvalidAccountOwner);
+    return Err(MyError::AtaOrOwner.into());
   }
   if !ata_info.mint().eq(mint.key()) {
     return Err(MyError::AtaOrMint.into());
@@ -381,10 +396,10 @@ pub fn executable(account: &AccountInfo) -> Result<(), ProgramError> {
 /// acc_type: 0 Mint, 1 TokenAccount
 pub fn rent_exempt(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
   if acc_type == 0 && account.lamports() < Rent::get()?.minimum_balance(Mint22::BASE_LEN) {
-    return Err(ProgramError::AccountNotRentExempt);
+    return Err(MyError::NotRentExamptMint22.into());
   }
   if acc_type == 1 && account.lamports() < Rent::get()?.minimum_balance(TokenAccount22::BASE_LEN) {
-    return Err(ProgramError::AccountNotRentExempt);
+    return Err(MyError::NotRentExamptTokAcct22.into());
   }
   if acc_type > 1 {
     return Err(MyError::AcctType.into());

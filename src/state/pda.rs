@@ -26,6 +26,9 @@ impl Config {
     //assert_eq!(account.owner(), &crate::ID);
     unsafe { Ok(&mut *(account.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
   }
+  pub fn load_unchecked(account: &AccountInfo) -> Result<&mut Self, ProgramError> {
+    unsafe { Ok(&mut *(account.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
+  }
 }
 
 #[repr(C)] //keeps the struct layout the same across different architectures
@@ -45,5 +48,35 @@ impl From<u8> for StatusEnum {
       3 => StatusEnum::Paused,
       _ => StatusEnum::Expired,
     }
+  }
+}
+
+//------------==
+#[derive(Clone, Copy, Debug)]
+#[repr(C)] //0..8 	Discriminator 	8 bytes
+pub struct Escrow {
+  pub maker: Pubkey,      //32
+  pub mint_maker: Pubkey, //32
+  pub mint_taker: Pubkey, //32
+  pub amount: [u8; 8],    //8
+  pub bump: u8,           //1
+}
+impl Escrow {
+  pub const LEN: usize = core::mem::size_of::<Escrow>();
+  //pub const LEN: usize = 32 + 32 + 32 + 8 + 1;
+
+  pub fn load(account: &AccountInfo) -> Result<&mut Self, ProgramError> {
+    if account.data_len() != Escrow::LEN {
+      return Err(MyError::InputDataLen.into());
+    }
+    //assert_eq!(account.data_len(), Escrow::LEN);
+    if account.owner() != &crate::ID {
+      return Err(MyError::ForeignPDA.into());
+    }
+    //assert_eq!(account.owner(), &crate::ID);
+    unsafe { Ok(&mut *(account.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
+  }
+  pub fn load_unchecked(account: &AccountInfo) -> Result<&mut Self, ProgramError> {
+    unsafe { Ok(&mut *(account.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
   }
 }

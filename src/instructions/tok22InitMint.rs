@@ -174,5 +174,5 @@ let extension_size = METADATA_POINTER_SIZE
             + uri.len();
 let total_mint_size = Mint::LEN + EXTENSIONS_PADDING_AND_OFFSET + extension_size;        */
 /*if rent_sysvar.key != &solana_program::sysvar::rent::ID {
-    return Err(ProgramError::InvalidAccountData);
+    return Err();
 }*/
