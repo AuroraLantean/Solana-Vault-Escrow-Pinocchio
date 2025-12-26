@@ -6,7 +6,7 @@ import {
 	adminAddr,
 	adminKp,
 	configPDA,
-	readAcctData,
+	readConfigData,
 	sendTxn,
 	vaultProgAddr,
 } from "./httpws";
@@ -43,7 +43,7 @@ test("InitConfig", async () => {
 	await sendTxn(methodIx, adminKp);
 	ll("program execution successful");
 
-	const configData = await readAcctData(configPDA, "configPDA");
+	const configData = await readConfigData(configPDA, "configPDA");
 	expect(configData.authority).toEqual(adminAddr);
 	expect(configData.fee).toEqual(fee);
 }, 10000); //Timeouts
@@ -75,7 +75,7 @@ test("UpdateConfig", async () => {
 	await sendTxn(methodIx, adminKp);
 	ll("program execution successful");
 
-	const configData = await readAcctData(configPDA, "configPDA");
+	const configData = await readConfigData(configPDA, "configPDA");
 	expect(configData.authority).toEqual(adminAddr);
 	expect(configData.fee).toEqual(newFee);
 	expect(configData.tokenBalance).toEqual(newToken);

@@ -27,7 +27,7 @@ pub struct TokLgcRedeem<'a> {
   pub amount: u64,
 }
 impl<'a> TokLgcRedeem<'a> {
-  pub const DISCRIMINATOR: &'a u8 = &7;
+  pub const DISCRIMINATOR: &'a u8 = &8;
 
   pub fn process(self) -> ProgramResult {
     let TokLgcRedeem {
@@ -75,20 +75,23 @@ impl<'a> TokLgcRedeem<'a> {
     }
     writable(to_ata)?;
     rent_exempt(to_ata, 1)?;
-    log!("ToATA is found/verified");
+    log!("TokLgcRedeem 6 ToATA is found/verified");
 
     let (expected_vault_pda, bump) = derive_pda1(from_pda_owner, VAULT_SEED)?;
+    log!("TokLgcRedeem 7a");
     if from_pda.key() != &expected_vault_pda {
       return Err(MyError::VaultPDA.into());
     }
+    log!("TokLgcRedeem 7b");
     let signer_seeds = [
       Seed::from(VAULT_SEED),
       Seed::from(from_pda_owner.key().as_ref()),
       Seed::from(core::slice::from_ref(&bump)),
     ];
+    log!("TokLgcRedeem 7c");
     let signer = Signer::from(&signer_seeds);
 
-    log!("Transfer Tokens");
+    log!("TokLgcRedeem 8 Transfer Tokens");
     pinocchio_token::instructions::TransferChecked {
       from: from_ata,
       mint,

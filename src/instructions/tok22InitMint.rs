@@ -26,7 +26,7 @@ pub struct Token2022InitMint<'a> {
   pub token_uri: [u8; 32],
 }
 impl<'a> Token2022InitMint<'a> {
-  pub const DISCRIMINATOR: &'a u8 = &8;
+  pub const DISCRIMINATOR: &'a u8 = &9;
 
   pub fn process(self) -> ProgramResult {
     let Token2022InitMint {

@@ -36,11 +36,11 @@ export const week = 604800;
 export const makeSolAmt = (amt: number) => BigInt(amt) * baseSOL;
 
 export const findPda = async (
-	userAddr: Address<string>,
+	addr: Address<string>,
 	str: string,
 	progAddr = vaultProgAddr,
 ) => {
-	const seedSigner = getAddressEncoder().encode(userAddr);
+	const seedSigner = getAddressEncoder().encode(addr);
 	const seedTag = getUtf8Encoder().encode(str);
 
 	const pda_bump = await getProgramDerivedAddress({

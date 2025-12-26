@@ -29,6 +29,8 @@ pub mod tokLgcInitMint;
 #[allow(non_snake_case)]
 pub mod tokLgcMintToken;
 #[allow(non_snake_case)]
+pub mod tokLgcPay;
+#[allow(non_snake_case)]
 pub mod tokLgcRedeem;
 #[allow(non_snake_case)]
 pub mod tokLgcWithdraw;
@@ -49,6 +51,7 @@ pub use tokLgcDeposit::*;
 pub use tokLgcInitATA::*;
 pub use tokLgcInitMint::*;
 pub use tokLgcMintToken::*;
+pub use tokLgcPay::*;
 pub use tokLgcRedeem::*;
 pub use tokLgcWithdraw::*;
 pub use updateConfig::*;
@@ -63,7 +66,7 @@ use shank::ShankInstruction;
 /// writable(to be modified):, name= signer, token_account, pda
 /// non writable: program, system_program, mint
 #[derive(ShankInstruction)]
-pub enum ProgramIx<'a> {
+pub enum ProgramIx {
   /// 0 Deposit lamports into the vault.
   #[account(0, signer, writable, name = "user", desc = "User")]
   #[account(1, writable, name = "vault", desc = "VaultPDA")]
@@ -104,7 +107,7 @@ pub enum ProgramIx<'a> {
   #[account(6, name = "atoken_program", desc = "AToken Program")]
   TokLgcMintToken { decimals: u8, amount: u64 },
 
-  /// 5 TokLgc Deposit/Pay Tokens
+  /// 5 TokLgc Deposit Tokens
   #[account(0, signer, writable, name = "user", desc = "User")]
   #[account(1, writable, name = "from", desc = "From ATA")]
   #[account(2, writable, name = "to", desc = "To ATA")]
@@ -126,7 +129,18 @@ pub enum ProgramIx<'a> {
   #[account(7, name = "atoken_program", desc = "AToken Program")]
   TokLgcWithdraw { decimals: u8, amount: u64 },
 
-  /// 7 TokLgc Redeem Tokens
+  /// 7 TokLgc User Pays Tokens to VaultAdmin
+  #[account(0, signer, writable, name = "user", desc = "User")]
+  #[account(1, writable, name = "from", desc = "From ATA")]
+  #[account(2, writable, name = "to", desc = "To ATA")]
+  #[account(3, name = "to_wallet", desc = "To Wallet")]
+  #[account(4, name = "mint", desc = "Mint")]
+  #[account(5, name = "token_program", desc = "Token Program")]
+  #[account(6, name = "system_program", desc = "System Program")]
+  #[account(7, name = "atoken_program", desc = "AToken Program")]
+  TokLgcPay { decimals: u8, amount: u64 },
+
+  /// 8 TokLgc Redeem Tokens
   #[account(0, signer, writable, name = "user", desc = "User")]
   #[account(1, writable, name = "from", desc = "From ATA")]
   #[account(2, writable, name = "to", desc = "To ATA")]
@@ -139,7 +153,7 @@ pub enum ProgramIx<'a> {
   TokLgcRedeem { decimals: u8, amount: u64 },
 
   //---------== Token2022
-  /// 8 Token2022 Init Mint
+  /// 9 Token2022 Init Mint
   #[account(0, signer, writable, name = "payer", desc = "Payer")]
   #[account(1, signer, writable, name = "mint", desc = "Mint")]
   #[account(2, name = "mint_authority", desc = "Mint Authority")]
@@ -148,7 +162,7 @@ pub enum ProgramIx<'a> {
   #[account(5, name = "system_program", desc = "System Program")]
   Token2022InitMint { decimals: u8 },
 
-  /// 9 Token2022 Init ATA(Associated Token Acct)
+  /// 10 Token2022 Init ATA(Associated Token Acct)
   #[account(0, signer, writable, name = "payer", desc = "Payer")]
   #[account(1, name = "to_wallet", desc = "To Wallet")]
   #[account(2, name = "mint", desc = "Mint")]
@@ -158,7 +172,7 @@ pub enum ProgramIx<'a> {
   #[account(6, name = "atoken_program", desc = "AToken Program")]
   Token2022InitATA {},
 
-  /// 10 Token2022 Mint Token
+  /// 11 Token2022 Mint Token
   #[account(0, signer, writable, name = "mint_authority", desc = "Mint Authority")]
   #[account(1, name = "to_wallet", desc = "ToWallet")]
   #[account(2, writable, name = "mint", desc = "Mint")]
@@ -167,12 +181,6 @@ pub enum ProgramIx<'a> {
   #[account(5, name = "system_program", desc = "System Program")]
   #[account(6, name = "atoken_program", desc = "AToken Program")]
   Tok22MintToken { decimals: u8, amount: u64 },
-
-  /// 11 Init Config PDA
-  #[account(0, signer, writable, name = "authority", desc = "Authority")]
-  #[account(1, name = "pda", desc = "PDA")]
-  #[account(2, name = "system_program", desc = "System Program")]
-  InitConfigPda { seeds: &'a str, space: u32 },
 
   /// 12 Init Config PDA
   #[account(0, signer, writable, name = "authority", desc = "Authority")]
@@ -231,7 +239,10 @@ pub fn check_mint0a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<(
     return Err(MyError::MintDataLen.into());
   }
   if !token_program.key().eq(&pinocchio_token::ID) {
-    return Err(MyError::TokenProgramInvalid.into());
+    return Err(MyError::TokenProgram.into());
+  }
+  if mint.owner() != &pinocchio_token::ID {
+    return Err(MyError::MintOrTokenProgram.into());
   }
   Ok(())
 }
@@ -262,7 +273,10 @@ pub fn check_mint22a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<
     return Err(MyError::MintDataLen.into());
   }
   if !token_program.key().eq(&pinocchio_token_2022::ID) {
-    return Err(MyError::TokenProgramInvalid.into());
+    return Err(MyError::SystemProgram.into());
+  }
+  if mint.owner() != &pinocchio_token_2022::ID {
+    return Err(MyError::MintOrTokenProgram.into());
   }
   Ok(())
 }
@@ -355,7 +369,7 @@ pub fn check_ata_x(
 }
 pub fn check_sysprog(system_program: &AccountInfo) -> Result<(), ProgramError> {
   if !system_program.key().eq(&pinocchio_system::ID) {
-    return Err(MyError::SystemProgramInvalid.into());
+    return Err(MyError::SystemProgram.into());
   }
   Ok(())
 }

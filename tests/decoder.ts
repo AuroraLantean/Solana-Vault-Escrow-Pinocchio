@@ -10,10 +10,11 @@ import {
 //converted from Rust code
 export type ConfigAcct = {
 	authority: Address;
-	//status: number;
 	fee: bigint;
 	solBalance: bigint;
 	tokenBalance: bigint;
+	status: number;
+	//status: Status;
 	bump: number;
 };
 enum Status {

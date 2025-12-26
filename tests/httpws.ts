@@ -35,6 +35,7 @@ export const rpcSubscriptions = createSolanaRpcSubscriptions(wssProvider);
 console.log(`✅ - Established connection to ${httpProvider}`);
 
 //https://www.solanakit.com/docs/getting-started/signers
+export const ownerKp = await generateKeyPairSigner();
 export const adminKp = await generateKeyPairSigner();
 export const mintAuthorityKp = await generateKeyPairSigner();
 export const user1Kp = await generateKeyPairSigner();
@@ -45,6 +46,7 @@ export const mintKp = await generateKeyPairSigner();
 export const mint22Kp = await generateKeyPairSigner();
 //import secret from './my-keypair.json';
 //const user2 = await createKeyPairSignerFromBytes(new Uint8Array(secret));
+export const ownerAddr = ownerKp.address;
 export const adminAddr = adminKp.address;
 export const mint = mintKp.address;
 export const mint22 = mint22Kp.address;
@@ -69,6 +71,11 @@ export const amtAirdrop = BigInt(100) * baseSOL;
 
 // Airdrop SOL to admin
 const airdrop = airdropFactory({ rpc, rpcSubscriptions });
+await airdrop({
+	commitment: "confirmed",
+	lamports: lamports(amtAirdrop),
+	recipientAddress: ownerAddr,
+});
 await airdrop({
 	commitment: "confirmed",
 	lamports: lamports(amtAirdrop),
@@ -105,7 +112,7 @@ const ACCOUNT_DISCRIMINATOR_SIZE = 8; // same as Anchor/Rust
 const U64_SIZE = 8; // u64 is 8 bytes
 const VAULT_SIZE = ACCOUNT_DISCRIMINATOR_SIZE + U64_SIZE; // 16
 
-const pda_bump = await findPda(adminAddr, "vault");
+const pda_bump = await findPda(ownerAddr, "vault");
 export const vaultPDA = pda_bump.pda;
 ll(`✅ - Vault PDA: ${vaultPDA}`);
 const pda_bump1 = await findPda(user1Addr, "vault");
@@ -135,12 +142,13 @@ export const acctExists = async (target: Address, name: string) => {
 	ll(`${name} exits!`);
 	return value;
 };
-export const readAcctData = async (target: Address, name: string) => {
-	const myAccount = await fetchEncodedAccount(rpc, target);
-	assertAccountExists(myAccount);
-	//myAccount satisfies MaybeEncodedAccount<>;
-
-	const decoded = decodeAccount(myAccount, configAcctDecoder);
+export const readConfigData = async (target: Address, name: string) => {
+	ll("readConfigData()...");
+	const encodedAcct = await fetchEncodedAccount(rpc, target);
+	assertAccountExists(encodedAcct);
+	//encodedAcct satisfies MaybeEncodedAccount<>;
+	ll("account exists");
+	const decoded = decodeAccount(encodedAcct, configAcctDecoder);
 	//decoded satisfies Account<ConfigAcct, target>;
 
 	/*const _authorityBytes = value.data.slice(8, 8 + 32); const _authorityPubkey = Address(authorityBytes);

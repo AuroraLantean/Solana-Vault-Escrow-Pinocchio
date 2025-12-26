@@ -1,22 +1,14 @@
 use core::convert::TryFrom;
-use pinocchio::{
-  account_info::AccountInfo,
-  instruction::{Seed, Signer},
-  program_error::ProgramError,
-  sysvars::{rent::Rent, Sysvar},
-  ProgramResult,
-};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
-use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
-  check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, derive_pda1, executable,
+  check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, executable,
   instructions::check_signer, min_data_len, parse_u64, rent_exempt, writable, MyError,
-  ACCOUNT_DISCRIMINATOR_SIZE, VAULT_SEED,
 };
 
-/// TokLgc: Users to Deposit Tokens
-pub struct TokLgcDeposit<'a> {
+/// TokLgc: Users to Pay Tokens to VaultAdmin
+pub struct TokLgcPay<'a> {
   pub user: &'a AccountInfo, //signer
   pub from_ata: &'a AccountInfo,
   pub to_ata: &'a AccountInfo,
@@ -28,11 +20,11 @@ pub struct TokLgcDeposit<'a> {
   pub decimals: u8,
   pub amount: u64,
 }
-impl<'a> TokLgcDeposit<'a> {
-  pub const DISCRIMINATOR: &'a u8 = &5;
+impl<'a> TokLgcPay<'a> {
+  pub const DISCRIMINATOR: &'a u8 = &7;
 
   pub fn process(self) -> ProgramResult {
-    let TokLgcDeposit {
+    let TokLgcPay {
       user,
       from_ata,
       to_ata,
@@ -44,48 +36,27 @@ impl<'a> TokLgcDeposit<'a> {
       decimals,
       amount,
     } = self;
-    log!("TokLgcDeposit process()");
+    log!("TokLgcPay process()");
     check_signer(user)?;
     executable(token_program)?;
     writable(from_ata)?;
     check_ata(from_ata, user, mint)?;
 
-    log!("TokLgcDeposit 1");
+    log!("TokLgcPay 1");
     rent_exempt(mint, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
-    log!("TokLgcDeposit 5");
+    log!("TokLgcPay 5");
     check_sysprog(system_program)?;
 
+    //only to_wallet(owner) should make to_wallet
     if to_wallet.lamports() == 0 {
-      log!("TokLgcDeposit 6: make to_wallet");
-      let (expected_vault_pda, bump) = derive_pda1(user, VAULT_SEED)?;
-      if to_wallet.key() != &expected_vault_pda {
-        return Err(MyError::VaultPDA.into());
-      }
-      let signer_seeds = [
-        Seed::from(VAULT_SEED),
-        Seed::from(user.key().as_ref()),
-        Seed::from(core::slice::from_ref(&bump)),
-      ];
-      let signer = Signer::from(&signer_seeds);
-      // Make the account rent-exempt.
-      const VAULT_SIZE: usize = ACCOUNT_DISCRIMINATOR_SIZE + size_of::<u64>();
-      let needed_lamports = Rent::get()?.minimum_balance(VAULT_SIZE);
-
-      CreateAccount {
-        from: user,
-        to: to_wallet,
-        lamports: needed_lamports,
-        space: VAULT_SIZE as u64,
-        owner: &crate::ID,
-      }
-      .invoke_signed(&[signer])?;
-      log!("TokLgcDeposit 6b");
+      return Err(MyError::ToWallet.into());
     }
+    log!("TokLgcPay 7a");
     check_pda(to_wallet)?;
-    log!("TokLgcDeposit 7: to_wallet is verified");
+    log!("TokLgcPay 7b: to_wallet is verified");
 
     if to_ata.data_is_empty() {
       log!("Make to_ata");
@@ -126,11 +97,11 @@ impl<'a> TokLgcDeposit<'a> {
     Ok(())
   }
 }
-impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcDeposit<'a> {
+impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
   type Error = ProgramError;
 
   fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
-    log!("TokLgcDeposit try_from");
+    log!("TokLgcPay try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 

@@ -1,5 +1,5 @@
 use core::convert::TryFrom;
-use pinocchio::{account_info::AccountInfo, program_error::ProgramError, pubkey, ProgramResult};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
@@ -11,8 +11,8 @@ use crate::{
 pub struct EscrowTokMake<'a> {
   pub maker: &'a AccountInfo, //signer
   pub from_ata: &'a AccountInfo,
-  pub to_ata: &'a AccountInfo,
-  pub to_wallet: &'a AccountInfo,
+  pub vault_ata: &'a AccountInfo, //as to_ata
+  pub vault: &'a AccountInfo,     //PDA or to_wallet
   pub mint_maker: &'a AccountInfo,
   pub mint_taker: &'a AccountInfo,
   pub token_program: &'a AccountInfo,
@@ -28,8 +28,8 @@ impl<'a> EscrowTokMake<'a> {
     let EscrowTokMake {
       maker,
       from_ata,
-      to_ata,
-      to_wallet,
+      vault_ata,
+      vault,
       mint_maker,
       mint_taker,
       token_program,
@@ -44,7 +44,7 @@ impl<'a> EscrowTokMake<'a> {
     writable(from_ata)?;
 
     log!("EscrowTokMake 1");
-    rent_exempt(mint_maker, 0)?;
+    rent_exempt(mint_maker, 0)?; //invalid mint_maker will also fail this txn
     rent_exempt(mint_taker, 0)?;
     log!("EscrowTokMake 2");
     check_ata(from_ata, maker, mint_maker)?;
@@ -52,21 +52,22 @@ impl<'a> EscrowTokMake<'a> {
     log!("EscrowTokMake 3");
     check_decimals(mint_maker, decimals)?;
     check_mint0a(mint_maker, token_program)?;
+    check_mint0a(mint_taker, token_program)?;
 
     log!("EscrowTokMake 5");
     check_sysprog(system_program)?;
 
-    check_pda(to_wallet)?;
+    check_pda(vault)?;
     /*Make a valid program derived address without searching for a bump seed:
     let seed = [(b"escrow"), maker.key().as_slice(), bump.as_ref()];
     let seeds = &seed[..];
     let pda = pubkey::checked_create_program_address(seeds, &crate::ID).unwrap();*/
-    if to_ata.data_is_empty() {
-      log!("Make to_ata");
+    if vault_ata.data_is_empty() {
+      log!("Make vault_ata");
       pinocchio_associated_token_account::instructions::Create {
         funding_account: maker,
-        account: to_ata,
-        wallet: to_wallet,
+        account: vault_ata,
+        wallet: vault,
         mint: mint_maker,
         system_program,
         token_program,
@@ -74,18 +75,18 @@ impl<'a> EscrowTokMake<'a> {
       .invoke()?;
       //Please upgrade to SPL Token 2022 for immutable owner support
     } else {
-      log!("to_ata has data");
-      check_ata(to_ata, to_wallet, mint_maker)?;
+      log!("vault_ata has data");
+      check_ata(vault_ata, vault, mint_maker)?;
     }
-    writable(to_ata)?;
-    rent_exempt(to_ata, 1)?;
+    writable(vault_ata)?;
+    rent_exempt(vault_ata, 1)?;
     log!("ToATA is found/verified");
 
     log!("Transfer Tokens");
     pinocchio_token::instructions::TransferChecked {
       from: from_ata,
       mint: mint_maker,
-      to: to_ata,
+      to: vault_ata,
       authority: maker,
       amount, // unsafe { *(data.as_ptr().add(1 + 8) as *const u64)}
       decimals,
@@ -93,7 +94,7 @@ impl<'a> EscrowTokMake<'a> {
     .invoke()?;
     /*  pinocchio_token::instructions::Transfer {
         from: vault,
-        to: to_ata,
+        to: vault_ata,
         authority: escrow,
         amount: vault_account.amount(),
     }.invoke_signed(&[seeds.clone()])?; */
@@ -108,7 +109,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokMake<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [maker, from_ata, to_ata, to_wallet, mint_maker, mint_taker, token_program, system_program, atoken_program] =
+    let [maker, from_ata, vault_ata, vault, mint_maker, mint_taker, token_program, system_program, atoken_program] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -123,8 +124,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokMake<'a> {
     Ok(Self {
       maker,
       from_ata,
-      to_ata,
-      to_wallet,
+      vault_ata,
+      vault,
       mint_maker,
       mint_taker,
       token_program,

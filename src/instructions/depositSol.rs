@@ -8,7 +8,7 @@ use pinocchio::{
   ProgramResult,
 };
 use pinocchio_log::log;
-use pinocchio_system::instructions::{CreateAccount, Transfer as SystemTransfer};
+use pinocchio_system::instructions::Transfer as SystemTransfer;
 
 use crate::{
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
@@ -86,7 +86,7 @@ fn ensure_deposit_accounts(user: &AccountInfo, vault: &AccountInfo) -> ProgramRe
     const VAULT_SIZE: usize = ACCOUNT_DISCRIMINATOR_SIZE + size_of::<u64>();
     let needed_lamports = Rent::get()?.minimum_balance(VAULT_SIZE);
 
-    CreateAccount {
+    pinocchio_system::instructions::CreateAccount {
       from: user,
       to: vault,
       lamports: needed_lamports,

@@ -4,6 +4,7 @@ use pinocchio::{
   program_error::{ProgramError, ToStr},
   pubkey::{try_find_program_address, Pubkey},
 };
+use pinocchio_log::log;
 use thiserror::Error;
 
 //TODO: put errors in error.rs ... https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-errors
@@ -27,10 +28,10 @@ pub enum MyError {
   TokAcctDataLen,
   #[error("Tok22AcctDataLen")]
   Tok22AcctDataLen,
-  #[error("TokenProgramInvalid")]
-  TokenProgramInvalid,
-  #[error("SystemProgramInvalid")]
-  SystemProgramInvalid,
+  #[error("TokenProgram")]
+  TokenProgram,
+  #[error("SystemProgram")]
+  SystemProgram,
   #[error("AtaOrOwner")]
   AtaOrOwner,
   #[error("AtaOrMint")]
@@ -57,8 +58,6 @@ pub enum MyError {
   PdaNotInitialized,
   #[error("Parse u64")]
   ParseU64,
-  #[error("MintOrTokenProgram")]
-  MintOrTokenProgram,
   #[error("Tok22AcctDisciminatorOffset")]
   Tok22AcctDisciminatorOffset,
   #[error("InputDataOverMax")]
@@ -97,19 +96,22 @@ pub enum MyError {
   NotRentExamptPDA,
   #[error("MintOrMintAuthority")]
   MintOrMintAuthority,
+  #[error("MintOrTokenProgram")]
+  MintOrTokenProgram,
   #[error("ErrorValue")]
   ErrorValue,
   #[error("PdaAuthority")]
   PdaAuthority,
   #[error("InsufficientFundNominal")]
   InsufficientFundNominal,
+  #[error("ToWallet")]
+  ToWallet,
 }
 impl From<MyError> for ProgramError {
   fn from(e: MyError) -> Self {
     ProgramError::Custom(e as u32)
   }
 }
-
 //Deserialize Errors from Raw Values
 impl TryFrom<u32> for MyError {
   type Error = ProgramError;
@@ -124,8 +126,8 @@ impl TryFrom<u32> for MyError {
       6 => Ok(MyError::MintDataLen),
       7 => Ok(MyError::TokAcctDataLen),
       8 => Ok(MyError::Tok22AcctDataLen),
-      9 => Ok(MyError::TokenProgramInvalid),
-      10 => Ok(MyError::SystemProgramInvalid),
+      9 => Ok(MyError::TokenProgram),
+      10 => Ok(MyError::SystemProgram),
       11 => Ok(MyError::AtaOrOwner),
       12 => Ok(MyError::AtaOrMint),
       13 => Ok(MyError::AtaCheckFailed),
@@ -139,28 +141,29 @@ impl TryFrom<u32> for MyError {
       21 => Ok(MyError::InputDataLen),
       22 => Ok(MyError::PdaNotInitialized),
       23 => Ok(MyError::ParseU64),
-      24 => Ok(MyError::MintOrTokenProgram),
-      25 => Ok(MyError::Tok22AcctDisciminatorOffset),
-      26 => Ok(MyError::InputDataOverMax),
-      27 => Ok(MyError::InputStrSliceOverMax),
-      28 => Ok(MyError::InputU8InvalidForBool),
-      29 => Ok(MyError::U64ByteSizeInvalid),
-      30 => Ok(MyError::U32ByteSizeInvalid),
-      31 => Ok(MyError::U16ByteSizeInvalid),
-      32 => Ok(MyError::U8ByteSizeInvalid),
-      33 => Ok(MyError::VaultPDA),
-      34 => Ok(MyError::ConfigDataLengh),
-      35 => Ok(MyError::FunctionSelector),
-      36 => Ok(MyError::ConfigPDA),
-      37 => Ok(MyError::InputStatus),
-      38 => Ok(MyError::MathOverflow),
-      39 => Ok(MyError::MathUnderflow),
-      40 => Ok(MyError::NotRentExamptMint22),
-      41 => Ok(MyError::NotRentExamptTokAcct22),
-      42 => Ok(MyError::NotRentExamptPDA),
-      43 => Ok(MyError::MintOrMintAuthority),
+      24 => Ok(MyError::Tok22AcctDisciminatorOffset),
+      25 => Ok(MyError::InputDataOverMax),
+      26 => Ok(MyError::InputStrSliceOverMax),
+      27 => Ok(MyError::InputU8InvalidForBool),
+      28 => Ok(MyError::U64ByteSizeInvalid),
+      29 => Ok(MyError::U32ByteSizeInvalid),
+      30 => Ok(MyError::U16ByteSizeInvalid),
+      31 => Ok(MyError::U8ByteSizeInvalid),
+      32 => Ok(MyError::VaultPDA),
+      33 => Ok(MyError::ConfigDataLengh),
+      34 => Ok(MyError::FunctionSelector),
+      35 => Ok(MyError::ConfigPDA),
+      36 => Ok(MyError::InputStatus),
+      37 => Ok(MyError::MathOverflow),
+      38 => Ok(MyError::MathUnderflow),
+      39 => Ok(MyError::NotRentExamptMint22),
+      40 => Ok(MyError::NotRentExamptTokAcct22),
+      41 => Ok(MyError::NotRentExamptPDA),
+      42 => Ok(MyError::MintOrMintAuthority),
+      43 => Ok(MyError::MintOrTokenProgram),
       44 => Ok(MyError::PdaAuthority),
       45 => Ok(MyError::InsufficientFundNominal),
+      46 => Ok(MyError::ToWallet),
       _ => Err(MyError::ErrorValue.into()),
     }
   }
@@ -179,8 +182,8 @@ impl ToStr for MyError {
       MyError::MintDataLen => "MintDataLen",
       MyError::TokAcctDataLen => "TokAcctDataLen",
       MyError::Tok22AcctDataLen => "Tok22AcctDataLen",
-      MyError::TokenProgramInvalid => "TokenProgramInvalid",
-      MyError::SystemProgramInvalid => "SystemProgramInvalid",
+      MyError::TokenProgram => "TokenProgram",
+      MyError::SystemProgram => "SystemProgram",
       MyError::AtaOrOwner => "AtaOrOwner",
       MyError::AtaOrMint => "AtaOrMint",
       MyError::AtaCheckFailed => "AtaCheckFailed",
@@ -194,7 +197,6 @@ impl ToStr for MyError {
       MyError::InputDataLen => "InputDataLen",
       MyError::PdaNotInitialized => "PdaNotInitialized",
       MyError::ParseU64 => "ParseU64",
-      MyError::MintOrTokenProgram => "MintOrTokenProgram",
       MyError::Tok22AcctDisciminatorOffset => "Tok22AcctDisciminatorOffset",
       MyError::InputDataOverMax => "InputDataOverMax",
       MyError::InputStrSliceOverMax => "InputStrSliceOverMax",
@@ -214,8 +216,10 @@ impl ToStr for MyError {
       MyError::NotRentExamptTokAcct22 => "NotRentExamptTokAcct22",
       MyError::NotRentExamptPDA => "NotRentExamptPDA",
       MyError::MintOrMintAuthority => "MintOrMintAuthority",
+      MyError::MintOrTokenProgram => "MintOrTokenProgram",
       MyError::PdaAuthority => "PdaAuthority",
       MyError::InsufficientFundNominal => "InsufficientFundNominal",
+      MyError::ToWallet => "ToWallet",
     }
   }
 }
@@ -273,6 +277,7 @@ pub fn max_data_len(data: &[u8], max: usize) -> Result<(), ProgramError> {
 }
 //----------------==
 pub fn derive_pda1(user: &AccountInfo, bstr: &[u8]) -> Result<(Pubkey, u8), ProgramError> {
+  log!("derive_pda1");
   //find_program_address(&[b"vault", user.key().as_ref()], &crate::ID)
   // let (pda, _bump) =
   try_find_program_address(&[bstr, user.key().as_ref()], &crate::ID)
