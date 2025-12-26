@@ -217,6 +217,7 @@ pub enum ProgramIx<'a> {
 /// Seed of the vault account PDA.
 pub const VAULT_SEED: &[u8] = b"vault";
 pub const CONFIG_SEED: &[u8] = b"config";
+pub const ESCROW_SEED: &[u8] = b"escrow";
 
 pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
   if !account.is_signer() {

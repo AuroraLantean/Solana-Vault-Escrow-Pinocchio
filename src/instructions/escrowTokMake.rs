@@ -1,13 +1,13 @@
 use core::convert::TryFrom;
-use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, pubkey, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
-  check_ata, check_decimals, check_mint0a, check_sysprog, executable, instructions::check_signer,
-  min_data_len, parse_u64, rent_exempt, writable,
+  check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, executable,
+  instructions::check_signer, min_data_len, parse_u64, rent_exempt, writable,
 };
 
-/// Escrow Token Make Offer
+/// Make Escrow Token Offer
 pub struct EscrowTokMake<'a> {
   pub maker: &'a AccountInfo, //signer
   pub from_ata: &'a AccountInfo,
@@ -56,6 +56,11 @@ impl<'a> EscrowTokMake<'a> {
     log!("EscrowTokMake 5");
     check_sysprog(system_program)?;
 
+    check_pda(to_wallet)?;
+    /*Make a valid program derived address without searching for a bump seed:
+    let seed = [(b"escrow"), maker.key().as_slice(), bump.as_ref()];
+    let seeds = &seed[..];
+    let pda = pubkey::checked_create_program_address(seeds, &crate::ID).unwrap();*/
     if to_ata.data_is_empty() {
       log!("Make to_ata");
       pinocchio_associated_token_account::instructions::Create {
