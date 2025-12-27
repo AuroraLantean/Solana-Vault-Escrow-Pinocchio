@@ -113,7 +113,7 @@ impl<'a> TokLgcDeposit<'a> {
       mint,
       to: to_ata,
       authority: user,
-      amount, // unsafe { *(data.as_ptr().add(1 + 8) as *const u64)}
+      amount,
       decimals,
     }
     .invoke()?;

@@ -1,10 +1,14 @@
 //use num_derive::FromPrimitive;
 use pinocchio::{
   account_info::AccountInfo,
-  program_error::{ProgramError, ToStr},
+  program_error::ProgramError,
+  program_error::ToStr,
+  pubkey::find_program_address,
   pubkey::{try_find_program_address, Pubkey},
+  sysvars::{rent::Rent, Sysvar},
 };
 use pinocchio_log::log;
+use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 use thiserror::Error;
 
 //TODO: put errors in error.rs ... https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-errors
@@ -223,8 +227,231 @@ impl ToStr for MyError {
     }
   }
 }
-//----------------==
-//----------------==
+
+//----------------== Account Verification Functions
+pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
+  if !account.is_signer() {
+    return Err(MyError::NotSigner.into());
+  }
+  Ok(())
+}
+pub fn check_mint0a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<(), ProgramError> {
+  //if !mint.is_owned_by(mint_authority)
+  if mint.data_len() != pinocchio_token::state::Mint::LEN {
+    return Err(MyError::MintDataLen.into());
+  }
+  if !token_program.key().eq(&pinocchio_token::ID) {
+    return Err(MyError::TokenProgram.into());
+  }
+  if mint.owner() != &pinocchio_token::ID {
+    return Err(MyError::MintOrTokenProgram.into());
+  }
+  Ok(())
+}
+
+pub fn check_mint0b(
+  mint: &AccountInfo,
+  mint_authority: &AccountInfo,
+  token_program: &AccountInfo,
+  decimals: u8,
+) -> Result<(), ProgramError> {
+  let mint_info = pinocchio_token::state::Mint::from_account_info(mint)?;
+  if mint_info
+    .mint_authority()
+    .is_some_and(|authority| !mint_authority.key().eq(authority))
+  {
+    return Err(MyError::MintOrMintAuthority.into());
+  }
+  if decimals != mint_info.decimals() {
+    return Err(MyError::DecimalsValue.into());
+  }
+  check_mint0a(mint, token_program)?;
+  //TODO: over mint supply?
+  Ok(())
+}
+
+pub fn check_mint22a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<(), ProgramError> {
+  //if !mint.is_owned_by(mint_authority)
+  if mint.data_len() != pinocchio_token_2022::state::Mint::BASE_LEN {
+    return Err(MyError::MintDataLen.into());
+  }
+  if !token_program.key().eq(&pinocchio_token_2022::ID) {
+    return Err(MyError::SystemProgram.into());
+  }
+  if mint.owner() != &pinocchio_token_2022::ID {
+    return Err(MyError::MintOrTokenProgram.into());
+  }
+  Ok(())
+}
+pub fn check_mint22b(
+  mint: &AccountInfo,
+  mint_authority: &AccountInfo,
+  token_program: &AccountInfo,
+  decimals: u8,
+) -> Result<(), ProgramError> {
+  let mint_info = pinocchio_token_2022::state::Mint::from_account_info(mint)?;
+
+  if mint_info
+    .mint_authority()
+    .is_some_and(|authority| !mint_authority.key().eq(authority))
+  {
+    return Err(MyError::MintOrMintAuthority.into());
+  }
+  if decimals != mint_info.decimals() {
+    return Err(MyError::DecimalsValue.into());
+  }
+  check_mint22a(mint, token_program)?;
+  //TODO: over mint supply?
+  Ok(())
+}
+
+pub fn check_ata(
+  ata: &AccountInfo,
+  owner: &AccountInfo,
+  mint: &AccountInfo,
+) -> Result<(), ProgramError> {
+  if ata
+    .data_len()
+    .ne(&pinocchio_token::state::TokenAccount::LEN)
+  {
+    return Err(MyError::TokAcctDataLen.into());
+  }
+  let ata_info = pinocchio_token::state::TokenAccount::from_account_info(ata)?;
+  if !ata_info.owner().eq(owner.key()) {
+    return Err(MyError::AtaOrOwner.into());
+  }
+  if !ata_info.mint().eq(mint.key()) {
+    return Err(MyError::AtaOrMint.into());
+  }
+  Ok(())
+}
+pub fn check_ata22(
+  ata: &AccountInfo,
+  owner: &AccountInfo,
+  mint: &AccountInfo,
+) -> Result<(), ProgramError> {
+  // token2022 ata has first 165 bytes the same as the legacy ata, but then some more data //log!("ata22 len:{}", ata.data_len());
+  let ata_info = TokenAccount22::from_account_info(ata)?;
+  if !ata_info.owner().eq(owner.key()) {
+    return Err(MyError::AtaOrOwner.into());
+  }
+  if !ata_info.mint().eq(mint.key()) {
+    return Err(MyError::AtaOrMint.into());
+  }
+  Ok(())
+}
+pub fn check_ata_x(
+  authority: &AccountInfo,
+  token_program: &AccountInfo,
+  mint: &AccountInfo,
+  ata: &AccountInfo,
+) -> Result<(), ProgramError> {
+  if find_program_address(
+    &[authority.key(), token_program.key(), mint.key()],
+    &pinocchio_associated_token_account::ID,
+  )
+  .0
+  .ne(ata.key())
+  {
+    return Err(MyError::AtaCheckFailed.into());
+  }
+  Ok(())
+}
+pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
+  if account.lamports() == 0 {
+    return Err(MyError::PdaNotInitialized.into());
+  }
+  if !account.is_owned_by(&crate::ID) {
+    return Err(MyError::ForeignPDA.into());
+  }
+  Ok(())
+}
+pub fn check_sysprog(system_program: &AccountInfo) -> Result<(), ProgramError> {
+  if !system_program.key().eq(&pinocchio_system::ID) {
+    return Err(MyError::SystemProgram.into());
+  }
+  Ok(())
+}
+
+//----------------== Check Account Properties
+pub fn writable(account: &AccountInfo) -> Result<(), ProgramError> {
+  if !account.is_writable() {
+    return Err(MyError::NotWritable.into());
+  }
+  Ok(())
+}
+pub fn executable(account: &AccountInfo) -> Result<(), ProgramError> {
+  if !account.executable() {
+    return Err(MyError::NotExecutable.into());
+  }
+  Ok(())
+}
+//TODO: Mint and ATA from TokenLgc works. For mint and ATA from Token2022?
+/// acc_type: 0 Mint, 1 TokenAccount
+pub fn rent_exempt(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
+  if acc_type == 0 && account.lamports() < Rent::get()?.minimum_balance(Mint22::BASE_LEN) {
+    return Err(MyError::NotRentExamptMint22.into());
+  }
+  if acc_type == 1 && account.lamports() < Rent::get()?.minimum_balance(TokenAccount22::BASE_LEN) {
+    return Err(MyError::NotRentExamptTokAcct22.into());
+  }
+  if acc_type > 1 {
+    return Err(MyError::AcctType.into());
+  }
+  Ok(())
+}
+
+pub fn empty_lamport(account: &AccountInfo) -> Result<(), ProgramError> {
+  if account.lamports() == 0 {
+    return Ok(());
+  }
+  Err(ProgramError::AccountAlreadyInitialized)
+}
+pub fn empty_data(account: &AccountInfo) -> Result<(), ProgramError> {
+  if account.data_len() == 0 {
+    return Ok(());
+  }
+  Err(MyError::EmptyData.into())
+}
+
+//----------------== Check Input Values
+pub fn min_data_len(data: &[u8], min: usize) -> Result<(), ProgramError> {
+  if data.len() < min {
+    return Err(MyError::InputDataLen.into());
+  }
+  Ok(())
+}
+pub fn max_data_len(data: &[u8], max: usize) -> Result<(), ProgramError> {
+  if data.len() > max {
+    return Err(MyError::InputDataOverMax.into());
+  }
+  Ok(())
+}
+
+pub fn check_decimals(mint: &AccountInfo, decimals: u8) -> Result<(), ProgramError> {
+  let mint_info = pinocchio_token::state::Mint::from_account_info(mint)?;
+  if decimals != mint_info.decimals() {
+    return Err(MyError::DecimalsValue.into());
+  }
+  Ok(())
+}
+pub fn check_decimals_max(decimals: u8, max: u8) -> Result<(), ProgramError> {
+  if decimals > max {
+    return Err(MyError::DecimalsValue.into());
+  }
+  Ok(())
+}
+pub fn check_str_len(s: &str, min_len: usize, max_len: usize) -> Result<(), ProgramError> {
+  if s.len() < min_len {
+    return Err(MyError::StrOverMax.into());
+  }
+  if s.len() > max_len {
+    return Err(MyError::StrUnderMin.into());
+  }
+  Ok(())
+}
+
+//----------------== Parse Functions
 /// Parse a u64 from u8 array
 pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
   let bytes: [u8; 8] = data
@@ -263,19 +490,8 @@ pub fn u8_to_bool(v: u8) -> Result<bool, ProgramError> {
     _ => Err(MyError::InputU8InvalidForBool.into()),
   }
 }
-pub fn min_data_len(data: &[u8], min: usize) -> Result<(), ProgramError> {
-  if data.len() < min {
-    return Err(MyError::InputDataLen.into());
-  }
-  Ok(())
-}
-pub fn max_data_len(data: &[u8], max: usize) -> Result<(), ProgramError> {
-  if data.len() > max {
-    return Err(MyError::InputDataOverMax.into());
-  }
-  Ok(())
-}
-//----------------==
+
+//----------------== Derive Functions
 pub fn derive_pda1(user: &AccountInfo, bstr: &[u8]) -> Result<(Pubkey, u8), ProgramError> {
   log!("derive_pda1");
   //find_program_address(&[b"vault", user.key().as_ref()], &crate::ID)
@@ -287,7 +503,8 @@ pub fn derive_pda1(user: &AccountInfo, bstr: &[u8]) -> Result<(Pubkey, u8), Prog
     &[PDA_SEED, &[self.datas.bump as u8]],
     &crate::ID,
 ) */
-//----------------==
+
+//----------------== Token 2022 Interface
 const TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET: usize = 165;
 pub const TOKEN_2022_MINT_DISCRIMINATOR: u8 = 0x01;
 pub const TOKEN_2022_TOKEN_ACCOUNT_DISCRIMINATOR: u8 = 0x02;

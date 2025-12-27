@@ -116,7 +116,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcMintToken<'a> {
           from: maker_ata,
           to: vault,
           authority: maker,
-          amount: unsafe { *(data.as_ptr().add(1 + 8) as *const u64)},
+          amount,
       }.invoke()?;
 
 //----------==

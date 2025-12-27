@@ -80,15 +80,15 @@ impl<'a> EscrowTokMake<'a> {
     }
     writable(vault_ata)?;
     rent_exempt(vault_ata, 1)?;
-    log!("ToATA is found/verified");
+    log!("EscrowTokMake 7: ToATA is found/verified");
 
-    log!("Transfer Tokens");
+    log!("EscrowTokMake 8: Transfer Tokens");
     pinocchio_token::instructions::TransferChecked {
       from: from_ata,
       mint: mint_maker,
       to: vault_ata,
       authority: maker,
-      amount, // unsafe { *(data.as_ptr().add(1 + 8) as *const u64)}
+      amount,
       decimals,
     }
     .invoke()?;

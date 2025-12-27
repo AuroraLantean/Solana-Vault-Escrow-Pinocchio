@@ -97,7 +97,7 @@ impl<'a> TokLgcRedeem<'a> {
       mint,
       to: to_ata,
       authority: from_pda,
-      amount, // unsafe { *(data.as_ptr().add(1 + 8) as *const u64)}
+      amount,
       decimals,
     }
     .invoke_signed(&[signer])?;
