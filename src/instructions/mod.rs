@@ -1,5 +1,4 @@
-use pinocchio::{account_info::AccountInfo, program_error::ProgramError};
-
+//---------------== Module Declaration
 #[allow(non_snake_case)]
 pub mod closeConfig;
 #[allow(non_snake_case)]
@@ -54,6 +53,7 @@ pub use withdrawSol::*;
 
 use shank::ShankInstruction;
 
+//---------------== Shank IDL Definition
 /// Shank IDL enum describes all program instructions and their required accounts.
 /// Manually write this below, then run IDL generation; This below does not affect runtime behavior.
 /// TODO: when is signer writable?
@@ -216,16 +216,10 @@ pub enum ProgramIx {
   EscrowTokMake { decimals: u8, bump: u8, amount: u64 },
 } //update here and lib.rs for new functions
 
-/// Seed of the vault account PDA.
+//---------------== Constant Values
+/// Seeds to generate PDA signers
 pub const VAULT_SEED: &[u8] = b"vault";
 pub const CONFIG_SEED: &[u8] = b"config";
 pub const ESCROW_SEED: &[u8] = b"escrow";
 
 pub const ACCOUNT_DISCRIMINATOR_SIZE: usize = 8;
-
-/// [4 (extension discriminator) + 32 (update_authority) + 32 (metadata)]
-pub const METADATA_POINTER_SIZE: usize = 4 + 32 + 32;
-/// [4 (extension discriminator) + 32 (update_authority) + 32 (mint) + 4 (size of name ) + 4 (size of symbol) + 4 (size of uri) + 4 (size of additional_metadata)]
-pub const METADATA_EXTENSION_BASE_SIZE: usize = 4 + 32 + 32 + 4 + 4 + 4 + 4;
-/// Padding used so that Mint and Account extensions start at the same index
-pub const EXTENSIONS_PADDING_AND_OFFSET: usize = 84;
