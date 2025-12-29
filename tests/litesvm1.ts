@@ -34,7 +34,7 @@ import {
 	usdcMint,
 	vaultProgram,
 } from "./litesvm-utils";
-import { bigintToBytes, bytesToBigint, toLam } from "./utils";
+import { as9zBn, bigintToBytes, bytesToBigint } from "./utils";
 
 const ownerKp = new Keypair();
 const adminKp = new Keypair();
@@ -117,26 +117,18 @@ test("hello world", () => {
 	expect(greetedAccountAfter?.data).toStrictEqual(new Uint8Array([1, 0, 0, 0]));
 });
 
-test("lamportsBytes", () => {
-	ll("\n------== lamportsBytes");
-	const amountNum = toLam(1.23);
-	const argData = bigintToBytes(amountNum);
-	const amountNumOut = bytesToBigint(argData);
-	ll("amountNumOut:", amountNumOut); //1230000000n
-});
-
 test("User1 Deposits SOL to vault1", () => {
 	ll("\n------== User1 Deposits SOL to vault1");
 	const disc = 0; //discriminator
 	ll("vaultPDA1:", vaultPDA1.toBase58());
 	const payer = user1Kp;
-	const amtlam = toLam(1.23);
+	const amtlam = as9zBn(1.23);
 	//ll(toLam(amtSol));1230000000n
 
 	const [programId] = vaultProgram(svm);
 	ll("programId:", programId.toBase58());
 
-	const argData = bigintToBytes(amtlam, 64);
+	const argData = bigintToBytes(amtlam);
 	//const bytes = [disc, ...argData];
 	//ll("bytes:", bytes);
 
@@ -186,12 +178,19 @@ test("User1 Deposits SOL to vault1", () => {
 	//expect(BigInt(lamports2a)).toEqual(amtLam);
 });
 
-test("parse u32", () => {
-	ll("\n------== parse u32");
-	const time1 = 1766946349n;
-	const argData = bigintToBytes(time1, 32);
-	const amountNumOut = bytesToBigint(argData, 32);
-	ll("amountNumOut:", amountNumOut); //1230000000n
+test("inputNum to/from Bytes", () => {
+	ll("\n------== inputNum to/from Bytes");
+	const amountNum = as9zBn(1.23);
+	const argData64 = bigintToBytes(amountNum);
+	const _amtOut64 = bytesToBigint(argData64);
+
+	const time1 = 1766946349;
+	const argData32 = bigintToBytes(time1, 32);
+	const _amtOut32 = bytesToBigint(argData32);
+
+	const u8Num = 37;
+	const argDataU8 = bigintToBytes(u8Num, 8);
+	const _amtOut8 = bytesToBigint(argDataU8);
 });
 
 test("infinite usdc mint", () => {
