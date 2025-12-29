@@ -67,7 +67,7 @@ impl Escrow {
 
   pub fn load(account: &AccountInfo) -> Result<&mut Self, ProgramError> {
     if account.data_len() != Escrow::LEN {
-      return Err(MyError::InputDataLen.into());
+      return Err(MyError::PdaDataLen.into());
     }
     //assert_eq!(account.data_len(), Escrow::LEN);
     if account.owner() != &crate::ID {

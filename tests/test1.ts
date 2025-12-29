@@ -26,10 +26,10 @@ import {
 	vaultRent,
 } from "./httpws";
 import { getAta, makeATA } from "./tokens";
-import { ATokenGPvbd, ll, toLam } from "./utils";
+import { ATokenGPvbd, as9zBn, ll } from "./utils";
 
-const amtDeposit = toLam(10);
-const amtWithdraw = toLam(9);
+const amtDeposit = as9zBn(10);
+const amtWithdraw = as9zBn(9);
 
 /*const base64Encoder = getBase64Encoder();
     let bytes = base64Encoder.encode(value.data[0]);

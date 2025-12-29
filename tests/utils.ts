@@ -32,6 +32,7 @@ export const USDC_DECIMALS = 6;
 export const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const USDT_MINT_ADDRESS = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 export const USDT_DECIMALS = 6;
+export const LAMPORTS_PER_SOL = 1000000000;
 
 export const MINIMUM_SLOT = 100;
 export const USDC_BALANCE = 100_000_000_000; // 100k USDC
@@ -114,8 +115,7 @@ export const bytesToBigint = (bytes: Uint8Array) => {
 	const length = bytes.length;
 	// bytes = decoder.decode(new Uint8Array([0x2a, 0x00, 0x00, 0x00]));
 	if (length === 8) {
-		//u64
-		//Returns a decoder that you can use to decode a byte array representing a 64-bit little endian number to a {@link Lamports} value.
+		//u64. Returns a decoder that you can use to decode a byte array representing a 64-bit little endian number to a {@link Lamports} value.
 		const lamportsDecoder = getLamportsDecoder(getU64Decoder()); //getDefaultLamportsDecoder()
 		bigint = lamportsDecoder.decode(bytes);
 	} else if (length === 4) {
@@ -144,11 +144,30 @@ export const bytesToBigint = (bytes: Uint8Array) => {
 	return bigint;
 };
 
+export const strToU8Fixed = (str: string, size: number) => {
+	const u8input = strToU8Array(str);
+	const inputLen = u8input.length;
+	if (inputLen > size) throw new Error("fixed size is too small");
+	if (inputLen === size) return u8input;
+
+	const u8out = new Uint8Array(size);
+	//ll("u8out:", u8out);
+	for (let i = 0; i < inputLen; i++) {
+		if (u8out[i] !== undefined && u8input[i] !== undefined) {
+			// biome-ignore lint/style/noNonNullAssertion: <>
+			u8out[i] = u8input[i]!;
+		} else {
+			throw new Error("undefined detected");
+		}
+	}
+	ll("u8out:", u8out);
+	return u8out;
+};
 export const strToU8Array = (str: string) => {
 	const u8array = Uint8Array.from(
 		Array.from(str).map((letter) => letter.charCodeAt(0)),
 	);
-	ll("u8array:", u8array);
+	ll(str, "to u8:", u8array);
 	return u8array;
 };
 export const u8ArrayToStr = (u8Array: Uint8Array) => {

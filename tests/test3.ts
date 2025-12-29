@@ -12,10 +12,10 @@ import {
 } from "./httpws";
 import {
 	ATokenGPvbd,
+	as9zBn,
 	getTime,
 	ll,
 	strToU8Array,
-	toLam,
 	u8ArrayToStr,
 } from "./utils";
 
@@ -31,7 +31,7 @@ test("programs exist", async () => {
 test("InitConfig", async () => {
 	ll("------== InitConfig");
 	ll("payer:", adminAddr);
-	const fee: bigint = toLam(111);
+	const fee: bigint = as9zBn(111);
 
 	const methodIx = vault.getInitConfigInstruction({
 		authority: adminKp,
@@ -54,12 +54,12 @@ test("UpdateConfig", async () => {
 	const bools = new Uint8Array([0, 1, 0, 1]);
 	const u8s = new Uint8Array([1, 2, 7, 8]);
 	const time = getTime();
-	ll("time:", time, ", u64a", toLam(37));
+	ll("time:", time, ", u64a", as9zBn(37));
 	const str1 = "SOL to the moon!";
 	const u8array = strToU8Array(str1);
 	const _str1b = u8ArrayToStr(u8array);
-	const newFee = toLam(137);
-	const newToken = toLam(243);
+	const newFee = as9zBn(137);
+	const newToken = as9zBn(243);
 
 	const methodIx = vault.getUpdateConfigInstruction({
 		authority: adminKp,
@@ -69,7 +69,7 @@ test("UpdateConfig", async () => {
 		bools,
 		u8s,
 		u32s: [time, time + 1, time + 2, time + 3],
-		u64s: [newFee, newToken, toLam(39), toLam(40)],
+		u64s: [newFee, newToken, as9zBn(39), as9zBn(40)],
 		strU8: u8array,
 	});
 	await sendTxn(methodIx, adminKp);

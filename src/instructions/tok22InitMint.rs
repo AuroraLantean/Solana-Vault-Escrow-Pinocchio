@@ -10,7 +10,7 @@ use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
   check_decimals_max, empty_data, empty_lamport, executable, instructions::check_signer,
-  max_data_len, min_data_len, u8_slice_to_array, writable,
+  min_data_len, to10bytes, to32bytes, to6bytes, writable,
 };
 use pinocchio_token_2022::{instructions::InitializeMint2, state::Mint};
 
@@ -22,7 +22,8 @@ pub struct Token2022InitMint<'a> {
   pub token_program: &'a AccountInfo,
   pub freeze_authority_opt: Option<&'a [u8; 32]>, // or Pubkey
   pub decimals: u8,
-  pub token_data: [u8; 32],
+  pub token_name: [u8; 10],
+  pub token_symbol: [u8; 6],
   pub token_uri: [u8; 32],
 }
 impl<'a> Token2022InitMint<'a> {
@@ -36,7 +37,8 @@ impl<'a> Token2022InitMint<'a> {
       token_program,
       freeze_authority_opt,
       decimals,
-      token_data: _,
+      token_name: _,
+      token_symbol: _,
       token_uri: _,
     } = self;
     log!("Token2022InitMint process()");
@@ -83,6 +85,7 @@ impl<'a> Token2022InitMint<'a> {
       token_program: token_program.key(),
     }
     .invoke()?;
+    //TODO: add metadata: https://solana.com/docs/tokens/extensions/metadata
     Ok(())
   }
   pub fn init_if_needed(self) -> ProgramResult {
@@ -113,17 +116,19 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
       None
     };
 
-    min_data_len(data, 64)?;
-    max_data_len(data, 64)?;
-
+    min_data_len(data, 49)?; //1+16+32=49
     let decimals = data[0];
     log!("decimals: {}", decimals);
 
-    // 32 = 10 token name + 6 token symbol + 8 max supply + 8 extra data
-    let token_data = *u8_slice_to_array(&data[1..32])?;
+    // 16 = 10 token name + 6 token symbol
+    let token_name = *to10bytes(&data[1..11])?;
+    log!("token_name: {}", &token_name);
+    let token_symbol = *to6bytes(&data[11..17])?;
+    log!("token_symbol: {}", &token_symbol);
 
     //32 length
-    let token_uri_array = *u8_slice_to_array(&data[32..64])?;
+    let token_uri = *to32bytes(&data[17..49])?;
+    log!("token_uri: {}", &token_uri);
 
     Ok(Self {
       payer,
@@ -132,8 +137,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
       token_program,
       freeze_authority_opt,
       decimals,
-      token_data,
-      token_uri: token_uri_array,
+      token_name,
+      token_symbol,
+      token_uri,
     })
   }
 }

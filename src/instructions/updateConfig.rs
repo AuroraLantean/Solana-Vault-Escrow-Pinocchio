@@ -3,8 +3,8 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-  check_pda, instructions::check_signer, max_data_len, parse_u32, parse_u64, u8_slice_to_array,
-  u8_to_bool, writable, Config, MyError, StatusEnum,
+  check_pda, instructions::check_signer, max_data_len, parse_u32, parse_u64, to32bytes, u8_to_bool,
+  writable, Config, MyError, StatusEnum,
 };
 
 /// Update Config PDA
@@ -106,7 +106,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     log!("u8s: {}, u32s: {}, u64s: {}", &u8s, &u32s, &u64s);
     let str_u8: &[u8] = &data[56..max_data_size1];
     log!("str_u8: {}", str_u8);
-    let str_u8array = u8_slice_to_array(str_u8)?;
+    let str_u8array = to32bytes(str_u8)?;
 
     //check Status input range
     if u8s[1] > 3 {

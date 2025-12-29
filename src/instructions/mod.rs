@@ -154,7 +154,12 @@ pub enum ProgramIx {
   #[account(3, name = "token_program", desc = "Token Program")]
   #[account(4, name = "freeze_authority_opt", desc = "Freeze Authority")]
   #[account(5, name = "system_program", desc = "System Program")]
-  Token2022InitMint { decimals: u8 },
+  Token2022InitMint {
+    decimals: u8,
+    token_name: [u8; 10],
+    token_symbol: [u8; 6],
+    token_uri: [u8; 32],
+  },
 
   /// 10 Token2022 Init ATA(Associated Token Acct)
   #[account(0, signer, writable, name = "payer", desc = "Payer")]

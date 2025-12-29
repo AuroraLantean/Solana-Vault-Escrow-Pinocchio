@@ -16,7 +16,7 @@ import {
 	user1Kp,
 } from "./httpws";
 import { getAta, makeATA } from "./tokens";
-import { ATokenGPvbd, findPdaV2, ll } from "./utils";
+import { ATokenGPvbd, findPdaV2, ll, strToU8Fixed } from "./utils";
 
 export const pda_bump = await findPdaV2(adminAddr, "vault", "Vault");
 export const vaultPDA: Address = pda_bump.pda;
@@ -28,6 +28,9 @@ describe("Vault Program", () => {
 		ll("payer:", adminAddr);
 		ll("mint_auth:", mintAuthority);
 		ll("mint22:", mint22);
+		const tokenName = strToU8Fixed("MoonDog", 10);
+		const tokenSymbol = strToU8Fixed("MDC", 6);
+		const tokenUri = strToU8Fixed("http://moondog.com", 32);
 
 		const methodIx = vault.getToken2022InitMintInstruction({
 			payer: adminKp,
@@ -37,6 +40,9 @@ describe("Vault Program", () => {
 			tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
 			systemProgram: SYSTEM_PROGRAM_ADDRESS,
 			decimals: 9,
+			tokenName,
+			tokenSymbol,
+			tokenUri,
 		});
 		await sendTxn(methodIx, adminKp);
 		ll("program execution successful");

@@ -56,18 +56,18 @@ pub enum MyError {
   StrOverMax,
   #[error("StrUnderMin")]
   StrUnderMin,
-  #[error("InputDataLen")]
-  InputDataLen,
+  #[error("InputDataUnderMin")]
+  InputDataUnderMin,
+  #[error("InputDataOverMax")]
+  InputDataOverMax,
   #[error("PdaNotInitialized")]
   PdaNotInitialized,
   #[error("Parse u64")]
   ParseU64,
   #[error("Tok22AcctDisciminatorOffset")]
   Tok22AcctDisciminatorOffset,
-  #[error("InputDataOverMax")]
-  InputDataOverMax,
-  #[error("InputStrSliceOverMax")]
-  InputStrSliceOverMax,
+  #[error("Xyz1")]
+  Xyz1,
   #[error("InputU8InvalidForBool")]
   InputU8InvalidForBool,
   #[error("U64ByteSizeInvalid")]
@@ -110,6 +110,14 @@ pub enum MyError {
   InsufficientFundNominal,
   #[error("ToWallet")]
   ToWallet,
+  #[error("PdaDataLen")]
+  PdaDataLen,
+  #[error("ByteSliceSize32")]
+  ByteSliceSize32,
+  #[error("ByteSliceSize10")]
+  ByteSliceSize10,
+  #[error("ByteSliceSize6")]
+  ByteSliceSize6,
 }
 impl From<MyError> for ProgramError {
   fn from(e: MyError) -> Self {
@@ -142,12 +150,12 @@ impl TryFrom<u32> for MyError {
       18 => Ok(MyError::AcctType),
       19 => Ok(MyError::StrOverMax),
       20 => Ok(MyError::StrUnderMin),
-      21 => Ok(MyError::InputDataLen),
-      22 => Ok(MyError::PdaNotInitialized),
-      23 => Ok(MyError::ParseU64),
-      24 => Ok(MyError::Tok22AcctDisciminatorOffset),
-      25 => Ok(MyError::InputDataOverMax),
-      26 => Ok(MyError::InputStrSliceOverMax),
+      21 => Ok(MyError::InputDataUnderMin),
+      22 => Ok(MyError::InputDataOverMax),
+      23 => Ok(MyError::PdaNotInitialized),
+      24 => Ok(MyError::ParseU64),
+      25 => Ok(MyError::Tok22AcctDisciminatorOffset),
+      26 => Ok(MyError::Xyz1),
       27 => Ok(MyError::InputU8InvalidForBool),
       28 => Ok(MyError::U64ByteSizeInvalid),
       29 => Ok(MyError::U32ByteSizeInvalid),
@@ -168,6 +176,10 @@ impl TryFrom<u32> for MyError {
       44 => Ok(MyError::PdaAuthority),
       45 => Ok(MyError::InsufficientFundNominal),
       46 => Ok(MyError::ToWallet),
+      47 => Ok(MyError::PdaDataLen),
+      48 => Ok(MyError::ByteSliceSize32),
+      49 => Ok(MyError::ByteSliceSize10),
+      50 => Ok(MyError::ByteSliceSize6),
       _ => Err(MyError::ErrorValue.into()),
     }
   }
@@ -198,12 +210,12 @@ impl ToStr for MyError {
       MyError::AcctType => "AcctType",
       MyError::StrOverMax => "StrOverMax",
       MyError::StrUnderMin => "StrUnderMin",
-      MyError::InputDataLen => "InputDataLen",
+      MyError::InputDataUnderMin => "InputDataUnderMin",
+      MyError::InputDataOverMax => "InputDataOverMax",
       MyError::PdaNotInitialized => "PdaNotInitialized",
       MyError::ParseU64 => "ParseU64",
       MyError::Tok22AcctDisciminatorOffset => "Tok22AcctDisciminatorOffset",
-      MyError::InputDataOverMax => "InputDataOverMax",
-      MyError::InputStrSliceOverMax => "InputStrSliceOverMax",
+      MyError::Xyz1 => "Xyz1",
       MyError::InputU8InvalidForBool => "InputU8InvalidForBool",
       MyError::U64ByteSizeInvalid => "U64ByteSizeInvalid",
       MyError::U32ByteSizeInvalid => "U32ByteSizeInvalid",
@@ -224,6 +236,10 @@ impl ToStr for MyError {
       MyError::PdaAuthority => "PdaAuthority",
       MyError::InsufficientFundNominal => "InsufficientFundNominal",
       MyError::ToWallet => "ToWallet",
+      MyError::PdaDataLen => "PdaDataLen",
+      MyError::ByteSliceSize32 => "ByteSliceSize32",
+      MyError::ByteSliceSize10 => "ByteSliceSize10",
+      MyError::ByteSliceSize6 => "ByteSliceSize6",
     }
   }
 }
@@ -417,7 +433,7 @@ pub fn empty_data(account: &AccountInfo) -> Result<(), ProgramError> {
 //----------------== Check Input Values
 pub fn min_data_len(data: &[u8], min: usize) -> Result<(), ProgramError> {
   if data.len() < min {
-    return Err(MyError::InputDataLen.into());
+    return Err(MyError::InputDataUnderMin.into());
   }
   Ok(())
 }
@@ -477,11 +493,21 @@ pub fn parse_u32(data: &[u8]) -> Result<u32, ProgramError> {
   }
   Ok(amt)
 }
-pub fn u8_slice_to_array(str_u8: &[u8]) -> Result<&[u8; 32], ProgramError> {
-  let str_u8array: &[u8; 32] = str_u8
+pub fn to32bytes(byte_slice: &[u8]) -> Result<&[u8; 32], ProgramError> {
+  let bytes: &[u8; 32] = byte_slice
     .try_into()
-    .map_err(|_| MyError::InputStrSliceOverMax)?;
-  return Ok(str_u8array);
+    .map_err(|_| MyError::ByteSliceSize32)?;
+  return Ok(bytes);
+}
+pub fn to10bytes(byte_slice: &[u8]) -> Result<&[u8; 10], ProgramError> {
+  let bytes: &[u8; 10] = byte_slice
+    .try_into()
+    .map_err(|_| MyError::ByteSliceSize10)?;
+  return Ok(bytes);
+}
+pub fn to6bytes(byte_slice: &[u8]) -> Result<&[u8; 6], ProgramError> {
+  let bytes: &[u8; 6] = byte_slice.try_into().map_err(|_| MyError::ByteSliceSize6)?;
+  return Ok(bytes);
 }
 pub fn u8_to_bool(v: u8) -> Result<bool, ProgramError> {
   match v {

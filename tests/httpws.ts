@@ -18,12 +18,11 @@ import {
 	setTransactionMessageLifetimeUsingBlockhash,
 	signTransactionMessageWithSigners,
 } from "@solana/kit";
-import { LAMPORTS_PER_SOL } from "gill";
 import * as vault from "../clients/js/src/generated/index";
 import { configAcctDecoder, type DecodedConfigAcct } from "./decoder";
 import { getAta } from "./tokens";
 import type { Data1 } from "./types";
-import { findPdaV2, llbalc } from "./utils";
+import { findPdaV2, LAMPORTS_PER_SOL, llbalc } from "./utils";
 
 export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
 
@@ -233,7 +232,9 @@ export const getTokBalc2 = async (
 
 //https://www.solanakit.com/docs/getting-started/send-transaction#confirmation-strategies
 export const sendTxn = async (
+	// biome-ignore lint/suspicious/noExplicitAny:<>
 	methodIx: any,
+	// biome-ignore lint/suspicious/noExplicitAny:<>
 	signerKp: any,
 	isVerbose = false,
 ) => {
