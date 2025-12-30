@@ -23,8 +23,8 @@ import {
 	AccountLayout,
 	getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import { TransactionMetadata } from "litesvm";
 import {
+	checkSuccess,
 	findPdaV1,
 	getLamports,
 	helloworldProgram,
@@ -108,7 +108,7 @@ test("hello world", () => {
 	});
 	const tx = new Transaction();
 	tx.recentBlockhash = blockhash;
-	tx.add(ix);
+	tx.add(ix); //tx.add(...ixs);
 	tx.sign(payer);
 	svm.sendTransaction(tx);
 
@@ -144,7 +144,7 @@ test("User1 Deposits SOL to vault1", () => {
 	});
 	const tx = new Transaction();
 	tx.recentBlockhash = blockhash;
-	tx.add(ix);
+	tx.add(ix); //tx.add(...ixs);
 	tx.sign(payer);
 
 	const simRes = svm.simulateTransaction(tx);
@@ -165,12 +165,7 @@ test("User1 Deposits SOL to vault1", () => {
 	//ll("sendRes:", sendRes);
 	//ll("sendRes.logs():", sendRes.logs());
 
-	if (sendRes instanceof TransactionMetadata) {
-		expect(simRes.meta().logs()).toStrictEqual(sendRes.logs());
-		expect(sendRes.logs()[15]).toStrictEqual(`Program ${programId} success`);
-	} else {
-		throw new Error("Unexpected tx failure");
-	}
+	checkSuccess(simRes, sendRes, programId, 15);
 	ll("after simulation");
 
 	const lamports2a = getLamports(svm, vaultPDA1);
@@ -195,13 +190,13 @@ test("inputNum to/from Bytes", () => {
 
 test("infinite usdc mint", () => {
 	const adminUsdcAta = getAssociatedTokenAddressSync(usdcMint, adminAddr, true);
-	const usdcToOwn = 1_000_000_000_000n;
-	const rawAccount = makeUsdcMint(adminAddr, adminUsdcAta, usdcToOwn);
+	const tokenAmount = 1_000_000_000_000n;
+	const rawAccount = makeUsdcMint(adminAddr, adminUsdcAta, tokenAmount);
 
 	expect(rawAccount).not.toBeNull();
 	const rawAccountData = rawAccount?.data;
 	const decoded = AccountLayout.decode(rawAccountData!);
-	expect(decoded.amount).toStrictEqual(usdcToOwn);
+	expect(decoded.amount).toStrictEqual(tokenAmount);
 });
 /*const c = svm.getClock();
     svm.setClock(

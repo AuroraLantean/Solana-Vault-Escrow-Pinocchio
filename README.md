@@ -18,6 +18,19 @@ The only dependencies are types from the Solana SDK. This mitigates dependency i
 
 the solana-program crate brings overhead. extra deserialization, hidden allocations, and increased binary size.
 
+### Why LiteSVM
+
+LiteSVM is a lightweight library for testing Solana Programs. Unlike other testing approaches that spin up separate validator processes, LiteSVM embeds the VM inside your tests, making them execute much faster.
+
+- Everything is Synchronous
+- Direct State Manipulation
+- Time Manipulation
+- Errors are Immediate and Clear
+
+```rust
+cargo add --dev litesvm litesvm-token solana-sdk
+```
+
 ### Environment
 
 Rust: 1.92.0 (ded5c06cf 2025-12-08);
@@ -80,7 +93,22 @@ Codama takes the Shank IDL and emits a TypeScript client. The generated code inc
 
 You'll see a clients/js/src/generated/ folder in our project with the program types our client code uses to send transactions to our program.
 
-### Run Tests
+### Run Tests via LiteSVM-Rust
+
+```bash
+cargo add --dev litesvm litesvm-token solana-sdk
+```
+
+### Run Tests via LiteSVM-NodeJs
+
+See tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
+
+```bash
+pnpm add -D litesvm @solana/web3.js @solana/spl-token
+bun test ./tests/litesvm1.ts
+```
+
+### Run Tests via Solana-Test-Validator
 
 Open two terminals at this project directory:
 Run in terminal 1:
@@ -97,13 +125,6 @@ solana program deploy --program-id target/deploy/pinocchio_vault-keypair.json ta
 bun test ./tests/test1.ts
 ```
 
-### LiteSVM
-
-Fast and lightweight library for testing Solana programs.
-
-```bash
-pnpm add -D litesvm @solana/web3.js @solana/spl-token
-```
 
 ### References
 
@@ -112,8 +133,10 @@ pnpm add -D litesvm @solana/web3.js @solana/spl-token
 - Bun Js Test: <https://bun.com/docs/test>
 - Solana Kit: <https://www.solanakit.com/docs/getting-started/send-transaction>
 - Solana Kit Account: <https://github.com/anza-xyz/kit/tree/main/packages/accounts>
-- LiteSVM: <https://github.com/LiteSVM/litesvm>
+- LiteSVM Docs: <https://www.litesvm.com/docs/getting-started>
+- LiteSVM GitHub: <https://github.com/LiteSVM/litesvm>
 - LiteSVM Example by Quicknode: <https://github.com/quiknode-labs/you-will-build-a-solana-program>
+- LiteSVM in JS: <https://litesvm.github.io/litesvm/tutorial.html>
 - Gill: <https://www.gillsdk.com/docs/guides/tokens/create-token>
 - Quicknode: <https://www.quicknode.com/guides/solana-development/pinocchio/how-to-build-and-deploy-a-solana-program-using-pinocchio>
 - How to Build Programs with Pinocchio: <https://www.helius.dev/blog/pinocchio#how-is-pinocchio-more-performant-than-solana-program>

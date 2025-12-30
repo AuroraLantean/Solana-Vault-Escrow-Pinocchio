@@ -16,3 +16,8 @@ pinocchio-token = "0.4.0"
 pinocchio-token-2022 = "0.1.0"
 shank = "0.4.6"
 thiserror = { version = "2.0.17", default-features = false }
+
+[dev-dependencies]
+litesvm = "0.8.2"
+litesvm-token = "0.8.2"
+solana-sdk = "3.0.0"

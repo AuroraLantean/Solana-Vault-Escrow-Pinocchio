@@ -1,3 +1,4 @@
+import { expect } from "bun:test";
 import {
 	ACCOUNT_SIZE,
 	AccountLayout,
@@ -10,7 +11,11 @@ import {
 	SystemProgram,
 	Transaction,
 } from "@solana/web3.js";
-import { ComputeBudget, LiteSVM } from "litesvm";
+import type {
+	FailedTransactionMetadata,
+	SimulatedTransactionInfo,
+} from "litesvm";
+import { ComputeBudget, LiteSVM, TransactionMetadata } from "litesvm";
 
 export const vaultProgAddr = new PublicKey(
 	"7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e",
@@ -151,3 +156,19 @@ export function helloworldProgram(
 	svm.addProgramFromFile(programId, programPath);
 	return [programId, greetedPubkey];
 }
+
+export const checkSuccess = (
+	simRes: FailedTransactionMetadata | SimulatedTransactionInfo,
+	sendRes: TransactionMetadata | FailedTransactionMetadata,
+	programId: PublicKey,
+	logIndex: number,
+) => {
+	if (sendRes instanceof TransactionMetadata) {
+		expect(simRes.meta().logs()).toStrictEqual(sendRes.logs());
+		expect(sendRes.logs()[logIndex]).toStrictEqual(
+			`Program ${programId} success`,
+		);
+	} else {
+		throw new Error("Unexpected tx failure");
+	}
+};
