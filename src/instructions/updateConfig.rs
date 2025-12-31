@@ -53,6 +53,7 @@ impl<'a> UpdateConfig<'a> {
     self.config.fee = self.u64s[0].to_le_bytes();
     //self.config.status = self.u8s[1];
     self.config.status = StatusEnum::from(self.u8s[1]);
+    self.config.str_u8array = *self.str_u8array;
     self.add_tokens()?;
     //self.update_authority()?;
     Ok(())

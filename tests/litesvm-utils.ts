@@ -15,20 +15,26 @@ import type {
 	FailedTransactionMetadata,
 	SimulatedTransactionInfo,
 } from "litesvm";
-import { ComputeBudget, type LiteSVM, TransactionMetadata } from "litesvm";
+import { ComputeBudget, LiteSVM, TransactionMetadata } from "litesvm";
+import {
+	adminAddr,
+	hackerAddr,
+	ownerAddr,
+	user1Addr,
+	user2Addr,
+	user3Addr,
+	vaultProgAddr,
+} from "./web3jsSetup";
 
-export const vaultProgAddr = new PublicKey(
-	"7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e",
-);
-export const systemProgram = new PublicKey("11111111111111111111111111111111");
-export const usdcMint = new PublicKey(
-	"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-);
-export const usdtMint = new PublicKey(
-	"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-);
-export const ll = console.log;
-ll("vaultProgAddr:", vaultProgAddr.toBase58());
+const ll = console.log;
+export const svm = new LiteSVM();
+export const initBalc = BigInt(LAMPORTS_PER_SOL) * BigInt(10);
+svm.airdrop(ownerAddr, initBalc);
+svm.airdrop(adminAddr, initBalc);
+svm.airdrop(user1Addr, initBalc);
+svm.airdrop(user2Addr, initBalc);
+svm.airdrop(user3Addr, initBalc);
+svm.airdrop(hackerAddr, initBalc);
 
 export function getRawAccount(svm: LiteSVM, address: PublicKey) {
 	const rawAccount = svm.getAccount(address);
@@ -48,6 +54,16 @@ export const findPdaV1 = (
 	ll(`${pdaName} pda: ${pda.toBase58()}, bump: ${bump}`);
 	return { pda, bump };
 };
+export const configPdaBump = findPdaV1(adminAddr, "config", "ConfigPDA");
+export const vaultPdaBump = findPdaV1(ownerAddr, "vault", "VaultPDA");
+export const vaultPdaBump1 = findPdaV1(user1Addr, "vault", "VaultPDA1");
+export const vaultPdaBump2 = findPdaV1(user2Addr, "vault", "VaultPDA2");
+export const vaultPdaBump3 = findPdaV1(user3Addr, "vault", "VaultPDA3");
+export const configPDA = configPdaBump.pda;
+export const vaultPDA = vaultPdaBump.pda;
+export const vaultPDA1 = vaultPdaBump1.pda;
+export const vaultPDA2 = vaultPdaBump2.pda;
+export const vaultPDA3 = vaultPdaBump3.pda;
 
 export type ConfigT = {
 	owner: PublicKey;
@@ -128,21 +144,18 @@ export const makeMint = (
 };
 
 //---------------== Deployment
-export const vaultProgram = (
-	svm: LiteSVM,
-	computeMaxUnits?: bigint,
-): [PublicKey] => {
-	const programId = vaultProgAddr;
-
+export const vaultProgram = (svm: LiteSVM, computeMaxUnits?: bigint) => {
+	ll("load VaultProgram...");
 	if (computeMaxUnits) {
 		const computeBudget = new ComputeBudget();
 		computeBudget.computeUnitLimit = computeMaxUnits;
 		svm = svm.withComputeBudget(computeBudget);
 	}
 	const programPath = "target/deploy/pinocchio_vault.so";
-	svm.addProgramFromFile(programId, programPath);
-	return [programId];
+	svm.addProgramFromFile(vaultProgAddr, programPath);
+	//return [programId];
 };
+vaultProgram(svm);
 
 export function helloworldProgram(
 	svm: LiteSVM,
@@ -172,14 +185,36 @@ export const checkSuccess = (
 	simRes: FailedTransactionMetadata | SimulatedTransactionInfo,
 	sendRes: TransactionMetadata | FailedTransactionMetadata,
 	programId: PublicKey,
-	logIndex: number,
+	isVerbose = false,
 ) => {
+	ll("\nsimRes meta prettylogs:", simRes.meta().prettyLogs());
+	if (isVerbose) {
+		ll("\nsimRes.meta().logs():", simRes.meta().logs());
+	}
+	/** simRes.meta():
+      computeUnitsConsumed: [class computeUnitsConsumed],
+      innerInstructions: [class innerInstructions],
+      logs: [class logs],
+      prettyLogs: [class prettyLogs],
+      returnData: [class returnData],
+      signature: [class signature],
+      toString: [class toString], */
 	if (sendRes instanceof TransactionMetadata) {
 		expect(simRes.meta().logs()).toStrictEqual(sendRes.logs());
-		expect(sendRes.logs()[logIndex]).toStrictEqual(
+
+		const logLength = simRes.meta().logs().length;
+		//ll("logLength:", logLength);
+		//ll("sendRes.logs()[logIndex]:", sendRes.logs()[logIndex]);
+		expect(sendRes.logs()[logLength - 1]).toStrictEqual(
 			`Program ${programId} success`,
 		);
 	} else {
+		ll("sendRes.err:", sendRes.err());
+		ll("sendRes.meta:", sendRes.meta());
+		ll("sendRes.toString:", sendRes.toString());
+		ll(
+			"find error here: https://docs.rs/solana-sdk/latest/solana_sdk/transaction/enum.TransactionError.html",
+		);
 		throw new Error("Unexpected tx failure");
 	}
 };

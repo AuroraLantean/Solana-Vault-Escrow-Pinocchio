@@ -14,66 +14,75 @@ import {
 	Transaction,
 	TransactionInstruction,
 } from "@solana/web3.js";
+import type {
+	FailedTransactionMetadata,
+	SimulatedTransactionInfo,
+	TransactionMetadata,
+} from "litesvm";
 import {
 	checkSuccess,
-	findPdaV1,
 	helloworldProgram,
-	ll,
+	initBalc,
 	makeMint,
-	systemProgram,
-	usdcMint,
-	vaultProgram,
+	svm,
+	vaultPDA1,
 } from "./litesvm-utils";
-import { as9zBn, bigintToBytes, bytesToBigint } from "./utils";
+import { as9zBn, bigintToBytes, bytesToBigint, ll } from "./utils";
 import {
 	adminAddr,
 	adminKp,
-	initBalc,
-	ownerAddr,
-	svm,
+	systemProgram,
+	usdcMint,
 	user1Addr,
 	user1Kp,
+	vaultProgAddr,
 } from "./web3jsSetup";
+
+let disc = 0; //discriminator
+let payerKp: Keypair;
+let amount: bigint;
+let amt: bigint;
+let argData: Uint8Array<ArrayBufferLike>;
+let blockhash: string;
+let ix: TransactionInstruction;
+let tx: Transaction;
+let simRes: FailedTransactionMetadata | SimulatedTransactionInfo;
+let sendRes: FailedTransactionMetadata | TransactionMetadata;
 
 const adminBalc = svm.getBalance(adminAddr);
 ll("admin SOL:", adminBalc);
 expect(adminBalc).toStrictEqual(initBalc);
 
-const vaultPdaBump = findPdaV1(ownerAddr, "vault", "VaultPDA");
-const vaultPdaBump1 = findPdaV1(user1Addr, "vault", "VaultPDA1");
-const _vaultPDA = vaultPdaBump.pda;
-const vaultPDA1 = vaultPdaBump1.pda;
-
 test("transfer SOL", () => {
-	const blockhash = svm.latestBlockhash();
-	const transferLamports = 1_000_000n;
+	blockhash = svm.latestBlockhash();
+	amount = 1_000_000n;
 	const ixs = [
 		SystemProgram.transfer({
 			fromPubkey: adminKp.publicKey,
 			toPubkey: user1Addr,
-			lamports: transferLamports,
+			lamports: amount,
 		}),
 	];
-	const tx = new Transaction();
+	tx = new Transaction();
 	tx.recentBlockhash = blockhash;
 	tx.add(...ixs);
 	tx.sign(adminKp);
 	svm.sendTransaction(tx);
 	const balanceAfter = svm.getBalance(user1Addr);
-	expect(balanceAfter).toStrictEqual(transferLamports + initBalc);
+	expect(balanceAfter).toStrictEqual(amount + initBalc);
 });
 
 test("hello world", () => {
 	const [programId, greetedPubkey] = helloworldProgram(svm);
 
-	const payer = new Keypair();
-	const amtInit = BigInt(LAMPORTS_PER_SOL);
-	svm.airdrop(payer.publicKey, amtInit);
+	payerKp = new Keypair();
+	amount = BigInt(LAMPORTS_PER_SOL);
+	svm.airdrop(payerKp.publicKey, amount);
 	const amt = svm.getBalance(greetedPubkey);
 	ll("payer SOL balc:", amt);
-	expect(amt).toStrictEqual(amtInit);
+	expect(amt).toStrictEqual(amount);
 
-	const blockhash = svm.latestBlockhash();
+	blockhash = svm.latestBlockhash();
 
 	const greetedAccountBefore = svm.getAccount(greetedPubkey);
 	expect(greetedAccountBefore).not.toBeNull();
@@ -81,15 +90,15 @@ test("hello world", () => {
 		new Uint8Array([0, 0, 0, 0]),
 	);
 
-	const ix = new TransactionInstruction({
+	ix = new TransactionInstruction({
 		keys: [{ pubkey: greetedPubkey, isSigner: false, isWritable: true }],
 		programId,
 		data: Buffer.from([0]),
 	});
-	const tx = new Transaction();
+	tx = new Transaction();
 	tx.recentBlockhash = blockhash;
 	tx.add(ix); //tx.add(...ixs);
-	tx.sign(payer);
+	tx.sign(payerKp);
 	svm.sendTransaction(tx);
 
 	const greetedAccountAfter = svm.getAccount(greetedPubkey);
@@ -99,58 +108,34 @@ test("hello world", () => {
 
 test("User1 Deposits SOL to vault1", () => {
 	ll("\n------== User1 Deposits SOL to vault1");
-	const disc = 0; //discriminator
+	disc = 0; //discriminator
 	ll("vaultPDA1:", vaultPDA1.toBase58());
-	const payer = user1Kp;
-	const amtlam = as9zBn(1.23);
+	payerKp = user1Kp;
+	amount = as9zBn(1.23);
 	//ll(toLam(amtSol));1230000000n
 
-	const [programId] = vaultProgram(svm);
-	ll("programId:", programId.toBase58());
-
-	const argData = bigintToBytes(amtlam);
+	argData = bigintToBytes(amount);
 	//const bytes = [disc, ...argData];
 	//ll("bytes:", bytes);
 
-	const blockhash = svm.latestBlockhash();
-	const ix = new TransactionInstruction({
+	blockhash = svm.latestBlockhash();
+	ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: payer.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: payerKp.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: vaultPDA1, isSigner: false, isWritable: true },
 			{ pubkey: systemProgram, isSigner: false, isWritable: false },
 		],
-		programId,
+		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
+	tx = new Transaction();
 	tx.recentBlockhash = blockhash;
 	tx.add(ix); //tx.add(...ixs);
-	tx.sign(payer);
+	tx.sign(payerKp);
 
-	const simRes = svm.simulateTransaction(tx);
-	ll("simRes meta logs:", simRes.meta().logs());
-	//ll("simRes meta prettylogs:", simRes.meta().prettyLogs());
-	ll("simRes meta returnData:", simRes.meta().returnData().toString()); //simRes.err(),
-	/** simRes.meta():
-  computeUnitsConsumed: [class computeUnitsConsumed],
-  innerInstructions: [class innerInstructions],
-  logs: [class logs],
-  prettyLogs: [class prettyLogs],
-  returnData: [class returnData],
-  signature: [class signature],
-  toString: [class toString], */
-
-	const sendRes = svm.sendTransaction(tx);
-	ll("\nsendRes:", sendRes.toString()); //sendRes.err(),sendRes.meta()
-	//ll("sendRes:", sendRes);
-	//ll("sendRes.logs():", sendRes.logs());
-
-	checkSuccess(simRes, sendRes, programId, 15);
-	ll("after simulation");
-
-	const lamports2a = svm.getBalance(vaultPDA1);
-	ll("lamports2a:", lamports2a);
-	//expect(amtAdmin).toStrictEqual(initBalc);
+	simRes = svm.simulateTransaction(tx);
+	sendRes = svm.sendTransaction(tx);
+	checkSuccess(simRes, sendRes, vaultProgAddr);
 });
 
 test("inputNum to/from Bytes", () => {
@@ -170,7 +155,7 @@ test("inputNum to/from Bytes", () => {
 
 test("infinite usdc mint", () => {
 	const adminUsdcAta = getAssociatedTokenAddressSync(usdcMint, adminAddr, true);
-	const amt = 1_000_000_000_000n;
+	amt = 1_000_000_000_000n;
 	const rawAccount = makeMint(svm, usdcMint, adminAddr, adminUsdcAta, amt);
 
 	expect(rawAccount).not.toBeNull();
@@ -191,4 +176,4 @@ Copying Accounts from a live environment
 https://litesvm.github.io/litesvm/tutorial.html#copying-accounts-from-a-live-environment
 */
 
-ll("LiteSVM finished");
+ll("LiteSVM1 finished");

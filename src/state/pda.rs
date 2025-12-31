@@ -5,10 +5,11 @@ use crate::MyError;
 #[derive(Clone, Copy, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct Config {
-  pub authority: Pubkey,      //32
-  pub fee: [u8; 8],           //u64,
-  pub sol_balance: [u8; 8],   //8
-  pub token_balance: [u8; 8], //8
+  pub authority: Pubkey,      // 32
+  pub str_u8array: [u8; 32],  // 32
+  pub fee: [u8; 8],           // 8 for u64,
+  pub sol_balance: [u8; 8],   // 8
+  pub token_balance: [u8; 8], // 8
   pub status: StatusEnum,     // 1
   pub bump: u8,               // 1
 }

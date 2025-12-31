@@ -21,16 +21,11 @@ import {
 import chalk from "chalk";
 import * as vault from "../clients/js/src/generated/index";
 
-export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
-ll("vaultProgAddr:", vaultProgAddr);
-export const ATokenGPvbd =
-	"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" as Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">;
-
+//-----------== General Config
 export const network = "mainnet-beta"; //devnet
 export const PROJECT_DIRECTORY = ""; // Leave empty if using default anchor project
+
 export const USDC_DECIMALS = 6;
-export const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-export const USDT_MINT_ADDRESS = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 export const USDT_DECIMALS = 6;
 export const LAMPORTS_PER_SOL = 1000000000;
 
@@ -42,7 +37,8 @@ export const week = 604800;
 
 export const decimalsSOL = BigInt(9);
 export const baseSOL = BigInt(10) ** decimalsSOL;
-export const amtAirdrop = BigInt(100) * baseSOL;
+
+//-----------==
 export const as9zBn = (amt: number) => {
 	if (Number.isInteger(amt)) {
 		return BigInt(amt) * baseSOL;
@@ -51,6 +47,11 @@ export const as9zBn = (amt: number) => {
 };
 export const fromLam = (amt: number) => BigInt(amt) / baseSOL;
 
+//-----------== SolanaKit setup
+export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
+ll("vaultProgAddr:", vaultProgAddr);
+export const ATokenGPvbd =
+	"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" as Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">;
 export const findPdaV2 = async (
 	addr: Address<string>,
 	seedStr: string,
@@ -68,6 +69,7 @@ export const findPdaV2 = async (
 	return { pda, bump };
 };
 
+//-----------==
 export const llBl = (txt: string) => {
 	ll(chalk.blue(txt));
 };

@@ -29,7 +29,7 @@ test("programs exist", async () => {
 });
 
 test("InitConfig", async () => {
-	ll("------== InitConfig");
+	ll("\n------== InitConfig");
 	ll("payer:", adminAddr);
 	const fee: bigint = as9zBn(111);
 
@@ -49,7 +49,7 @@ test("InitConfig", async () => {
 }, 10000); //Timeouts
 
 test("UpdateConfig", async () => {
-	ll("------== UpdateConfig");
+	ll("\n------== UpdateConfig");
 	ll("payer:", adminAddr);
 	const bools = new Uint8Array([0, 1, 0, 1]);
 	const u8s = new Uint8Array([1, 2, 7, 8]);
@@ -58,8 +58,8 @@ test("UpdateConfig", async () => {
 	const str1 = "SOL to the moon!";
 	const u8array = strToU8Array(str1);
 	const _str1b = u8ArrayToStr(u8array);
-	const newFee = as9zBn(137);
-	const newToken = as9zBn(243);
+	const newFee = as9zBn(112);
+	const newTokBalc = as9zBn(243);
 
 	const methodIx = vault.getUpdateConfigInstruction({
 		authority: adminKp,
@@ -69,7 +69,7 @@ test("UpdateConfig", async () => {
 		bools,
 		u8s,
 		u32s: [time, time + 1, time + 2, time + 3],
-		u64s: [newFee, newToken, as9zBn(39), as9zBn(40)],
+		u64s: [newFee, newTokBalc, as9zBn(39), as9zBn(40)],
 		strU8: u8array,
 	});
 	await sendTxn(methodIx, adminKp);
@@ -78,5 +78,5 @@ test("UpdateConfig", async () => {
 	const configData = await readConfigData(configPDA, "configPDA");
 	expect(configData.authority).toEqual(adminAddr);
 	expect(configData.fee).toEqual(newFee);
-	expect(configData.tokenBalance).toEqual(newToken);
+	expect(configData.tokenBalance).toEqual(newTokBalc);
 });
