@@ -1,5 +1,12 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <> */
 import { expect, test } from "bun:test";
+
+//Tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
+import {
+	//	ACCOUNT_SIZE,	TOKEN_PROGRAM_ID,
+	AccountLayout,
+	getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 import {
 	Keypair,
 	LAMPORTS_PER_SOL,
@@ -7,58 +14,30 @@ import {
 	Transaction,
 	TransactionInstruction,
 } from "@solana/web3.js";
-//Node-LiteSVM uses web3.js! https://github.com/LiteSVM/litesvm/tree/master/crates/node-litesvm
-import { LiteSVM } from "litesvm";
-
-/*import {
-	getAssociatedTokenAddressSync,
-	AccountLayout,
-	ACCOUNT_SIZE,
-	TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-*/
-//import * as vault from "../clients/js/src/generated/index";
-
-import {
-	AccountLayout,
-	getAssociatedTokenAddressSync,
-} from "@solana/spl-token";
 import {
 	checkSuccess,
 	findPdaV1,
-	getLamports,
 	helloworldProgram,
 	ll,
-	makeUsdcMint,
+	makeMint,
 	systemProgram,
 	usdcMint,
 	vaultProgram,
 } from "./litesvm-utils";
 import { as9zBn, bigintToBytes, bytesToBigint } from "./utils";
+import {
+	adminAddr,
+	adminKp,
+	initBalc,
+	ownerAddr,
+	svm,
+	user1Addr,
+	user1Kp,
+} from "./web3jsSetup";
 
-const ownerKp = new Keypair();
-const adminKp = new Keypair();
-const user1Kp = new Keypair();
-const user2Kp = new Keypair();
-const user3Kp = new Keypair();
-const hackerKp = new Keypair();
-const ownerAddr = ownerKp.publicKey;
-const adminAddr = adminKp.publicKey;
-const user1Addr = user1Kp.publicKey;
-const user2Addr = user2Kp.publicKey;
-const user3Addr = user3Kp.publicKey;
-const hackerAddr = hackerKp.publicKey;
-
-const initBalc = BigInt(LAMPORTS_PER_SOL) * BigInt(10);
-const svm = new LiteSVM();
-svm.airdrop(ownerAddr, initBalc);
-svm.airdrop(adminAddr, initBalc);
-svm.airdrop(user1Addr, initBalc);
-svm.airdrop(user2Addr, initBalc);
-svm.airdrop(user3Addr, initBalc);
-svm.airdrop(hackerAddr, initBalc);
 const adminBalc = svm.getBalance(adminAddr);
-ll("adminBalc:", adminBalc);
+ll("admin SOL:", adminBalc);
+expect(adminBalc).toStrictEqual(initBalc);
 
 const vaultPdaBump = findPdaV1(ownerAddr, "vault", "VaultPDA");
 const vaultPdaBump1 = findPdaV1(user1Addr, "vault", "VaultPDA1");
@@ -88,10 +67,11 @@ test("hello world", () => {
 	const [programId, greetedPubkey] = helloworldProgram(svm);
 
 	const payer = new Keypair();
-	svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
-	const amt = getLamports(svm, greetedPubkey);
+	const amtInit = BigInt(LAMPORTS_PER_SOL);
+	svm.airdrop(payer.publicKey, amtInit);
+	const amt = svm.getBalance(greetedPubkey);
 	ll("payer SOL balc:", amt);
-	expect(amt).toEqual(LAMPORTS_PER_SOL);
+	expect(amt).toStrictEqual(amtInit);
 
 	const blockhash = svm.latestBlockhash();
 
@@ -168,9 +148,9 @@ test("User1 Deposits SOL to vault1", () => {
 	checkSuccess(simRes, sendRes, programId, 15);
 	ll("after simulation");
 
-	const lamports2a = getLamports(svm, vaultPDA1);
+	const lamports2a = svm.getBalance(vaultPDA1);
 	ll("lamports2a:", lamports2a);
-	//expect(BigInt(lamports2a)).toEqual(amtLam);
+	//expect(amtAdmin).toStrictEqual(initBalc);
 });
 
 test("inputNum to/from Bytes", () => {
@@ -190,13 +170,13 @@ test("inputNum to/from Bytes", () => {
 
 test("infinite usdc mint", () => {
 	const adminUsdcAta = getAssociatedTokenAddressSync(usdcMint, adminAddr, true);
-	const tokenAmount = 1_000_000_000_000n;
-	const rawAccount = makeUsdcMint(adminAddr, adminUsdcAta, tokenAmount);
+	const amt = 1_000_000_000_000n;
+	const rawAccount = makeMint(svm, usdcMint, adminAddr, adminUsdcAta, amt);
 
 	expect(rawAccount).not.toBeNull();
 	const rawAccountData = rawAccount?.data;
 	const decoded = AccountLayout.decode(rawAccountData!);
-	expect(decoded.amount).toStrictEqual(tokenAmount);
+	expect(decoded.amount).toStrictEqual(amt);
 });
 
 /*Test with Time Travel: https://litesvm.github.io/litesvm/tutorial.html#time-travel

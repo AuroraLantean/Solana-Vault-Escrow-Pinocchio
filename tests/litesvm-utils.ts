@@ -15,7 +15,7 @@ import type {
 	FailedTransactionMetadata,
 	SimulatedTransactionInfo,
 } from "litesvm";
-import { ComputeBudget, LiteSVM, TransactionMetadata } from "litesvm";
+import { ComputeBudget, type LiteSVM, TransactionMetadata } from "litesvm";
 
 export const vaultProgAddr = new PublicKey(
 	"7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e",
@@ -24,8 +24,16 @@ export const systemProgram = new PublicKey("11111111111111111111111111111111");
 export const usdcMint = new PublicKey(
 	"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
 );
+export const usdtMint = new PublicKey(
+	"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+);
 export const ll = console.log;
 ll("vaultProgAddr:", vaultProgAddr.toBase58());
+
+export function getRawAccount(svm: LiteSVM, address: PublicKey) {
+	const rawAccount = svm.getAccount(address);
+	return rawAccount;
+}
 
 export const findPdaV1 = (
 	userAddr: PublicKey,
@@ -59,15 +67,15 @@ export const getConfigAcct = (
 };
 
 export const makeAccount = (
-	payer: Keypair,
-	dataAccount: Keypair,
-	programId: PublicKey,
 	svm: LiteSVM,
+	payer: Keypair,
+	acctKp: Keypair,
+	programId: PublicKey,
 ) => {
 	const ixs = [
 		SystemProgram.createAccount({
 			fromPubkey: payer.publicKey,
-			newAccountPubkey: dataAccount.publicKey,
+			newAccountPubkey: acctKp.publicKey,
 			lamports: Number(svm.minimumBalanceForRentExemption(BigInt(4))),
 			space: 4,
 			programId: programId,
@@ -80,17 +88,24 @@ export const makeAccount = (
 	tx.sign(payer);
 	svm.sendTransaction(tx);
 };
-export const makeUsdcMint = (
+
+//-------------==
+
+//-------------== USDC or USDT
+export const makeMint = (
+	svm: LiteSVM,
+	mint: PublicKey,
 	owner: PublicKey,
 	ata: PublicKey,
-	usdcToOwn: bigint,
+	tokenAmount: bigint,
 ) => {
 	const tokenAccData = Buffer.alloc(ACCOUNT_SIZE);
 	AccountLayout.encode(
 		{
-			mint: usdcMint,
+			mint,
 			owner,
-			amount: usdcToOwn,
+			//decimal: 6,
+			amount: tokenAmount,
 			delegateOption: 0,
 			delegate: PublicKey.default,
 			delegatedAmount: 0n,
@@ -102,7 +117,6 @@ export const makeUsdcMint = (
 		},
 		tokenAccData,
 	);
-	const svm = new LiteSVM();
 	svm.setAccount(ata, {
 		lamports: 1_000_000_000,
 		data: tokenAccData,
@@ -112,11 +126,8 @@ export const makeUsdcMint = (
 	const rawAccount = svm.getAccount(ata);
 	return rawAccount;
 };
-//note-litesvm/tests/utils.ts...
-export function getLamports(svm: LiteSVM, address: PublicKey): number | null {
-	const acc = svm.getAccount(address);
-	return acc === null ? null : acc.lamports;
-}
+
+//---------------== Deployment
 export const vaultProgram = (
 	svm: LiteSVM,
 	computeMaxUnits?: bigint,

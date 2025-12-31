@@ -85,7 +85,7 @@ impl<'a> Token2022InitMint<'a> {
       token_program: token_program.key(),
     }
     .invoke()?;
-    //TODO: add metadata: https://solana.com/docs/tokens/extensions/metadata
+    //TODO: search "InitializeMetadataPointer solana token 2022" to add metadata: https://solana.com/docs/tokens/extensions/metadata
     Ok(())
   }
   pub fn init_if_needed(self) -> ProgramResult {

@@ -1,10 +1,9 @@
 use litesvm::LiteSVM;
-use litesvm_token::spl_token::instruction::transfer;
 use solana_keypair::Keypair;
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 //use solana_message::Message;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::{inner_instruction, transaction::Transaction};
 //use solana_signer::Signer;
 //use solana_system_interface::instruction::transfer;
 //use solana_transaction::Transaction;
@@ -42,17 +41,12 @@ fn test_transfer() {
   // Fund Alice
   svm.airdrop(&alice.pubkey(), 2_000_000_000).unwrap();
 
-  /*let instruction = transfer(&alice.pubkey(), &bob.pubkey(), 1_000_000_000);
-  /* token_program_id: &Pubkey,
-  source_pubkey: &Pubkey,
-  destination_pubkey: &Pubkey,
-  authority_pubkey: &Pubkey,
-  signer_pubkeys: &[&Pubkey],
-  amount: u64,  */
+  /*https://www.litesvm.com/docs/examples/sol-transfer
+  let ix = transfer(&alice.pubkey(), &bob.pubkey(), 1_000_000_000);
 
   // Build and sign transaction
   let tx = Transaction::new_signed_with_payer(
-    &[instruction],
+    &[ix],
     Some(&alice.pubkey()),
     &[&alice],
     svm.latest_blockhash(),

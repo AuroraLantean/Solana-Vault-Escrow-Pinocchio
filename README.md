@@ -125,7 +125,6 @@ solana program deploy --program-id target/deploy/pinocchio_vault-keypair.json ta
 bun test ./tests/test1.ts
 ```
 
-
 ### References
 
 - Pinocchio: <https://github.com/anza-xyz/pinocchio>
