@@ -10,7 +10,8 @@ pub struct Config {
   fee: [u8; 8],              // 8 for u64,
   sol_balance: [u8; 8],      // 8
   token_balance: [u8; 8],    // 8
-  pub status: StatusEnum,    // 1
+  pub is_authorized: bool,   // 1
+  pub status: Status,        // 1
   pub bump: u8,              // 1
 } // padding: [u8; 6] since the struct size needs to be aligned to 32 bytes.
 
@@ -26,7 +27,10 @@ impl Config {
   pub fn token_balance(&self) -> u64 {
     u64::from_le_bytes(self.token_balance)
   }
-
+  pub fn read(pda: &AccountInfo) -> Result<&Self, ProgramError> {
+    Self::check(pda)?;
+    Ok(unsafe { &*(pda.borrow_mut_data_unchecked().as_ptr() as *const Self) })
+  }
   pub fn check(pda: &AccountInfo) -> Result<(), ProgramError> {
     if pda.data_len() != Self::LEN {
       return Err(MyError::ConfigDataLengh.into());
@@ -34,10 +38,11 @@ impl Config {
     if pda.owner() != &crate::ID {
       return Err(MyError::ForeignPDA.into());
     }
-    // CHECK alignment for the most restrictive field (u64 in this case)... avoided by using byte arrays
+    // CHECK alignment for the most restrictive field (u64 in this case)... Alignment requirement checking can be removed ONLY IF you know all numbers are using u8 arrays
     /*if (pda.borrow_mut_data_unchecked().as_ptr() as usize) % core::mem::align_of::<Self>() != 0 { return Err();  }*/
     Ok(())
   }
+  //better to use setters below
   pub fn load(pda: &AccountInfo) -> Result<&mut Self, ProgramError> {
     Self::check(pda)?;
     unsafe { Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
@@ -45,28 +50,52 @@ impl Config {
   pub fn load_unchecked(pda: &AccountInfo) -> Result<&mut Self, ProgramError> {
     unsafe { Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
   }
-  pub fn read(pda: &AccountInfo) -> Result<&Self, ProgramError> {
-    Self::check(pda)?;
-    Ok(unsafe { &*(pda.borrow_mut_data_unchecked().as_ptr() as *const Self) })
+  //Setters
+  pub fn set_authority(&mut self, authority: Pubkey) {
+    self.authority = authority;
+  }
+  pub fn set_str_u8array(&mut self, str_u8array: [u8; 32]) {
+    self.str_u8array = str_u8array;
+  }
+  pub fn set_fee(&mut self, amt: u64) {
+    self.fee = amt.to_le_bytes();
+  }
+  pub fn set_sol_balance(&mut self, amt: u64) {
+    self.sol_balance = amt.to_le_bytes();
+  }
+  pub fn set_token_balance(&mut self, amt: u64) {
+    self.token_balance = amt.to_le_bytes();
+  }
+  pub fn set_bump(&mut self, amt: u8) {
+    self.bump = amt;
+  }
+  pub fn set_status(&mut self, status: Status) {
+    self.status = status;
+  }
+  pub fn set_is_authorized(&mut self, boo: bool) {
+    self.is_authorized = boo;
   }
 }
 
-#[repr(C)] //keeps the struct layout the same across different architectures
+//#[repr(C)] keeps the struct layout the same across different architectures
+#[repr(u8)]
 #[derive(Clone, Copy, Debug)]
-pub enum StatusEnum {
-  Waiting,
-  Active,
-  Expired,
-  Paused,
+pub enum Status {
+  Waiting = 0,
+  Active = 1,
+  Expired = 2,
+  Paused = 3,
+  Canceled = 4,
 }
-impl From<u8> for StatusEnum {
+impl From<u8> for Status {
   fn from(num: u8) -> Self {
     match num {
-      0 => StatusEnum::Waiting,
-      1 => StatusEnum::Active,
-      2 => StatusEnum::Expired,
-      3 => StatusEnum::Paused,
-      _ => StatusEnum::Expired,
+      0 => Status::Waiting,
+      1 => Status::Active,
+      2 => Status::Expired,
+      3 => Status::Paused,
+      4 => Status::Canceled,
+      _ => Status::Expired,
     }
   }
 }

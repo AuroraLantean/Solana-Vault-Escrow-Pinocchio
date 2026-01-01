@@ -11,6 +11,8 @@ use pinocchio_log::log;
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 use thiserror::Error;
 
+use crate::Status;
+
 //TODO: put errors in error.rs ... https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-errors
 #[derive(Clone, Debug, Eq, Error, PartialEq)] //FromPrimitive
 pub enum MyError {
@@ -66,8 +68,8 @@ pub enum MyError {
   ParseU64,
   #[error("Tok22AcctDisciminatorOffset")]
   Tok22AcctDisciminatorOffset,
-  #[error("Xyz1")]
-  Xyz1,
+  #[error("InputU8InvalidForStatus")]
+  InputU8InvalidForStatus,
   #[error("InputU8InvalidForBool")]
   InputU8InvalidForBool,
   #[error("U64ByteSizeInvalid")]
@@ -155,7 +157,7 @@ impl TryFrom<u32> for MyError {
       23 => Ok(MyError::PdaNotInitialized),
       24 => Ok(MyError::ParseU64),
       25 => Ok(MyError::Tok22AcctDisciminatorOffset),
-      26 => Ok(MyError::Xyz1),
+      26 => Ok(MyError::InputU8InvalidForStatus),
       27 => Ok(MyError::InputU8InvalidForBool),
       28 => Ok(MyError::U64ByteSizeInvalid),
       29 => Ok(MyError::U32ByteSizeInvalid),
@@ -215,7 +217,7 @@ impl ToStr for MyError {
       MyError::PdaNotInitialized => "PdaNotInitialized",
       MyError::ParseU64 => "ParseU64",
       MyError::Tok22AcctDisciminatorOffset => "Tok22AcctDisciminatorOffset",
-      MyError::Xyz1 => "Xyz1",
+      MyError::InputU8InvalidForStatus => "InputU8InvalidForStatus",
       MyError::InputU8InvalidForBool => "InputU8InvalidForBool",
       MyError::U64ByteSizeInvalid => "U64ByteSizeInvalid",
       MyError::U32ByteSizeInvalid => "U32ByteSizeInvalid",
@@ -497,6 +499,8 @@ pub fn to32bytes(byte_slice: &[u8]) -> Result<&[u8; 32], ProgramError> {
   let bytes: &[u8; 32] = byte_slice
     .try_into()
     .map_err(|_| MyError::ByteSliceSize32)?;
+  //let mut str_u8array = [0u8; 32];
+  //str_u8array.copy_from_slice(&data[10..42]);
   return Ok(bytes);
 }
 pub fn to10bytes(byte_slice: &[u8]) -> Result<&[u8; 10], ProgramError> {
@@ -514,6 +518,16 @@ pub fn u8_to_bool(v: u8) -> Result<bool, ProgramError> {
     0 => Ok(false),
     1 => Ok(true),
     _ => Err(MyError::InputU8InvalidForBool.into()),
+  }
+}
+pub fn u8_to_status(v: u8) -> Result<Status, ProgramError> {
+  match v {
+    0 => Ok(Status::Waiting),
+    1 => Ok(Status::Active),
+    2 => Ok(Status::Expired),
+    3 => Ok(Status::Paused),
+    4 => Ok(Status::Canceled),
+    _ => Err(MyError::InputU8InvalidForStatus.into()),
   }
 }
 

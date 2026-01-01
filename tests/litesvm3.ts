@@ -15,7 +15,7 @@ import {
 	svm,
 	vaultPDA1,
 } from "./litesvm-utils";
-import { as9zBn, bigintToBytes, ll } from "./utils";
+import { as9zBn, bigintToBytes, boolToBytes, ll } from "./utils";
 import {
 	adminAddr,
 	adminKp,
@@ -34,7 +34,8 @@ let authority: PublicKey;
 let originalOwner: PublicKey;
 let _amount: bigint;
 let _amt: bigint;
-let argData: Uint8Array<ArrayBufferLike>;
+let isAuthorized = false;
+let argData: number[];
 let blockhash: string;
 let ix: TransactionInstruction;
 let tx: Transaction;
@@ -51,7 +52,10 @@ test("InitConfig", () => {
 	ll("authority:", authority.toBase58());
 	originalOwner = authority;
 	const fee = as9zBn(111);
-	argData = bigintToBytes(fee);
+	isAuthorized = true;
+
+	const feeBytes = bigintToBytes(fee);
+	argData = [boolToBytes(isAuthorized), ...feeBytes];
 	//const bytes = [disc, ...argData];
 	//ll("bytes:", bytes);
 
@@ -81,11 +85,11 @@ test("InitConfig", () => {
 	const rawAccountData = configPDAraw?.data;
 	ll("rawAccountData:", rawAccountData);
 
-	const decoded = ConfigLayout.decode(rawAccountData!);
+	/*const decoded = ConfigLayout.decode(rawAccountData!);
 	ll("decoded:", decoded);
 	ll("authority:", decoded.authority.toBase58());
 	ll("fee:", decoded.fee);
-	ll("bump:", decoded.bump);
+	ll("bump:", decoded.bump);*/
 	//expect(decoded.amount).toStrictEqual(amt);
 });
 

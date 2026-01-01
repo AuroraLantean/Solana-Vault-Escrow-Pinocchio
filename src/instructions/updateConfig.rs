@@ -4,7 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_pda, instructions::check_signer, min_data_len, parse_u32, parse_u64, to32bytes, u8_to_bool,
-  writable, Config, MyError, StatusEnum,
+  writable, Config, MyError, Status,
 };
 
 /// Update Config PDA
@@ -17,7 +17,7 @@ pub struct UpdateConfig<'a> {
   pub u8s: [u8; 4],
   pub u32s: [u32; 4],
   pub u64s: [u64; 4],
-  pub str_u8array: &'a [u8; 32], //pub str_u8: &'a [u8], //pub datalen: usize,
+  pub str_u8array: [u8; 32], //pub str_u8: &'a [u8], //pub datalen: usize,
   pub config: &'a mut Config,
 }
 //impl<'a> Copy for UpdateConfig<'a> {}
@@ -39,27 +39,29 @@ impl<'a> UpdateConfig<'a> {
     let mutated_state = (self.config.token_balance())
       .checked_add(self.u64s[1])
       .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
-    //self.config.token_balance = mutated_state.to_le_bytes();
+    self.config.set_token_balance(mutated_state);
     Ok(())
   }
 
   pub fn update_status(self) -> ProgramResult {
     log!("UpdateConfig update_status()");
+    let status = Status::from(self.u8s[1]);
+    self.config.set_status(status);
     Ok(())
   }
   //TODO: WHY do tests run twice??
   pub fn update_fee(self) -> ProgramResult {
     log!("UpdateConfig update_fee()");
-    self.config.fee = self.u64s[0].to_le_bytes();
-    //self.config.status = self.u8s[1];
-    self.config.status = StatusEnum::from(self.u8s[1]);
-    self.config.str_u8array = *self.str_u8array;
+    self.config.set_fee(self.u64s[0]);
+    let status = Status::from(self.u8s[1]);
+    self.config.set_status(status);
+    self.config.set_str_u8array(self.str_u8array);
     self.add_tokens()?;
     //self.update_authority()?;
     Ok(())
   }
   pub fn update_authority(self) -> ProgramResult {
-    self.config.authority = *self.account1.key();
+    self.config.set_authority(*self.account1.key());
     Ok(())
   }
 }
@@ -84,8 +86,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     if data.len() != expected_size {
       return Err(MyError::InputDataLen.into());
     }*/
-    let max_data_size1 = 88;
-    min_data_len(data, max_data_size1)?; //56+32
+    let min_data_size1 = 88;
+    min_data_len(data, min_data_size1)?; //56+32
 
     let b0 = u8_to_bool(data[0])?;
     let b1 = u8_to_bool(data[1])?;
@@ -105,9 +107,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     let num64d = parse_u64(&data[48..56])?;
     let u64s = [num64a, num64b, num64c, num64d];
     log!("u8s: {}, u32s: {}, u64s: {}", &u8s, &u32s, &u64s);
-    let str_u8: &[u8] = &data[56..max_data_size1];
-    log!("str_u8: {}", str_u8);
-    let str_u8array = to32bytes(str_u8)?;
+
+    let str_u8array = *to32bytes(&data[56..min_data_size1])?;
+    log!("str_u8array: {}", &str_u8array);
 
     //check Status input range
     if u8s[1] > 3 {
@@ -118,6 +120,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     writable(config_pda)?;
     check_pda(config_pda)?;
 
+    config_pda.can_borrow_mut_data()?;
     let config = Config::load(&config_pda)?;
     if config.authority != *authority.key() {
       return Err(MyError::PdaAuthority.into());

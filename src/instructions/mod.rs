@@ -186,7 +186,7 @@ pub enum ProgramIx {
   #[account(1, writable, name = "config_pda", desc = "Config PDA")]
   #[account(2, name = "original_owner", desc = "Original Owner")]
   #[account(3, name = "system_program", desc = "System Program")]
-  InitConfig { fee: u64 },
+  InitConfig { fee: u64, is_authorized: bool },
 
   /// 13 Update Config PDA
   #[account(0, signer, writable, name = "authority", desc = "Authority")]

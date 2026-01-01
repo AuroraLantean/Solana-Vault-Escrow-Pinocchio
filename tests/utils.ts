@@ -181,6 +181,8 @@ export const u8ArrayToStr = (u8Array: Uint8Array) => {
 	ll("string:", str);
 	return str;
 };
+export const boolToBytes = (input: boolean) => (input ? 1 : 0);
+
 export const getTime = () => {
 	return Math.floor(Date.now() / 1000);
 };

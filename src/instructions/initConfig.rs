@@ -9,7 +9,8 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::{
-  derive_pda1, empty_lamport, instructions::check_signer, parse_u64, Config, MyError, CONFIG_SEED,
+  derive_pda1, empty_lamport, instructions::check_signer, min_data_len, parse_u64, to32bytes,
+  u8_to_bool, u8_to_status, Config, MyError, Status, CONFIG_SEED,
 };
 
 /// Init Config PDA
@@ -19,6 +20,9 @@ pub struct InitConfig<'a> {
   pub original_owner: &'a AccountInfo,
   pub system_program: &'a AccountInfo,
   pub fee: u64,
+  pub is_authorized: bool,
+  pub status: Status,
+  pub str_u8array: [u8; 32],
 }
 impl<'a> InitConfig<'a> {
   pub const DISCRIMINATOR: &'a u8 = &12;
@@ -28,8 +32,11 @@ impl<'a> InitConfig<'a> {
       authority,
       config_pda,
       original_owner,
-      fee,
       system_program: _,
+      fee,
+      is_authorized,
+      status,
+      str_u8array,
     } = self;
     log!("InitConfig process()");
     check_signer(authority)?;
@@ -71,10 +78,12 @@ impl<'a> InitConfig<'a> {
     log!("InitConfig after initialization");
     self.config_pda.can_borrow_mut_data()?;
     let config = Config::load(&config_pda)?;
-    config.authority = *original_owner.key();
-    log!("fee: {}", fee);
-    config.fee = fee.to_le_bytes();
-    config.bump = bump;
+    config.set_authority(*original_owner.key());
+    config.set_str_u8array(str_u8array);
+    config.set_fee(fee);
+    config.set_is_authorized(is_authorized);
+    config.set_status(status);
+    config.set_bump(bump);
     Ok(())
   }
 }
@@ -90,13 +99,23 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for InitConfig<'a> {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     //let seeds: &'a [Seed<'a>] = &'a [Seed::from(b"vault".as_slice())];
-    let fee = parse_u64(data)?;
+    let data_size1 = 42;
+    min_data_len(data, data_size1)?; //56+32
+
+    let is_authorized = u8_to_bool(data[0])?;
+    let status = u8_to_status(data[1])?;
+    let fee = parse_u64(&data[2..10])?;
+    let str_u8array = *to32bytes(&data[10..data_size1])?;
+
     Ok(Self {
       authority,
       config_pda,
       original_owner,
       system_program,
       fee,
+      is_authorized,
+      status,
+      str_u8array,
     })
   }
 }
