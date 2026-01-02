@@ -20,6 +20,7 @@ import {
 } from "@solana/kit";
 import chalk from "chalk";
 import * as vault from "../clients/js/src/generated/index";
+import { Status } from "./web3jsSetup";
 
 //-----------== General Config
 export const network = "mainnet-beta"; //devnet
@@ -146,7 +147,7 @@ export const bytesToBigint = (bytes: Uint8Array) => {
 	return bigint;
 };
 
-export const strToU8Fixed = (str: string, size: number) => {
+export const strToU8Fixed = (str: string, size = 32) => {
 	const u8input = strToU8Array(str);
 	const inputLen = u8input.length;
 	if (inputLen > size) throw new Error("fixed size is too small");
@@ -181,7 +182,41 @@ export const u8ArrayToStr = (u8Array: Uint8Array) => {
 	ll("string:", str);
 	return str;
 };
-export const boolToBytes = (input: boolean) => (input ? 1 : 0);
+export const boolToByte = (input: boolean) => (input ? 1 : 0);
+export const statusToByte = (status: Status) => {
+	let out = -1;
+	switch (status) {
+		case Status.Waiting:
+			{
+				out = 0;
+			}
+			break;
+		case Status.Active:
+			{
+				out = 1;
+			}
+			break;
+		case Status.Expired:
+			{
+				out = 2;
+			}
+			break;
+		case Status.Paused:
+			{
+				out = 3;
+			}
+			break;
+		case Status.Canceled:
+			{
+				out = 4;
+			}
+			break;
+		default: {
+			throw new Error("status invalid");
+		}
+	}
+	return out;
+};
 
 export const getTime = () => {
 	return Math.floor(Date.now() / 1000);

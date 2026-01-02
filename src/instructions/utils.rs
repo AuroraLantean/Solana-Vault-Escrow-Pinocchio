@@ -1,11 +1,9 @@
 //use num_derive::FromPrimitive;
 use pinocchio::{
   account_info::AccountInfo,
-  program_error::ProgramError,
-  program_error::ToStr,
-  pubkey::find_program_address,
-  pubkey::{try_find_program_address, Pubkey},
-  sysvars::{rent::Rent, Sysvar},
+  program_error::{ProgramError, ToStr},
+  pubkey::{find_program_address, try_find_program_address, Pubkey},
+  sysvars::{clock::Clock, rent::Rent, Sysvar},
 };
 use pinocchio_log::log;
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
@@ -122,6 +120,8 @@ pub enum MyError {
   ByteSliceSize6,
   #[error("AtokenGPvbd")]
   AtokenGPvbd,
+  #[error("ClockGet")]
+  ClockGet,
 }
 impl From<MyError> for ProgramError {
   fn from(e: MyError) -> Self {
@@ -185,6 +185,7 @@ impl TryFrom<u32> for MyError {
       49 => Ok(MyError::ByteSliceSize10),
       50 => Ok(MyError::ByteSliceSize6),
       51 => Ok(MyError::AtokenGPvbd),
+      52 => Ok(MyError::ClockGet),
       _ => Err(MyError::ErrorValue.into()),
     }
   }
@@ -246,6 +247,7 @@ impl ToStr for MyError {
       MyError::ByteSliceSize10 => "ByteSliceSize10",
       MyError::ByteSliceSize6 => "ByteSliceSize6",
       MyError::AtokenGPvbd => "AtokenGPvbd",
+      MyError::ClockGet => "ClockGet",
     }
   }
 }
@@ -619,4 +621,10 @@ pub fn check_tokacct_interface(ata: &AccountInfo) -> Result<(), ProgramError> {
     }
   }
   Ok(())
+}
+pub fn get_time() -> Result<u32, ProgramError> {
+  let clock = Clock::get().map_err(|_| MyError::ClockGet)?;
+  let time = clock.unix_timestamp as u32;
+  log!("Solana time:{}", time);
+  Ok(time)
 }

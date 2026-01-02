@@ -101,9 +101,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for InitConfig<'a> {
     check_sysprog(system_program)?;
     //writable(config_pda)?;
 
-    //let seeds: &'a [Seed<'a>] = &'a [Seed::from(b"vault".as_slice())];
-    let data_size1 = 42;
-    min_data_len(data, data_size1)?; //56+32
+    let data_size1 = 42; //1+1+8+32
+    min_data_len(data, data_size1)?;
 
     let is_authorized = u8_to_bool(data[0])?;
     let status = u8_to_status(data[1])?;

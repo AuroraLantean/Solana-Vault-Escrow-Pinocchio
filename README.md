@@ -9,10 +9,11 @@ The only dependencies are types from the Solana SDK. This mitigates dependency i
 ### Why Pinocchio
 
 - Zero-dependency. Additional dependencies can be added on
-- High Performance & Lower Compute Units
+- High Performance Execution & Lower Compute Units
 - Zero-copy types to avoid cloning or copying in deserialization
 - Provide safe/unsafe function variants: safe Rust do all checks for you, while{} unsafe Rust comes with speed
 - Small Binaries: no no_std the Rust standard library
+- Fine-grained control over account fields,
 
 ### Why skipping solana-program
 
@@ -26,6 +27,7 @@ LiteSVM is a lightweight library for testing Solana Programs. Unlike other testi
 - Direct State Manipulation
 - Time Manipulation
 - Errors are Immediate and Clear
+- Better than Mollusk testing environment because LiteSVM runs a full, lightweight Solana Virtual Machine (SVM) for broader testing (Rust, TS for testing frontend libraries aka End-To-End testing, Python), offering greater realism and speed for complex scenarios. Additionally, LiteSVM offers Time Travel testing.
 
 ```rust
 cargo add --dev litesvm litesvm-token solana-sdk
@@ -93,14 +95,15 @@ Codama takes the Shank IDL and emits a TypeScript client. The generated code inc
 
 You'll see a clients/js/src/generated/ folder in our project with the program types our client code uses to send transactions to our program.
 
-### Run Tests via LiteSVM-Rust
+### Run Tests via LiteSVM
+
+Write tests in Rust:
 
 ```bash
 cargo add --dev litesvm litesvm-token solana-sdk
 ```
 
-### Run Tests via LiteSVM-NodeJs
-
+Write tests in TypeScript
 See tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
 
 ```bash

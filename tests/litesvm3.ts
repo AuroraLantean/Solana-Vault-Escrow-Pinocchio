@@ -15,10 +15,19 @@ import {
 	svm,
 	vaultPDA1,
 } from "./litesvm-utils";
-import { as9zBn, bigintToBytes, boolToBytes, ll } from "./utils";
+import {
+	as9zBn,
+	bigintToBytes,
+	boolToByte,
+	ll,
+	statusToByte,
+	strToU8Fixed,
+} from "./utils";
 import {
 	adminAddr,
 	adminKp,
+	ownerAddr,
+	Status,
 	systemProgram,
 	vaultProgAddr,
 } from "./web3jsSetup";
@@ -29,12 +38,16 @@ expect(adminBalc).toStrictEqual(initBalc);
 
 let disc = 0; //discriminator
 let _payerKp: Keypair;
-let authorityKp: Keypair;
-let authority: PublicKey;
-let originalOwner: PublicKey;
+let _authorityKp: Keypair;
+let _authority: PublicKey;
+let progOwner: PublicKey;
+let progAdmin: PublicKey;
 let _amount: bigint;
 let _amt: bigint;
 let isAuthorized = false;
+let status: Status;
+let str: string;
+let _strU8array: number[];
 let argData: number[];
 let blockhash: string;
 let ix: TransactionInstruction;
@@ -47,24 +60,29 @@ test("InitConfig", () => {
 	disc = 12; //discriminator
 	ll("vaultPDA1:", vaultPDA1.toBase58());
 	ll(`configPDA: ${configPDA}`);
-	authorityKp = adminKp;
-	authority = authorityKp.publicKey;
-	ll("authority:", authority.toBase58());
-	originalOwner = authority;
+	ll("admin:", adminAddr.toBase58());
+	progOwner = ownerAddr;
+	progAdmin = adminAddr;
 	const fee = as9zBn(111);
 	isAuthorized = true;
-
-	const feeBytes = bigintToBytes(fee);
-	argData = [boolToBytes(isAuthorized), ...feeBytes];
+	status = Status.Waiting;
+	str = "MoonDog to the Moon!";
+	argData = [
+		boolToByte(isAuthorized),
+		statusToByte(status),
+		...bigintToBytes(fee),
+		...strToU8Fixed(str),
+	];
 	//const bytes = [disc, ...argData];
 	//ll("bytes:", bytes);
 
 	blockhash = svm.latestBlockhash();
 	ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: authority, isSigner: true, isWritable: true },
+			{ pubkey: adminAddr, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
-			{ pubkey: originalOwner, isSigner: false, isWritable: false },
+			{ pubkey: progOwner, isSigner: false, isWritable: false },
+			{ pubkey: progAdmin, isSigner: false, isWritable: false },
 			{ pubkey: systemProgram, isSigner: false, isWritable: false },
 		],
 		programId: vaultProgAddr,
@@ -73,7 +91,7 @@ test("InitConfig", () => {
 	tx = new Transaction();
 	tx.recentBlockhash = blockhash;
 	tx.add(ix); //tx.add(...ixs);
-	tx.sign(authorityKp);
+	tx.sign(adminKp);
 
 	simRes = svm.simulateTransaction(tx);
 	sendRes = svm.sendTransaction(tx);

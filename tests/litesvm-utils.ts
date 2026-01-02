@@ -1,5 +1,4 @@
 import { expect } from "bun:test";
-
 import {
 	ACCOUNT_SIZE,
 	AccountLayout,
@@ -28,6 +27,7 @@ import {
 } from "./web3jsSetup";
 
 const ll = console.log;
+ll("\n------== litesvm-utils");
 export const svm = new LiteSVM();
 export const initBalc = BigInt(LAMPORTS_PER_SOL) * BigInt(10);
 svm.airdrop(ownerAddr, initBalc);
@@ -55,8 +55,8 @@ export const findPdaV1 = (
 	ll(`${pdaName} pda: ${pda.toBase58()}, bump: ${bump}`);
 	return { pda, bump };
 };
-export const configPdaBump = findPdaV1(adminAddr, "config", "ConfigPDA");
-export const vaultPdaBump = findPdaV1(ownerAddr, "vault", "VaultPDA");
+export const configPdaBump = findPdaV1(ownerAddr, "config", "ConfigPDA");
+export const vaultPdaBump = findPdaV1(ownerAddr, "vault", "VaultPDA ");
 export const vaultPdaBump1 = findPdaV1(user1Addr, "vault", "VaultPDA1");
 export const vaultPdaBump2 = findPdaV1(user2Addr, "vault", "VaultPDA2");
 export const vaultPdaBump3 = findPdaV1(user3Addr, "vault", "VaultPDA3");
@@ -193,9 +193,16 @@ export const checkSuccess = (
 			`Program ${programId} success`,
 		);
 	} else {
-		ll("sendRes.err:", sendRes.err());
-		ll("sendRes.meta:", sendRes.meta());
-		ll("sendRes.toString:", sendRes.toString());
+		ll("sendRes.err():", sendRes.err());
+		ll("sendRes.meta():", sendRes.meta());
+		const errStr = sendRes.toString();
+		ll("sendRes.toString():", errStr);
+		const pos = errStr.search("custom program error: 0x");
+		ll("pos:", pos);
+		if (pos > -1) {
+			const errCode = errStr.substring(pos + 22, pos + 26);
+			ll("error code:", errCode, Number(errCode));
+		}
 		ll(
 			"find error here: https://docs.rs/solana-sdk/latest/solana_sdk/transaction/enum.TransactionError.html",
 		);
