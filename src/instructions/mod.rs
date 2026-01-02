@@ -182,10 +182,11 @@ pub enum ProgramIx {
   Tok22MintToken { decimals: u8, amount: u64 },
 
   /// 12 Init Config PDA
-  #[account(0, signer, writable, name = "authority", desc = "Authority")]
+  #[account(0, signer, writable, name = "signer", desc = "Signer")]
   #[account(1, writable, name = "config_pda", desc = "Config PDA")]
-  #[account(2, name = "original_owner", desc = "Original Owner")]
-  #[account(3, name = "system_program", desc = "System Program")]
+  #[account(2, name = "prog_owner", desc = "Program Owner")]
+  #[account(3, name = "prog_admin", desc = "Program Admin")]
+  #[account(4, name = "system_program", desc = "System Program")]
   InitConfig { fee: u64, is_authorized: bool },
 
   /// 13 Update Config PDA

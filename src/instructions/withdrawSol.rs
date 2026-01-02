@@ -28,10 +28,7 @@ impl<'a> WithdrawSol<'a> {
       vault,
       amount,
     } = self;
-    check_signer(user)?;
-
-    // Validate the vault is owned by the program
-    check_pda(vault)?;
+    log!("withdrawSol process()");
 
     let (expected_vault_pda, _bump) = derive_pda1(user, VAULT_SEED)?;
     if vault.key() != &expected_vault_pda {
@@ -80,10 +77,15 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for WithdrawSol<'a> {
   type Error = ProgramError;
 
   fn try_from(value: (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
+    log!("WithdrawSol try_from");
     let (data, accounts) = value;
+    log!("accounts len: {}, data len: {}", accounts.len(), data.len());
+
     let [user, vault] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(user)?;
+    check_pda(vault)?;
 
     let amount = parse_u64(data)?;
     Ok(Self {

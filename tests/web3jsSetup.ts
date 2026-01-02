@@ -34,6 +34,7 @@ export const usdtMint = new PublicKey(
 );
 
 export interface RawConfig {
+	prog_owner: PublicKey;
 	authority: PublicKey;
 	strU8array: number[]; // string;
 	fee: number[]; // bigint;
@@ -43,6 +44,7 @@ export interface RawConfig {
 	bump: number;
 }
 /*export const ConfigLayout = struct<RawConfig>([
+	prog_owner("authority"),
 	publicKey("authority"),
 	//seq(Layout<number>(1), 32),
 	cstr("strU8array"),

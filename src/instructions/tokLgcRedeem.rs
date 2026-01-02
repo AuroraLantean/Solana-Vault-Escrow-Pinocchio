@@ -44,8 +44,6 @@ impl<'a> TokLgcRedeem<'a> {
       amount,
     } = self;
     log!("TokLgcRedeem process()");
-    check_signer(user)?;
-    executable(token_program)?;
     writable(from_ata)?;
     check_ata(from_ata, from_pda, mint)?;
 
@@ -54,9 +52,7 @@ impl<'a> TokLgcRedeem<'a> {
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
-    log!("TokLgcRedeem 5");
-    check_sysprog(system_program)?;
-
+    log!("TokLgcRedeem 2");
     if to_ata.data_is_empty() {
       log!("Make to_ata");
       pinocchio_associated_token_account::instructions::Create {
@@ -123,6 +119,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcRedeem<'a> {
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(user)?;
+    executable(token_program)?;
+    check_sysprog(system_program)?;
+    //check_pda(config_pda)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     min_data_len(data, 9)?;

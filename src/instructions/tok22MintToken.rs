@@ -35,17 +35,11 @@ impl<'a> Token2022MintToken<'a> {
       amount,
     } = self;
     log!("Token2022MintToken process()");
-    check_signer(mint_authority)?;
-    executable(token_program)?;
-
-    log!("Token2022MintToken 1");
     rent_exempt(mint, 0)?;
     writable(mint)?;
     check_mint22b(mint, mint_authority, token_program, decimals)?;
 
     log!("Token2022MintToken 5");
-    check_sysprog(system_program)?;
-
     if token_account.data_is_empty() {
       log!("Make token_account");
       pinocchio_associated_token_account::instructions::Create {
@@ -93,6 +87,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022MintToken<'a> {
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(mint_authority)?;
+    executable(token_program)?;
+    check_sysprog(system_program)?;
+    //check_pda(config_pda)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     min_data_len(data, 9)?;

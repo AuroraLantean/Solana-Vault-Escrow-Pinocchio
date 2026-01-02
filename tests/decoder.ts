@@ -10,6 +10,7 @@ import {
 
 //converted from Rust code. XyzAcct, xyzAcctDecoder, DecodedXyzAcct should all match in field order and types!
 export type ConfigAcct = {
+	progOwner: Address;
 	authority: Address;
 	strU8array: number[];
 	fee: bigint;
@@ -24,9 +25,11 @@ enum Status {
 	Active,
 	Expired,
 	Paused,
+	Canceled,
 }
 export const configAcctDecoder: Decoder<ConfigAcct> = getStructDecoder([
 	//["discriminator", fixDecoderSize(getBytesDecoder(), 4)],
+	["progOwner", getAddressDecoder()],
 	["authority", getAddressDecoder()],
 	["strU8array", getArrayDecoder(getU8Decoder(), { size: 32 })],
 	["fee", getU64Decoder()],
@@ -44,6 +47,7 @@ export type DecodedConfigAcct = {
 	space: bigint;
 	address: string;
 	data: {
+		progOwner: string;
 		authority: string;
 		strU8array: number[];
 		fee: bigint;

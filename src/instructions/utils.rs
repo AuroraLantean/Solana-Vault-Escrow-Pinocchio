@@ -120,6 +120,8 @@ pub enum MyError {
   ByteSliceSize10,
   #[error("ByteSliceSize6")]
   ByteSliceSize6,
+  #[error("AtokenGPvbd")]
+  AtokenGPvbd,
 }
 impl From<MyError> for ProgramError {
   fn from(e: MyError) -> Self {
@@ -182,6 +184,7 @@ impl TryFrom<u32> for MyError {
       48 => Ok(MyError::ByteSliceSize32),
       49 => Ok(MyError::ByteSliceSize10),
       50 => Ok(MyError::ByteSliceSize6),
+      51 => Ok(MyError::AtokenGPvbd),
       _ => Err(MyError::ErrorValue.into()),
     }
   }
@@ -242,6 +245,7 @@ impl ToStr for MyError {
       MyError::ByteSliceSize32 => "ByteSliceSize32",
       MyError::ByteSliceSize10 => "ByteSliceSize10",
       MyError::ByteSliceSize6 => "ByteSliceSize6",
+      MyError::AtokenGPvbd => "AtokenGPvbd",
     }
   }
 }
@@ -294,7 +298,7 @@ pub fn check_mint22a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<
     return Err(MyError::MintDataLen.into());
   }
   if !token_program.key().eq(&pinocchio_token_2022::ID) {
-    return Err(MyError::SystemProgram.into());
+    return Err(MyError::TokenProgram.into());
   }
   if mint.owner() != &pinocchio_token_2022::ID {
     return Err(MyError::MintOrTokenProgram.into());
@@ -387,6 +391,13 @@ pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
 pub fn check_sysprog(system_program: &AccountInfo) -> Result<(), ProgramError> {
   if !system_program.key().eq(&pinocchio_system::ID) {
     return Err(MyError::SystemProgram.into());
+  }
+  Ok(())
+}
+pub const ATOKENGPVBD: pinocchio_pubkey::reexport::Pubkey = pinocchio_system::ID; //[0, 0];
+pub fn check_atoken_gpvbd(atoken_program: &AccountInfo) -> Result<(), ProgramError> {
+  if !atoken_program.key().eq(&ATOKENGPVBD) {
+    return Err(MyError::AtokenGPvbd.into());
   }
   Ok(())
 }

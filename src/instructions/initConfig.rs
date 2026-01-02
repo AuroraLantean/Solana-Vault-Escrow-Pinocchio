@@ -9,15 +9,16 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::{
-  derive_pda1, empty_lamport, instructions::check_signer, min_data_len, parse_u64, to32bytes,
-  u8_to_bool, u8_to_status, Config, MyError, Status, CONFIG_SEED,
+  check_sysprog, derive_pda1, empty_lamport, instructions::check_signer, min_data_len, parse_u64,
+  to32bytes, u8_to_bool, u8_to_status, Config, MyError, Status, CONFIG_SEED,
 };
 
 /// Init Config PDA
 pub struct InitConfig<'a> {
-  pub authority: &'a AccountInfo,
+  pub signer: &'a AccountInfo,
   pub config_pda: &'a AccountInfo,
-  pub original_owner: &'a AccountInfo,
+  pub prog_owner: &'a AccountInfo,
+  pub prog_admin: &'a AccountInfo,
   pub system_program: &'a AccountInfo,
   pub fee: u64,
   pub is_authorized: bool,
@@ -29,9 +30,10 @@ impl<'a> InitConfig<'a> {
 
   pub fn process(self) -> ProgramResult {
     let InitConfig {
-      authority,
+      signer,
       config_pda,
-      original_owner,
+      prog_owner,
+      prog_admin,
       system_program: _,
       fee,
       is_authorized,
@@ -39,10 +41,6 @@ impl<'a> InitConfig<'a> {
       str_u8array,
     } = self;
     log!("InitConfig process()");
-    check_signer(authority)?;
-    //writable(config_pda)?;
-
-    log!("InitConfig 2");
     empty_lamport(config_pda)?;
 
     log!("InitConfig 3");
@@ -50,7 +48,7 @@ impl<'a> InitConfig<'a> {
     let space = Config::LEN as u64;
 
     log!("InitConfig 4");
-    let (expected_config_pda, bump) = derive_pda1(original_owner, CONFIG_SEED)?;
+    let (expected_config_pda, bump) = derive_pda1(prog_owner, CONFIG_SEED)?;
 
     log!("InitConfig 5");
     if expected_config_pda != *config_pda.key() {
@@ -60,25 +58,26 @@ impl<'a> InitConfig<'a> {
     log!("InitConfig 6");
     let seeds = [
       Seed::from(CONFIG_SEED),
-      Seed::from(original_owner.key().as_ref()),
+      Seed::from(prog_owner.key().as_ref()),
       Seed::from(core::slice::from_ref(&bump)),
     ];
-    let signer = [Signer::from(&seeds)];
+    let seed_signer = [Signer::from(&seeds)];
 
     log!("InitConfig 7");
     pinocchio_system::instructions::CreateAccount {
-      from: authority,
+      from: signer,
       to: config_pda,
       lamports,
       space,
       owner: &crate::ID,
     }
-    .invoke_signed(&signer)?;
+    .invoke_signed(&seed_signer)?;
 
     log!("InitConfig after initialization");
     self.config_pda.can_borrow_mut_data()?;
     let config = Config::load(&config_pda)?;
-    config.set_authority(*original_owner.key());
+    config.set_prog_owner(*prog_owner.key());
+    config.set_admin(*prog_admin.key());
     config.set_str_u8array(str_u8array);
     config.set_fee(fee);
     config.set_is_authorized(is_authorized);
@@ -95,9 +94,13 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for InitConfig<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [authority, config_pda, original_owner, system_program] = accounts else {
+    let [signer, config_pda, prog_owner, prog_admin, system_program] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(signer)?;
+    check_sysprog(system_program)?;
+    //writable(config_pda)?;
+
     //let seeds: &'a [Seed<'a>] = &'a [Seed::from(b"vault".as_slice())];
     let data_size1 = 42;
     min_data_len(data, data_size1)?; //56+32
@@ -108,9 +111,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for InitConfig<'a> {
     let str_u8array = *to32bytes(&data[10..data_size1])?;
 
     Ok(Self {
-      authority,
+      signer,
       config_pda,
-      original_owner,
+      prog_owner,
+      prog_admin,
       system_program,
       fee,
       is_authorized,

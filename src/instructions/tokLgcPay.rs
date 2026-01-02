@@ -37,8 +37,6 @@ impl<'a> TokLgcPay<'a> {
       amount,
     } = self;
     log!("TokLgcPay process()");
-    check_signer(user)?;
-    executable(token_program)?;
     writable(from_ata)?;
     check_ata(from_ata, user, mint)?;
 
@@ -47,9 +45,7 @@ impl<'a> TokLgcPay<'a> {
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
-    log!("TokLgcPay 5");
-    check_sysprog(system_program)?;
-
+    log!("TokLgcPay 2");
     //only to_wallet(owner) should make to_wallet
     if to_wallet.lamports() == 0 {
       return Err(MyError::ToWallet.into());
@@ -110,6 +106,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(user)?;
+    executable(token_program)?;
+    check_sysprog(system_program)?;
+    //check_pda(config_pda)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     min_data_len(data, 9)?;

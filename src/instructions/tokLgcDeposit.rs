@@ -45,8 +45,6 @@ impl<'a> TokLgcDeposit<'a> {
       amount,
     } = self;
     log!("TokLgcDeposit process()");
-    check_signer(user)?;
-    executable(token_program)?;
     writable(from_ata)?;
     check_ata(from_ata, user, mint)?;
 
@@ -56,8 +54,6 @@ impl<'a> TokLgcDeposit<'a> {
     check_mint0a(mint, token_program)?;
 
     log!("TokLgcDeposit 5");
-    check_sysprog(system_program)?;
-
     if to_wallet.lamports() == 0 {
       log!("TokLgcDeposit 6: make to_wallet");
       let (expected_vault_pda, bump) = derive_pda1(user, VAULT_SEED)?;
@@ -139,6 +135,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcDeposit<'a> {
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(user)?;
+    executable(token_program)?;
+    check_sysprog(system_program)?;
+    //TODO: check ATOKEN
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     min_data_len(data, 9)?;

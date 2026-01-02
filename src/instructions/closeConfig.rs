@@ -2,7 +2,7 @@ use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
-use crate::{instructions::check_signer, writable, Config};
+use crate::{check_pda, instructions::check_signer, writable, Config, MyError};
 
 /// Close PDA
 pub struct CloseConfigPda<'a> {
@@ -15,32 +15,23 @@ impl<'a> CloseConfigPda<'a> {
 
   pub fn process(self) -> ProgramResult {
     let CloseConfigPda {
-      authority,
+      authority: _,
       config_pda,
       dest,
     } = self;
     log!("CloseConfigPda process()");
-    check_signer(authority)?;
-    writable(config_pda)?;
-
-    log!("CloseConfigPda 2");
-    let config = Config::load(&self.config_pda)?;
-    log!("CloseConfigPda 3");
-    if config.authority != *self.authority.key() {
-      return Err(ProgramError::IncorrectAuthority);
-    }
-    log!("CloseConfigPda 4");
     //set the first byte to 255
     {
       let mut data = config_pda.try_borrow_mut_data()?;
       data[0] = 0xff;
     }
+    log!("CloseConfigPda 1");
     //https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-accounts
     *dest.try_borrow_mut_lamports()? += *config_pda.try_borrow_lamports()?;
-    //resize the account to only the 1st byte
+
+    log!("CloseConfigPda 2"); //resize the account to only the 1st byte
     config_pda.resize(1)?;
     config_pda.close()?;
-    log!("CloseConfigPda 5");
     Ok(())
   }
 }
@@ -55,7 +46,15 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for CloseConfigPda<'a> {
     let [authority, config_pda, dest] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(authority)?;
+    writable(config_pda)?;
+    check_pda(config_pda)?;
 
+    config_pda.can_borrow_mut_data()?;
+    let config: &mut Config = Config::load(&config_pda)?;
+    if config.admin != *authority.key() || config.prog_owner != *authority.key() {
+      return Err(MyError::PdaAuthority.into());
+    }
     Ok(Self {
       authority,
       config_pda,

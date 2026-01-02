@@ -39,10 +39,6 @@ impl<'a> EscrowTokMake<'a> {
       decimals,
     } = self;
     log!("EscrowTokMake process()");
-    check_signer(maker)?;
-    executable(token_program)?;
-    writable(from_ata)?;
-
     log!("EscrowTokMake 1");
     rent_exempt(mint_maker, 0)?; //invalid mint_maker will also fail this txn
     rent_exempt(mint_taker, 0)?;
@@ -55,9 +51,6 @@ impl<'a> EscrowTokMake<'a> {
     check_mint0a(mint_taker, token_program)?;
 
     log!("EscrowTokMake 5");
-    check_sysprog(system_program)?;
-
-    check_pda(vault)?;
     /*Make a valid program derived address without searching for a bump seed:
     let seed = [(b"escrow"), maker.key().as_slice(), bump.as_ref()];
     let seeds = &seed[..];
@@ -114,6 +107,13 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokMake<'a> {
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(maker)?;
+    executable(token_program)?;
+    check_sysprog(system_program)?;
+    writable(from_ata)?;
+    check_pda(vault)?;
+    //check_pda(config_pda)?;
+    log!("precheck passed");
 
     //u8 takes 1 + u64 takes 8 bytes
     min_data_len(data, 9)?;

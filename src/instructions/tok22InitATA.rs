@@ -3,8 +3,8 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-  check_mint22a, empty_data, empty_lamport, executable, instructions::check_signer, rent_exempt,
-  writable,
+  check_mint22a, check_sysprog, empty_data, empty_lamport, executable, instructions::check_signer,
+  rent_exempt, writable,
 };
 
 /// Token2022 Init ATA(Associated Token Account)
@@ -31,9 +31,6 @@ impl<'a> Token2022InitAta<'a> {
       atoken_program: _,
     } = self;
     log!("Token2022InitAta process()");
-    check_signer(payer)?;
-    executable(token_program)?;
-
     log!("Token2022InitAta 1");
     rent_exempt(mint, 0)?;
     check_mint22a(mint, token_program)?;
@@ -83,6 +80,11 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitAta<'a> {
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(payer)?;
+    executable(token_program)?;
+    check_sysprog(system_program)?;
+    //check_pda(config_pda)?;
+
     Ok(Self {
       payer,
       to_wallet,

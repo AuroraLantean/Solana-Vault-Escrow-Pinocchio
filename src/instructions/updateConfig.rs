@@ -29,7 +29,7 @@ impl<'a> UpdateConfig<'a> {
     match self.u8s[0] {
       0 => self.update_status(),
       1 => self.update_fee(),
-      2 => self.update_authority(),
+      2 => self.update_admin(),
       _ => Err(MyError::FunctionSelector.into()),
     }
   }
@@ -57,11 +57,15 @@ impl<'a> UpdateConfig<'a> {
     self.config.set_status(status);
     self.config.set_str_u8array(self.str_u8array);
     self.add_tokens()?;
-    //self.update_authority()?;
+    //self.update_admin()?;
     Ok(())
   }
-  pub fn update_authority(self) -> ProgramResult {
-    self.config.set_authority(*self.account1.key());
+  pub fn update_admin(self) -> ProgramResult {
+    self.config.set_admin(*self.account1.key());
+    Ok(())
+  }
+  pub fn update_prog_owner(self) -> ProgramResult {
+    self.config.set_prog_owner(*self.account1.key());
     Ok(())
   }
 }
@@ -76,6 +80,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     let [authority, config_pda, account1, account2] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(authority)?;
+    writable(config_pda)?;
+    check_pda(config_pda)?;
 
     /* check minimum data size in try_from!
     u32size = core::mem::size_of::<u32>();//4
@@ -116,13 +123,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
       return Err(MyError::InputStatus.into());
     }
 
-    check_signer(authority)?;
-    writable(config_pda)?;
-    check_pda(config_pda)?;
-
     config_pda.can_borrow_mut_data()?;
-    let config = Config::load(&config_pda)?;
-    if config.authority != *authority.key() {
+    let config: &mut Config = Config::load(&config_pda)?;
+    if config.admin != *authority.key() || config.prog_owner != *authority.key() {
       return Err(MyError::PdaAuthority.into());
     }
     // cannot use self in "0 => Self.process(),
@@ -143,6 +146,6 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
 /*match self.datalen as usize {
   len if len == size_of::<UpdateConfigStatus>() => self.update_status()?,
   len if len == size_of::<UpdateConfigFee>() => self.update_fee()?,
-  len if len == size_of::<UpdateConfigAuthority>() => self.update_authority()?,
+  len if len == size_of::<UpdateConfigAdmin>() => self.update_admin()?,
   _ => return Err(..),
 } */

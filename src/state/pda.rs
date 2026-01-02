@@ -5,7 +5,8 @@ use crate::MyError;
 #[derive(Clone, Copy, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct Config {
-  pub authority: Pubkey,     // 32
+  pub prog_owner: Pubkey,    // 32
+  pub admin: Pubkey,         // 32
   pub str_u8array: [u8; 32], // 32
   fee: [u8; 8],              // 8 for u64,
   sol_balance: [u8; 8],      // 8
@@ -17,7 +18,7 @@ pub struct Config {
 
 impl Config {
   pub const LEN: usize = core::mem::size_of::<Self>();
-  //Accessors: Safe Direct value copy, no reference created
+  //Getters or Accessors: Safe Direct value copy, no reference created
   pub fn fee(&self) -> u64 {
     u64::from_le_bytes(self.fee)
   }
@@ -51,8 +52,11 @@ impl Config {
     unsafe { Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
   }
   //Setters
-  pub fn set_authority(&mut self, authority: Pubkey) {
-    self.authority = authority;
+  pub fn set_prog_owner(&mut self, prog_owner: Pubkey) {
+    self.prog_owner = prog_owner;
+  }
+  pub fn set_admin(&mut self, admin: Pubkey) {
+    self.admin = admin;
   }
   pub fn set_str_u8array(&mut self, str_u8array: [u8; 32]) {
     self.str_u8array = str_u8array;

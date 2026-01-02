@@ -9,8 +9,8 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
-  check_decimals_max, empty_data, empty_lamport, executable, instructions::check_signer,
-  min_data_len, to10bytes, to32bytes, to6bytes, writable,
+  check_decimals_max, check_sysprog, empty_data, empty_lamport, executable,
+  instructions::check_signer, min_data_len, to10bytes, to32bytes, to6bytes, writable,
 };
 use pinocchio_token_2022::{instructions::InitializeMint2, state::Mint};
 
@@ -42,13 +42,10 @@ impl<'a> Token2022InitMint<'a> {
       token_uri: _,
     } = self;
     log!("Token2022InitMint process()");
-    check_signer(payer)?;
-    log!("here 2");
     empty_lamport(mint)?;
     log!("here 3");
     empty_data(mint)?;
     log!("here 4");
-    executable(token_program)?;
 
     check_decimals_max(decimals, 18)?;
     log!("Token2022InitMint 4()");
@@ -104,11 +101,15 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
     //accounts len: 5, data len: 1
 
-    let [payer, mint, mint_authority, token_program, freeze_authority_opt1, _system_program] =
+    let [payer, mint, mint_authority, token_program, freeze_authority_opt1, system_program] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    check_signer(payer)?;
+    executable(token_program)?;
+    check_sysprog(system_program)?;
+    //check_pda(config_pda)?;
 
     let freeze_authority_opt: Option<&'a [u8; 32]> = if freeze_authority_opt1 == token_program {
       Some(freeze_authority_opt1.key())
