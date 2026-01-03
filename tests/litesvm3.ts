@@ -7,7 +7,7 @@ import type {
 	SimulatedTransactionInfo,
 	TransactionMetadata,
 } from "litesvm";
-import { Status, solanaKitDecode } from "./decoder";
+import { Status, solanaKitDecodeDev } from "./decoder";
 import {
 	checkSuccess,
 	configPDA,
@@ -100,8 +100,16 @@ test("InitConfig", () => {
 	const rawAccountData = configPDAraw?.data;
 	ll("rawAccountData:", rawAccountData);
 
-	const decoded = solanaKitDecode(rawAccountData);
-	expect(decoded.progOwner.toString()).toEqual(progOwner.toString());
+	const decoded = solanaKitDecodeDev(rawAccountData);
+	expect(decoded.progOwner).toEqual(progOwner);
+	expect(decoded.admin).toEqual(adminAddr);
+	expect(decoded.strU8array).toEqual(str);
+	expect(decoded.fee).toEqual(fee);
+	expect(decoded.solBalance).toEqual(0n);
+	expect(decoded.tokenBalance).toEqual(0n);
+	expect(decoded.isAuthorized).toEqual(isAuthorized);
+	expect(decoded.status).toEqual(status);
+	//expect(decoded.bump).toEqual(bump);
 });
 
 test("inputNum to/from Bytes", () => {});

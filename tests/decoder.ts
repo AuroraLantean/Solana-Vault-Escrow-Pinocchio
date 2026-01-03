@@ -13,6 +13,7 @@ import {
 	getU64Decoder,
 	getUtf8Decoder,
 } from "@solana/kit";
+import { PublicKey } from "@solana/web3.js";
 
 const ll = console.log;
 //Methods to decode: use SolanaKit, Borsh, or BufferLayout, or separate str then decode the rest;
@@ -40,7 +41,7 @@ export enum Status {
 //https://github.com/anza-xyz/kit/tree/main/packages/codecs-core#fixed-size-and-variable-size-codecs
 export const configAcctDecoder: FixedSizeDecoder<ConfigAcct> = getStructDecoder(
 	[
-		//["discriminator", fixDecoderSize(getBytesDecoder(), 4)],
+		//["discriminator", fixDecoderSize(getBytesDecoder(), 4)],//only for accounts made by Anchor
 		["progOwner", getAddressDecoder()],
 		["admin", getAddressDecoder()],
 		["strU8array", fixDecoderSize(getUtf8Decoder(), 32)],
@@ -56,20 +57,51 @@ export const configAcctDecoder: FixedSizeDecoder<ConfigAcct> = getStructDecoder(
 	],
 );
 export const solanaKitDecode = (
+	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike>,
+	isVerbose = false,
+) => {
+	const decoded = configAcctDecoder.decode(bytes);
+	if (isVerbose) {
+		ll("progOwner:", decoded.progOwner);
+		ll("admin:", decoded.admin);
+		ll("strU8array:", decoded.strU8array);
+		ll("fee:", decoded.fee);
+		ll("solBalance:", decoded.solBalance);
+		ll("tokenBalance:", decoded.tokenBalance);
+		ll("isAuthorized:", decoded.isAuthorized);
+		ll("status:", decoded.status);
+		ll("bump:", decoded.bump);
+	}
+	return decoded;
+};
+export const solanaKitDecodeDev = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
 ) => {
 	if (!bytes) throw new Error("bytes invalid");
-	const decoded = configAcctDecoder.decode(bytes);
-	ll("progOwner:", decoded.progOwner);
-	ll("admin:", decoded.admin);
-	ll("strU8array:", decoded.strU8array);
-	ll("fee:", decoded.fee);
-	ll("solBalance:", decoded.solBalance);
-	ll("tokenBalance:", decoded.tokenBalance);
-	ll("isAuthorized:", decoded.isAuthorized);
-	ll("status:", decoded.status);
-	ll("bump:", decoded.bump);
-	return decoded;
+	const decoded = solanaKitDecode(bytes, true);
+	const decoded2: ConfigAcct2 = {
+		progOwner: new PublicKey(decoded.progOwner.toString()),
+		admin: new PublicKey(decoded.admin.toString()),
+		strU8array: decoded.strU8array,
+		fee: decoded.fee,
+		solBalance: decoded.solBalance,
+		tokenBalance: decoded.tokenBalance,
+		isAuthorized: decoded.isAuthorized,
+		status: decoded.status,
+		bump: decoded.bump,
+	};
+	return decoded2;
+};
+export type ConfigAcct2 = {
+	progOwner: PublicKey;
+	admin: PublicKey;
+	strU8array: string;
+	fee: bigint;
+	solBalance: bigint;
+	tokenBalance: bigint;
+	isAuthorized: boolean;
+	status: Status;
+	bump: number;
 };
 
 export type DecodedConfigAcct = {

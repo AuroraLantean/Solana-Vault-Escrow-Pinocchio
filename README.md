@@ -37,7 +37,7 @@ cargo add --dev litesvm litesvm-token solana-sdk
 
 Rust: 1.92.0 (ded5c06cf 2025-12-08);
 solana-cli: 3.0.12 or 2.3.13;
-BunJs:  1.3.5; PNPM: 10.26.0
+BunJs:  1.3.5; PNPM: 10.27.0
 
 Install Solana CLI: <https://solana.com/docs/intro/installation>
 
@@ -146,3 +146,5 @@ bun test ./tests/test1.ts
 - Create and Mint SPL Tokens via Anchor: <https://www.quicknode.com/guides/solana-development/anchor/create-tokens>
 - Create Token Account via Anchor: <https://www.anchor-lang.com/docs/tokens/basics/create-token-account>
 - Get Token Account: <https://solana.com/developers/cookbook/tokens/get-token-account>
+- Account Deserialization by QuickNode: <https://www.quicknode.com/guides/solana-development/tooling/web3-2/account-deserialization>
+- Solana Kit decoder with fixed size codec: <https://github.com/anza-xyz/kit/tree/main/packages/codecs-core#fixed-size-and-variable-size-codecs>

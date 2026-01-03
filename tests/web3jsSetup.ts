@@ -31,7 +31,7 @@ export const usdtMint = new PublicKey(
 	"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
 );
 
-//---------------==
+//---------------== BufferLayout code below is replaced by SolanaKit decoder
 export type RawConfig = {
 	progOwner: PublicKey;
 	admin: PublicKey;
