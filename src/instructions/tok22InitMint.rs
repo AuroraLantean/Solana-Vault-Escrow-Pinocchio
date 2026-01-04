@@ -9,7 +9,7 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
-  check_decimals_max, check_sysprog, empty_data, empty_lamport, executable,
+  check_decimals_max, check_initialized, check_sysprog, empty_data, empty_lamport, executable,
   instructions::check_signer, min_data_len, to10bytes, to32bytes, to6bytes, writable,
 };
 use pinocchio_token_2022::{instructions::InitializeMint2, state::Mint};
@@ -110,6 +110,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     //check_pda(config_pda)?;
+    check_initialized(mint)?;
 
     let freeze_authority_opt: Option<&'a [u8; 32]> = if freeze_authority_opt1 == token_program {
       Some(freeze_authority_opt1.key())

@@ -4,7 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, executable,
-  instructions::check_signer, min_data_len, parse_u64, rent_exempt, writable,
+  instructions::check_signer, min_data_len, parse_u64, rent_exempt22, writable,
 };
 
 /// Make Escrow Token Offer
@@ -40,8 +40,8 @@ impl<'a> EscrowTokMake<'a> {
     } = self;
     log!("EscrowTokMake process()");
     log!("EscrowTokMake 1");
-    rent_exempt(mint_maker, 0)?; //invalid mint_maker will also fail this txn
-    rent_exempt(mint_taker, 0)?;
+    rent_exempt22(mint_maker, 0)?; //invalid mint_maker will also fail this txn
+    rent_exempt22(mint_taker, 0)?;
     log!("EscrowTokMake 2");
     check_ata(from_ata, maker, mint_maker)?;
 
@@ -72,7 +72,7 @@ impl<'a> EscrowTokMake<'a> {
       check_ata(vault_ata, vault, mint_maker)?;
     }
     writable(vault_ata)?;
-    rent_exempt(vault_ata, 1)?;
+    rent_exempt22(vault_ata, 1)?;
     log!("EscrowTokMake 7: ToATA is found/verified");
 
     log!("EscrowTokMake 8: Transfer Tokens");

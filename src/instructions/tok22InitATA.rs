@@ -3,8 +3,8 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-  check_mint22a, check_sysprog, empty_data, empty_lamport, executable, instructions::check_signer,
-  rent_exempt, writable,
+  check_initialized, check_mint22a, check_sysprog, empty_data, empty_lamport, executable,
+  instructions::check_signer, rent_exempt22, writable,
 };
 
 /// Token2022 Init ATA(Associated Token Account)
@@ -32,7 +32,7 @@ impl<'a> Token2022InitAta<'a> {
     } = self;
     log!("Token2022InitAta process()");
     log!("Token2022InitAta 1");
-    rent_exempt(mint, 0)?;
+    rent_exempt22(mint, 0)?;
     check_mint22a(mint, token_program)?;
     //writable(mint)?;//Shank IDL definition
 
@@ -84,6 +84,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitAta<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     //check_pda(config_pda)?;
+    check_initialized(token_account)?;
 
     Ok(Self {
       payer,

@@ -4,7 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_pda, get_time, instructions::check_signer, min_data_len, parse_u32, parse_u64, to32bytes,
-  u8_to_bool, writable, Config, Ee, Status,
+  u8_to_bool, u8_to_status, writable, Config, Ee, Status,
 };
 
 /// Update Config PDA
@@ -56,7 +56,7 @@ impl<'a> UpdateConfig<'a> {
     let time = get_time()?;
     self.config.set_updated_at(time);
 
-    let status = Status::from(self.u8s[1]);
+    let status = u8_to_status(self.u8s[1])?;
     self.config.set_status(status);
     self.config.set_str_u8array(self.str_u8array);
 
@@ -133,9 +133,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     log!("str_u8array: {}", &str_u8array);
 
     //check Status input range
-    if u8s[1] > 3 {
-      return Err(Ee::InputStatus.into());
-    }
+    let _status = u8_to_status(u8s[1])?;
 
     config_pda.can_borrow_mut_data()?;
     let config: &mut Config = Config::load(&config_pda)?;

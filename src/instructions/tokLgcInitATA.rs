@@ -1,6 +1,6 @@
 use crate::{
-  check_mint0a, check_sysprog, empty_data, empty_lamport, executable, instructions::check_signer,
-  rent_exempt, writable,
+  check_initialized, check_mint0a, check_sysprog, empty_data, empty_lamport, executable,
+  instructions::check_signer, rent_exempt22, writable,
 };
 use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
@@ -30,7 +30,7 @@ impl<'a> TokenLgcInitAta<'a> {
       atoken_program: _,
     } = self;
     log!("TokenLgcInitAta process()");
-    rent_exempt(mint, 0)?;
+    rent_exempt22(mint, 0)?;
     check_mint0a(mint, token_program)?;
     //writable(mint)?;//Shank IDL definition
 
@@ -75,6 +75,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokenLgcInitAta<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     //check_pda(config_pda)?;
+    check_initialized(token_account)?;
 
     log!("TokenLgcInitAta try_from end");
     Ok(Self {

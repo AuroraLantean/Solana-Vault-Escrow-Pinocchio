@@ -4,7 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, executable,
-  instructions::check_signer, min_data_len, parse_u64, rent_exempt, writable, Ee,
+  instructions::check_signer, min_data_len, parse_u64, rent_exempt22, writable, Ee,
 };
 
 /// TokLgc: Users to Pay Tokens to VaultAdmin
@@ -41,7 +41,7 @@ impl<'a> TokLgcPay<'a> {
     check_ata(from_ata, user, mint)?;
 
     log!("TokLgcPay 1");
-    rent_exempt(mint, 0)?;
+    rent_exempt22(mint, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
@@ -71,7 +71,7 @@ impl<'a> TokLgcPay<'a> {
       check_ata(to_ata, to_wallet, mint)?;
     }
     writable(to_ata)?;
-    rent_exempt(to_ata, 1)?;
+    rent_exempt22(to_ata, 1)?;
     log!("ToATA is found/verified");
 
     log!("Transfer Tokens");

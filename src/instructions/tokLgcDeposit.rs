@@ -11,7 +11,7 @@ use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
   check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, derive_pda1, executable,
-  instructions::check_signer, min_data_len, parse_u64, rent_exempt, writable, Ee,
+  instructions::check_signer, min_data_len, parse_u64, rent_exempt22, writable, Ee,
   ACCOUNT_DISCRIMINATOR_SIZE, VAULT_SEED,
 };
 
@@ -49,7 +49,7 @@ impl<'a> TokLgcDeposit<'a> {
     check_ata(from_ata, user, mint)?;
 
     log!("TokLgcDeposit 1");
-    rent_exempt(mint, 0)?;
+    rent_exempt22(mint, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
@@ -100,7 +100,7 @@ impl<'a> TokLgcDeposit<'a> {
       check_ata(to_ata, to_wallet, mint)?;
     }
     writable(to_ata)?;
-    rent_exempt(to_ata, 1)?;
+    rent_exempt22(to_ata, 1)?;
     log!("ToATA is found/verified");
 
     log!("Transfer Tokens");

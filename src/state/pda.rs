@@ -127,7 +127,7 @@ impl Escrow {
 
   pub fn load(pda: &AccountInfo) -> Result<&mut Self, ProgramError> {
     if pda.data_len() != Escrow::LEN {
-      return Err(Ee::PdaDataLen.into());
+      return Err(Ee::EscrowDataLengh.into());
     }
     //assert_eq!(pda.data_len(), Escrow::LEN);
     if pda.owner() != &crate::ID {

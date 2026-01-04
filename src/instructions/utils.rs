@@ -18,112 +18,175 @@ pub enum Ee {
   InvalidDiscriminator,
   #[error("NotSigner")]
   NotSigner,
+  #[error("OnlyOwner")]
+  OnlyOwner,
+  #[error("OnlyAdmin")]
+  OnlyAdmin,
+  #[error("OnlyUser")]
+  OnlyUser,
+  #[error("Xyz005")]
+  Xyz005,
+  #[error("Xyz006")]
+  Xyz006,
   #[error("NotWritable")]
   NotWritable,
   #[error("NotExecutable")]
   NotExecutable,
-  #[error("ZeroAsInput")]
-  ZeroAsInput,
-  #[error("DecimalsValue")]
-  DecimalsValue,
-  #[error("MintDataLen")]
-  MintDataLen,
-  #[error("TokAcctDataLen")]
-  TokAcctDataLen,
-  #[error("Tok22AcctDataLen")]
-  Tok22AcctDataLen,
   #[error("TokenProgram")]
   TokenProgram,
+  #[error("AtokenGPvbd")]
+  AtokenGPvbd,
   #[error("SystemProgram")]
   SystemProgram,
-  #[error("AtaOrOwner")]
-  AtaOrOwner,
-  #[error("AtaOrMint")]
-  AtaOrMint,
-  #[error("AtaCheckFailed")]
-  AtaCheckFailed,
-  #[error("AtaOwnerInvalid")]
-  AtaOwnerInvalid,
-  #[error("ForeignPDA")]
-  ForeignPDA,
-  #[error("EmptyLamport")]
-  EmptyLamport,
-  #[error("EmptyData")]
-  EmptyData,
-  #[error("AcctType")]
-  AcctType,
-  #[error("StrOverMax")]
-  StrOverMax,
-  #[error("StrUnderMin")]
-  StrUnderMin,
   #[error("InputDataUnderMin")]
   InputDataUnderMin,
   #[error("InputDataOverMax")]
   InputDataOverMax,
-  #[error("PdaNotInitialized")]
-  PdaNotInitialized,
-  #[error("Parse u64")]
-  ParseU64,
-  #[error("Tok22AcctDiscOffset")]
-  Tok22AcctDiscOffset,
-  #[error("InputU8InvalidForStatus")]
-  InputU8InvalidForStatus,
-  #[error("InputU8InvalidForBool")]
-  InputU8InvalidForBool,
-  #[error("U64ByteSizeInvalid")]
-  U64ByteSizeInvalid,
-  #[error("U32ByteSizeInvalid")]
-  U32ByteSizeInvalid,
-  #[error("U16ByteSizeInvalid")]
-  U16ByteSizeInvalid,
-  #[error("U8ByteSizeInvalid")]
-  U8ByteSizeInvalid,
-  #[error("VaultPDA")]
-  VaultPDA,
-  #[error("ConfigDataLengh")]
-  ConfigDataLengh,
-  #[error("FunctionSelector")]
-  FunctionSelector,
-  #[error("ConfigPDA")]
-  ConfigPDA,
-  #[error("InputStatus")]
-  InputStatus,
-  #[error("MathOverflow")]
-  MathOverflow,
-  #[error("MathUnderflow")]
-  MathUnderflow,
-  #[error("NotRentExamptMint22")]
-  NotRentExamptMint22,
-  #[error("NotRentExamptTokAcct22")]
-  NotRentExamptTokAcct22,
-  #[error("NotRentExamptPDA")]
-  NotRentExamptPDA,
-  #[error("MintOrMintAuthority")]
-  MintOrMintAuthority,
-  #[error("MintOrTokenProgram")]
-  MintOrTokenProgram,
-  #[error("ErrorValue")]
-  ErrorValue,
-  #[error("PdaAuthority")]
-  PdaAuthority,
-  #[error("InsufficientFundNominal")]
-  InsufficientFundNominal,
-  #[error("ToWallet")]
-  ToWallet,
-  #[error("PdaDataLen")]
-  PdaDataLen,
+  #[error("Xyz009")]
+  Xyz009,
+  //Bytes for Numerical
+  #[error("ZeroAsU128")]
+  ZeroAsU128,
+  #[error("ZeroAsU64")]
+  ZeroAsU64,
+  #[error("ZeroAsU32")]
+  ZeroAsU32,
+  #[error("ZeroAsU16")]
+  ZeroAsU16,
+  #[error("ZeroAsU8")]
+  ZeroAsU8,
+
+  //Inputs
+  #[error("StrOverMax")]
+  StrOverMax,
+  #[error("StrUnderMin")]
+  StrUnderMin,
+  #[error("ArrayLength")]
+  ArrayLength,
+  #[error("ByteForStatus")]
+  ByteForStatus,
+  #[error("ByteForSBool")]
+  ByteForSBool,
+  #[error("Xyz010")]
+  Xyz010,
+  //Bytes Sizes
+  #[error("ByteSizeForU128")]
+  ByteSizeForU128,
+  #[error("ByteSizeForU64")]
+  ByteSizeForU64,
+  #[error("ByteSizeForU32")]
+  ByteSizeForU32,
+  #[error("ByteSizeForU16")]
+  ByteSizeForU16,
+  #[error("ByteSizeForU8")]
+  ByteSizeForU8,
+  #[error("Xyz020")]
+  Xyz020,
+  //Byte Slice Sizes
+  #[error("ByteSliceSize64")]
+  ByteSliceSize64,
   #[error("ByteSliceSize32")]
   ByteSliceSize32,
   #[error("ByteSliceSize10")]
   ByteSliceSize10,
   #[error("ByteSliceSize6")]
   ByteSliceSize6,
-  #[error("AtokenGPvbd")]
-  AtokenGPvbd,
+  #[error("Xyz030")]
+  Xyz030,
+  //PDA
+  #[error("PdaNoLamport")]
+  PdaNoLamport,
+  #[error("ForeignPDA")]
+  ForeignPDA,
+  #[error("ConfigPDA")]
+  ConfigPDA,
+  #[error("VaultPDA")]
+  VaultPDA,
+  #[error("AdminPDA")]
+  AdminPDA,
+  #[error("UserPDA")]
+  UserPDA,
+  #[error("EscrowPDA")]
+  EscrowPDA,
+  #[error("ActionPDA")]
+  ActionPDA,
+  #[error("Xyz040")]
+  Xyz040,
+  //PDA Data Length
+  #[error("ConfigDataLengh")]
+  ConfigDataLengh,
+  #[error("VaultDataLengh")]
+  VaultDataLengh,
+  #[error("AdminDataLengh")]
+  AdminDataLengh,
+  #[error("UserDataLengh")]
+  UserDataLengh,
+  #[error("EscrowDataLengh")]
+  EscrowDataLengh,
+  #[error("ActionDataLengh")]
+  ActionDataLengh,
+  #[error("Xyz050")]
+  Xyz050,
+  //Mint Account
+  #[error("DecimalsValue")]
+  DecimalsValue,
+  #[error("MintDataLen")]
+  MintDataLen,
+  #[error("MintOrMintAuthority")]
+  MintOrMintAuthority,
+  #[error("MintOrTokenProgram")]
+  MintOrTokenProgram,
+  #[error("Xyz060")]
+  Xyz060,
+  //ATA
+  #[error("TokAcctDataLen")]
+  TokAcctDataLen,
+  #[error("Tok22AcctDataLen")]
+  Tok22AcctDataLen,
+  #[error("AtaOrOwner")]
+  AtaOrOwner,
+  #[error("AtaOrMint")]
+  AtaOrMint,
+  #[error("AtaCheckX1")]
+  AtaCheckX1,
+  #[error("ForeignAta")]
+  ForeignAta,
+  #[error("Xyz070")]
+  Xyz070,
+
+  //Token 2022
+  #[error("Acct22Type")]
+  Acct22Type,
+  #[error("Tok22AcctDiscOffset")]
+  Tok22AcctDiscOffset,
+  #[error("NotRentExamptMint22")]
+  NotRentExamptMint22,
+  #[error("NotRentExamptTokAcct22")]
+  NotRentExamptTokAcct22,
+  #[error("Xyz080")]
+  Xyz080,
+
+  //Withdraw
+  #[error("PdaToBeBelowRentExampt")]
+  PdaToBeBelowRentExampt,
+  #[error("ToWallet")]
+  ToWallet,
+  //Math
+  #[error("MathOverflow")]
+  MathOverflow,
+  #[error("MathUnderflow")]
+  MathUnderflow,
+  #[error("Xyz090")]
+  Xyz090,
+  //Misc...
+  #[error("EmptyData")]
+  EmptyData,
+  #[error("FunctionSelector")]
+  FunctionSelector,
   #[error("ClockGet")]
   ClockGet,
-  #[error("OnlyOwner")]
-  OnlyOwner,
+  #[error("ErrorNotMapped")]
+  ErrorNotMapped,
 }
 impl From<Ee> for ProgramError {
   fn from(e: Ee) -> Self {
@@ -139,7 +202,7 @@ impl TryFrom<u32> for Ee {
       1 => Ok(Ee::NotSigner),
       2 => Ok(Ee::NotWritable),
       3 => Ok(Ee::NotExecutable),
-      4 => Ok(Ee::ZeroAsInput),
+      4 => Ok(Ee::ZeroAsU64),
       5 => Ok(Ee::DecimalsValue),
       6 => Ok(Ee::MintDataLen),
       7 => Ok(Ee::TokAcctDataLen),
@@ -148,48 +211,47 @@ impl TryFrom<u32> for Ee {
       10 => Ok(Ee::SystemProgram),
       11 => Ok(Ee::AtaOrOwner),
       12 => Ok(Ee::AtaOrMint),
-      13 => Ok(Ee::AtaCheckFailed),
-      14 => Ok(Ee::AtaOwnerInvalid),
+      13 => Ok(Ee::AtaCheckX1),
+      14 => Ok(Ee::ForeignAta),
       15 => Ok(Ee::ForeignPDA),
-      16 => Ok(Ee::EmptyLamport),
       17 => Ok(Ee::EmptyData),
-      18 => Ok(Ee::AcctType),
+      18 => Ok(Ee::Acct22Type),
       19 => Ok(Ee::StrOverMax),
       20 => Ok(Ee::StrUnderMin),
       21 => Ok(Ee::InputDataUnderMin),
       22 => Ok(Ee::InputDataOverMax),
-      23 => Ok(Ee::PdaNotInitialized),
-      24 => Ok(Ee::ParseU64),
+      23 => Ok(Ee::PdaNoLamport),
       25 => Ok(Ee::Tok22AcctDiscOffset),
-      26 => Ok(Ee::InputU8InvalidForStatus),
-      27 => Ok(Ee::InputU8InvalidForBool),
-      28 => Ok(Ee::U64ByteSizeInvalid),
-      29 => Ok(Ee::U32ByteSizeInvalid),
-      30 => Ok(Ee::U16ByteSizeInvalid),
-      31 => Ok(Ee::U8ByteSizeInvalid),
+      26 => Ok(Ee::ByteForStatus),
+      27 => Ok(Ee::ByteForSBool),
+      28 => Ok(Ee::ByteSizeForU64),
+      29 => Ok(Ee::ByteSizeForU32),
+      30 => Ok(Ee::ByteSizeForU16),
+      31 => Ok(Ee::ByteSizeForU8),
       32 => Ok(Ee::VaultPDA),
       33 => Ok(Ee::ConfigDataLengh),
       34 => Ok(Ee::FunctionSelector),
       35 => Ok(Ee::ConfigPDA),
-      36 => Ok(Ee::InputStatus),
+
       37 => Ok(Ee::MathOverflow),
       38 => Ok(Ee::MathUnderflow),
       39 => Ok(Ee::NotRentExamptMint22),
       40 => Ok(Ee::NotRentExamptTokAcct22),
-      41 => Ok(Ee::NotRentExamptPDA),
       42 => Ok(Ee::MintOrMintAuthority),
       43 => Ok(Ee::MintOrTokenProgram),
-      44 => Ok(Ee::PdaAuthority),
-      45 => Ok(Ee::InsufficientFundNominal),
+      45 => Ok(Ee::PdaToBeBelowRentExampt),
       46 => Ok(Ee::ToWallet),
-      47 => Ok(Ee::PdaDataLen),
+
       48 => Ok(Ee::ByteSliceSize32),
       49 => Ok(Ee::ByteSliceSize10),
       50 => Ok(Ee::ByteSliceSize6),
       51 => Ok(Ee::AtokenGPvbd),
       52 => Ok(Ee::ClockGet),
       53 => Ok(Ee::OnlyOwner),
-      _ => Err(Ee::ErrorValue.into()),
+      54 => Ok(Ee::UserPDA),
+      55 => Ok(Ee::ZeroAsU32),
+      56 => Ok(Ee::EscrowDataLengh),
+      _ => Err(Ee::ErrorNotMapped.into()),
     }
   }
 }
@@ -197,12 +259,36 @@ impl TryFrom<u32> for Ee {
 impl ToStr for Ee {
   fn to_str<E>(&self) -> &'static str {
     match self {
-      Ee::ErrorValue => "ErrorValue",
+      Ee::Xyz009 => "Xyz009",
+      Ee::Xyz010 => "Xyz010",
+      Ee::Xyz020 => "Xyz020",
+      Ee::Xyz030 => "Xyz030",
+      Ee::Xyz040 => "Xyz040",
+      Ee::Xyz050 => "Xyz050",
+      Ee::Xyz060 => "Xyz060",
+      Ee::Xyz070 => "Xyz070",
+      Ee::Xyz080 => "Xyz080",
+      Ee::Xyz090 => "Xyz090",
+      Ee::EscrowPDA => "EscrowPDA",
+      Ee::EscrowDataLengh => "EscrowDataLengh",
+      Ee::ActionDataLengh => "ActionDataLengh",
+      Ee::UserDataLengh => "UserDataLengh",
+      Ee::AdminDataLengh => "AdminDataLengh",
+      Ee::VaultDataLengh => "VaultDataLengh",
+      Ee::ByteSliceSize64 => "ByteSliceSize64",
+      Ee::ArrayLength => "ArrayLength",
+      Ee::AdminPDA => "AdminPDA",
+      Ee::ActionPDA => "ActionPDA",
+      Ee::ErrorNotMapped => "ErrorNotMapped",
       Ee::InvalidDiscriminator => "InvalidDiscriminator",
       Ee::NotSigner => "NotSigner",
       Ee::NotWritable => "NotWritable",
       Ee::NotExecutable => "NotExecutable",
-      Ee::ZeroAsInput => "ZeroAsInput",
+      Ee::ZeroAsU128 => "ZeroAsU128",
+      Ee::ZeroAsU64 => "ZeroAsU64",
+      Ee::ZeroAsU32 => "ZeroAsU32",
+      Ee::ZeroAsU16 => "ZeroAsU16",
+      Ee::ZeroAsU8 => "ZeroAsU8",
       Ee::DecimalsValue => "DecimalsValue",
       Ee::MintDataLen => "MintDataLen",
       Ee::TokAcctDataLen => "TokAcctDataLen",
@@ -211,47 +297,48 @@ impl ToStr for Ee {
       Ee::SystemProgram => "SystemProgram",
       Ee::AtaOrOwner => "AtaOrOwner",
       Ee::AtaOrMint => "AtaOrMint",
-      Ee::AtaCheckFailed => "AtaCheckFailed",
-      Ee::AtaOwnerInvalid => "AtaOwnerInvalid",
+      Ee::AtaCheckX1 => "AtaCheckX1",
+      Ee::ForeignAta => "ForeignAta",
       Ee::ForeignPDA => "ForeignPDA",
-      Ee::EmptyLamport => "EmptyLamport",
       Ee::EmptyData => "EmptyData",
-      Ee::AcctType => "AcctType",
+      Ee::Acct22Type => "Acct22Type",
       Ee::StrOverMax => "StrOverMax",
       Ee::StrUnderMin => "StrUnderMin",
       Ee::InputDataUnderMin => "InputDataUnderMin",
       Ee::InputDataOverMax => "InputDataOverMax",
-      Ee::PdaNotInitialized => "PdaNotInitialized",
-      Ee::ParseU64 => "ParseU64",
+      Ee::PdaNoLamport => "PdaNoLamport",
       Ee::Tok22AcctDiscOffset => "Tok22AcctDiscOffset",
-      Ee::InputU8InvalidForStatus => "InputU8InvalidForStatus",
-      Ee::InputU8InvalidForBool => "InputU8InvalidForBool",
-      Ee::U64ByteSizeInvalid => "U64ByteSizeInvalid",
-      Ee::U32ByteSizeInvalid => "U32ByteSizeInvalid",
-      Ee::U16ByteSizeInvalid => "U16ByteSizeInvalid",
-      Ee::U8ByteSizeInvalid => "U8ByteSizeInvalid",
+      Ee::ByteForStatus => "ByteForStatus",
+      Ee::ByteForSBool => "ByteForSBool",
+      Ee::ByteSizeForU128 => "ByteSizeForU128",
+      Ee::ByteSizeForU64 => "ByteSizeForU64",
+      Ee::ByteSizeForU32 => "ByteSizeForU32",
+      Ee::ByteSizeForU16 => "ByteSizeForU16",
+      Ee::ByteSizeForU8 => "ByteSizeForU8",
       Ee::VaultPDA => "VaultPDA",
       Ee::ConfigDataLengh => "ConfigDataLengh",
       Ee::FunctionSelector => "FunctionSelector",
       Ee::ConfigPDA => "ConfigPDA",
-      Ee::InputStatus => "InputStatus",
+      Ee::UserPDA => "UserPDA",
       Ee::MathOverflow => "MathOverflow",
       Ee::MathUnderflow => "MathUnderflow",
       Ee::NotRentExamptMint22 => "NotRentExamptMint22",
       Ee::NotRentExamptTokAcct22 => "NotRentExamptTokAcct22",
-      Ee::NotRentExamptPDA => "NotRentExamptPDA",
       Ee::MintOrMintAuthority => "MintOrMintAuthority",
       Ee::MintOrTokenProgram => "MintOrTokenProgram",
-      Ee::PdaAuthority => "PdaAuthority",
-      Ee::InsufficientFundNominal => "InsufficientFundNominal",
+      Ee::PdaToBeBelowRentExampt => "PdaToBeBelowRentExampt",
       Ee::ToWallet => "ToWallet",
-      Ee::PdaDataLen => "PdaDataLen",
+
       Ee::ByteSliceSize32 => "ByteSliceSize32",
       Ee::ByteSliceSize10 => "ByteSliceSize10",
       Ee::ByteSliceSize6 => "ByteSliceSize6",
       Ee::AtokenGPvbd => "AtokenGPvbd",
       Ee::ClockGet => "ClockGet",
       Ee::OnlyOwner => "OnlyOwner",
+      Ee::OnlyAdmin => "OnlyAdmin",
+      Ee::OnlyUser => "OnlyUser",
+      Ee::Xyz005 => "Xyz005",
+      Ee::Xyz006 => "Xyz006",
     }
   }
 }
@@ -368,7 +455,7 @@ pub fn check_ata22(
   }
   Ok(())
 }
-pub fn check_ata_x(
+pub fn check_ata_x1(
   authority: &AccountInfo,
   token_program: &AccountInfo,
   mint: &AccountInfo,
@@ -381,16 +468,22 @@ pub fn check_ata_x(
   .0
   .ne(ata.key())
   {
-    return Err(Ee::AtaCheckFailed.into());
+    return Err(Ee::AtaCheckX1.into());
   }
   Ok(())
 }
 pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
   if account.lamports() == 0 {
-    return Err(Ee::PdaNotInitialized.into());
+    return Err(Ee::PdaNoLamport.into());
   }
   if !account.is_owned_by(&crate::ID) {
     return Err(Ee::ForeignPDA.into());
+  }
+  Ok(())
+}
+pub fn check_initialized(account: &AccountInfo) -> Result<(), ProgramError> {
+  if account.lamports() > 0 {
+    return Err(ProgramError::AccountAlreadyInitialized);
   }
   Ok(())
 }
@@ -423,7 +516,7 @@ pub fn executable(account: &AccountInfo) -> Result<(), ProgramError> {
 }
 //TODO: Mint and ATA from TokenLgc works. For mint and ATA from Token2022?
 /// acc_type: 0 Mint, 1 TokenAccount
-pub fn rent_exempt(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
+pub fn rent_exempt22(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
   if acc_type == 0 && account.lamports() < Rent::get()?.minimum_balance(Mint22::BASE_LEN) {
     return Err(Ee::NotRentExamptMint22.into());
   }
@@ -431,11 +524,18 @@ pub fn rent_exempt(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramErr
     return Err(Ee::NotRentExamptTokAcct22.into());
   }
   if acc_type > 1 {
-    return Err(Ee::AcctType.into());
+    return Err(Ee::Acct22Type.into());
   }
   Ok(())
 }
-
+pub fn is_rent_exempt(account: &AccountInfo) -> Result<(u64, u64), ProgramError> {
+  let min_balance = Rent::get()?.minimum_balance(account.data_len());
+  let current = account.lamports();
+  if current < min_balance {
+    return Err(ProgramError::AccountNotRentExempt);
+  }
+  Ok((current, min_balance))
+}
 pub fn empty_lamport(account: &AccountInfo) -> Result<(), ProgramError> {
   if account.lamports() == 0 {
     return Ok(());
@@ -489,22 +589,22 @@ pub fn check_str_len(s: &str, min_len: usize, max_len: usize) -> Result<(), Prog
 //----------------== Parse Functions
 /// Parse a u64 from u8 array
 pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
-  let bytes: [u8; 8] = data.try_into().or_else(|_e| Err(Ee::U64ByteSizeInvalid))?;
+  let bytes: [u8; 8] = data.try_into().or_else(|_e| Err(Ee::ByteSizeForU64))?;
 
   let amt = u64::from_le_bytes(bytes);
   // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]]);
   if amt == 0 {
-    return Err(Ee::ZeroAsInput.into());
+    return Err(Ee::ZeroAsU64.into());
   }
   Ok(amt)
 }
 pub fn parse_u32(data: &[u8]) -> Result<u32, ProgramError> {
-  let bytes: [u8; 4] = data.try_into().or_else(|_e| Err(Ee::U32ByteSizeInvalid))?;
+  let bytes: [u8; 4] = data.try_into().or_else(|_e| Err(Ee::ByteSizeForU32))?;
 
   let amt = u32::from_le_bytes(bytes);
   // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3]]);
   if amt == 0 {
-    return Err(Ee::ZeroAsInput.into());
+    return Err(Ee::ZeroAsU32.into());
   }
   Ok(amt)
 }
@@ -526,7 +626,7 @@ pub fn u8_to_bool(v: u8) -> Result<bool, ProgramError> {
   match v {
     0 => Ok(false),
     1 => Ok(true),
-    _ => Err(Ee::InputU8InvalidForBool.into()),
+    _ => Err(Ee::ByteForSBool.into()),
   }
 }
 pub fn u8_to_status(v: u8) -> Result<Status, ProgramError> {
@@ -536,7 +636,7 @@ pub fn u8_to_status(v: u8) -> Result<Status, ProgramError> {
     2 => Ok(Status::Expired),
     3 => Ok(Status::Paused),
     4 => Ok(Status::Canceled),
-    _ => Err(Ee::InputU8InvalidForStatus.into()),
+    _ => Err(Ee::ByteForStatus.into()),
   }
 }
 
@@ -594,7 +694,7 @@ pub fn check_tokacct_interface(ata: &AccountInfo) -> Result<(), ProgramError> {
   if !ata.is_owned_by(&pinocchio_token_2022::ID) {
     //Legacy ATA
     if !ata.is_owned_by(&pinocchio_token::ID) {
-      return Err(Ee::AtaOwnerInvalid.into());
+      return Err(Ee::ForeignAta.into());
     } else {
       if ata
         .data_len()

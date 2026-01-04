@@ -9,7 +9,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_ata, check_decimals, check_mint0a, check_sysprog, derive_pda1, executable,
-  instructions::check_signer, min_data_len, parse_u64, rent_exempt, writable, Ee, VAULT_SEED,
+  instructions::check_signer, min_data_len, parse_u64, rent_exempt22, writable, Ee, VAULT_SEED,
 };
 
 /// TokLgc: Users to Redeem Tokens from VaultPDA
@@ -48,7 +48,7 @@ impl<'a> TokLgcRedeem<'a> {
     check_ata(from_ata, from_pda, mint)?;
 
     log!("TokLgcRedeem 1");
-    rent_exempt(mint, 0)?;
+    rent_exempt22(mint, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
@@ -70,7 +70,7 @@ impl<'a> TokLgcRedeem<'a> {
       check_ata(to_ata, user, mint)?;
     }
     writable(to_ata)?;
-    rent_exempt(to_ata, 1)?;
+    rent_exempt22(to_ata, 1)?;
     log!("TokLgcRedeem 6 ToATA is found/verified");
 
     let (expected_vault_pda, bump) = derive_pda1(from_pda_owner, VAULT_SEED)?;

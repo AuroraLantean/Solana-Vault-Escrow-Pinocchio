@@ -1,15 +1,10 @@
 use core::convert::TryFrom;
-use pinocchio::{
-  account_info::AccountInfo,
-  program_error::ProgramError,
-  sysvars::{rent::Rent, Sysvar},
-  ProgramResult,
-};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  Ee, VAULT_SEED,
+  is_rent_exempt, Ee, VAULT_SEED,
 };
 
 //  vault is owned by the program, matches the PDA derived from user. The withdrawn amount is everything above the rent minimum.
@@ -36,21 +31,18 @@ impl<'a> WithdrawSol<'a> {
     }
 
     // Compute how much can be withdrawn while keeping the account rent-exempt
-    let data_len = vault.data_len();
-    let min_balance = Rent::get()?.minimum_balance(data_len);
-
+    let (current, min_balance) = is_rent_exempt(vault)?;
     log!("withdraw amt: {}", amount);
-    let current = vault.lamports();
     log!("vault balc: {}", current);
-    if current <= min_balance {
-      return Err(Ee::NotRentExamptPDA.into());
+    if current <= amount {
+      return Err(ProgramError::InsufficientFunds);
     }
     if current
       <= min_balance
         .checked_add(amount)
         .ok_or_else(|| ProgramError::ArithmeticOverflow)?
     {
-      return Err(Ee::InsufficientFundNominal.into());
+      return Err(Ee::PdaToBeBelowRentExampt.into());
     }
 
     // Transfer SOL from vault to user

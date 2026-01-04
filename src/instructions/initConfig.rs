@@ -9,8 +9,9 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::{
-  check_sysprog, derive_pda1, empty_lamport, get_time, instructions::check_signer, min_data_len,
-  parse_u64, to32bytes, u8_to_bool, u8_to_status, Config, Ee, Status, CONFIG_SEED,
+  check_initialized, check_sysprog, derive_pda1, empty_lamport, get_time,
+  instructions::check_signer, min_data_len, parse_u64, to32bytes, u8_to_bool, u8_to_status, Config,
+  Ee, Status, CONFIG_SEED,
 };
 
 /// Init Config PDA
@@ -102,6 +103,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for InitConfig<'a> {
     check_signer(signer)?;
     check_sysprog(system_program)?;
     //writable(config_pda)?;
+    check_initialized(config_pda)?;
 
     let data_size1 = 42; //1+1+8+32
     min_data_len(data, data_size1)?;
