@@ -30,7 +30,7 @@ impl<'a> UpdateConfig<'a> {
       0 => self.update_status(),
       1 => self.update_fee(),
       2 => self.update_admin(),
-      _ => Err(Ee::FunctionSelector.into()),
+      _ => Ee::FunctionSelector.e(),
     }
   }
 
@@ -66,7 +66,7 @@ impl<'a> UpdateConfig<'a> {
   }
   pub fn only_owner(&self) -> ProgramResult {
     if self.config.prog_owner != *self.signer.key() {
-      return Err(Ee::OnlyProgOwner.into());
+      return Ee::OnlyProgOwner.e();
     }
     Ok(())
   }
@@ -104,7 +104,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     let expected_size: usize = 56;
     log!("expected_size: {}", expected_size);
     if data.len() != expected_size {
-      return Err(Ee::InputDataLen.into());
+      return Ee::InputDataLen.e();
     }*/
     let min_data_size1 = 88;
     min_data_len(data, min_data_size1)?; //56+32

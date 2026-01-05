@@ -38,10 +38,10 @@ impl Config {
   }
   pub fn check(pda: &AccountInfo) -> Result<(), ProgramError> {
     if pda.data_len() != Self::LEN {
-      return Err(Ee::ConfigDataLengh.into());
+      return Ee::ConfigDataLengh.e();
     }
     if pda.owner() != &crate::ID {
-      return Err(Ee::ForeignPDA.into());
+      return Ee::ForeignPDA.e();
     }
     // CHECK alignment for the most restrictive field (u64 in this case)... Alignment requirement checking can be removed ONLY IF you know all numbers are using u8 arrays
     /*if (pda.borrow_mut_data_unchecked().as_ptr() as usize) % core::mem::align_of::<Self>() != 0 { return Err();  }*/

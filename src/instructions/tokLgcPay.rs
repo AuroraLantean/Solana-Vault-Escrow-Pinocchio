@@ -37,10 +37,6 @@ impl<'a> TokLgcPay<'a> {
       amount,
     } = self;
     log!("TokLgcPay process()");
-    writable(from_ata)?;
-    check_ata(from_ata, user, mint)?;
-
-    log!("TokLgcPay 1");
     rent_exempt22(mint, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
@@ -48,7 +44,7 @@ impl<'a> TokLgcPay<'a> {
     log!("TokLgcPay 2");
     //only to_wallet(owner) should make to_wallet
     if to_wallet.lamports() == 0 {
-      return Err(Ee::ToWallet.into());
+      return Ee::ToWallet.e();
     }
     log!("TokLgcPay 7a");
     check_pda(to_wallet)?;
@@ -110,6 +106,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     //check_pda(config_pda)?;
+    writable(from_ata)?;
+    check_ata(from_ata, user, mint)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     min_data_len(data, 9)?;

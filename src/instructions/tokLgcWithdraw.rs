@@ -42,10 +42,6 @@ impl<'a> TokLgcWithdraw<'a> {
       amount,
     } = self;
     log!("TokLgcWithdraw process()");
-    writable(from_ata)?;
-    check_ata(from_ata, from_wallet, mint)?;
-
-    log!("TokLgcWithdraw 1");
     rent_exempt22(mint, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
@@ -74,7 +70,7 @@ impl<'a> TokLgcWithdraw<'a> {
 
     let (expected_vault_pda, bump) = derive_pda1(user, VAULT_SEED)?;
     if from_wallet.key() != &expected_vault_pda {
-      return Err(Ee::VaultPDA.into());
+      return Ee::VaultPDA.e();
     }
     let signer_seeds = [
       Seed::from(VAULT_SEED),
@@ -119,6 +115,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcWithdraw<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     //check_pda(config_pda)?;
+    writable(from_ata)?;
+    check_ata(from_ata, from_wallet, mint)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     min_data_len(data, 9)?;

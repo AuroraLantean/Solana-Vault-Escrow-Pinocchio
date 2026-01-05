@@ -27,7 +27,7 @@ impl<'a> WithdrawSol<'a> {
 
     let (expected_vault_pda, _bump) = derive_pda1(user, VAULT_SEED)?;
     if vault.key() != &expected_vault_pda {
-      return Err(Ee::VaultPDA.into());
+      return Ee::VaultPDA.e();
     }
 
     // Compute how much can be withdrawn while keeping the account rent-exempt
@@ -42,7 +42,7 @@ impl<'a> WithdrawSol<'a> {
         .checked_add(amount)
         .ok_or_else(|| ProgramError::ArithmeticOverflow)?
     {
-      return Err(Ee::PdaToBeBelowRentExempt.into());
+      return Ee::PdaToBeBelowRentExempt.e();
     }
 
     // Transfer SOL from vault to user

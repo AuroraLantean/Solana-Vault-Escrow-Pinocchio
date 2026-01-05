@@ -44,10 +44,6 @@ impl<'a> TokLgcRedeem<'a> {
       amount,
     } = self;
     log!("TokLgcRedeem process()");
-    writable(from_ata)?;
-    check_ata(from_ata, from_pda, mint)?;
-
-    log!("TokLgcRedeem 1");
     rent_exempt22(mint, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
@@ -76,7 +72,7 @@ impl<'a> TokLgcRedeem<'a> {
     let (expected_vault_pda, bump) = derive_pda1(from_pda_owner, VAULT_SEED)?;
     log!("TokLgcRedeem 7a");
     if from_pda.key() != &expected_vault_pda {
-      return Err(Ee::VaultPDA.into());
+      return Ee::VaultPDA.e();
     }
     log!("TokLgcRedeem 7b");
     let signer_seeds = [
@@ -123,6 +119,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcRedeem<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     //check_pda(config_pda)?;
+    writable(from_ata)?;
+    check_ata(from_ata, from_pda, mint)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     min_data_len(data, 9)?;

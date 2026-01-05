@@ -49,7 +49,7 @@ impl<'a> InitConfig<'a> {
 
     log!("InitConfig 5");
     if expected_config_pda != *config_pda.key() {
-      return Err(Ee::ConfigPDA.into());
+      return Ee::ConfigPDA.e();
     }
 
     log!("InitConfig 6");

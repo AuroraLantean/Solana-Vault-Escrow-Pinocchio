@@ -200,7 +200,11 @@ export const checkSuccess = (
 		const pos = errStr.search("custom program error: 0x");
 		ll("pos:", pos);
 		if (pos > -1) {
-			const errCode = errStr.substring(pos + 22, pos + 26);
+			let errCode = errStr.substring(pos + 22, pos + 26);
+			if (errCode.slice(-1) === '"') {
+				//ll("last char:", errCode.slice(-1));
+				errCode = errCode.slice(0, -1);
+			}
 			ll("error code:", errCode, Number(errCode));
 		}
 		ll(

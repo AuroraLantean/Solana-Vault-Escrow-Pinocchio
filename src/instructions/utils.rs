@@ -14,8 +14,8 @@ use crate::Status;
 //TODO: put errors in error.rs ... https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-errors
 #[derive(Clone, Debug, Eq, Error, PartialEq)] //FromPrimitive
 pub enum Ee {
-  #[error("InvalidDiscriminator")]
-  InvalidDiscriminator,
+  #[error("MethodDiscriminator")]
+  MethodDiscriminator,
   #[error("Xyz001")]
   Xyz001,
   #[error("OnlyProgOwner")]
@@ -207,10 +207,10 @@ pub enum Ee {
   Acct22Type,
   #[error("Tok22AcctDiscOffset")]
   Tok22AcctDiscOffset,
-  #[error("NotRentExemptMint22")]
-  NotRentExemptMint22,
-  #[error("NotRentExemptTokAcct22")]
-  NotRentExemptTokAcct22,
+  #[error("NoRentExemptMint22")]
+  NoRentExemptMint22,
+  #[error("NoRentExemptTokAcct22")]
+  NoRentExemptTokAcct22,
   #[error("Xyz094")]
   Xyz094,
   //Withdraw
@@ -242,21 +242,26 @@ pub enum Ee {
   FunctionSelector,
   #[error("ClockGet")]
   ClockGet,
-  #[error("ErrorNotMapped")]
-  ErrorNotMapped,
+  #[error("NotMapped")]
+  NotMapped,
   //ProgramError: AccountBorrowFailed
+}
+impl Ee {
+  pub fn e(self) -> Result<(), ProgramError> {
+    Err(ProgramError::Custom(self as u32))
+  }
 }
 impl From<Ee> for ProgramError {
   fn from(e: Ee) -> Self {
     ProgramError::Custom(e as u32)
   }
-} //TODO: fix tryFrom and to_str below
-  //Deserialize Errors from Raw Values
+}
+//Deserialize Errors from Raw Values
 impl TryFrom<u32> for Ee {
   type Error = ProgramError;
   fn try_from(error: u32) -> Result<Self, Self::Error> {
     match error {
-      0 => Ok(Ee::InvalidDiscriminator),
+      0 => Ok(Ee::MethodDiscriminator),
       1 => Ok(Ee::Xyz001),
       2 => Ok(Ee::OnlyProgOwner),
       3 => Ok(Ee::OnlyAdmin),
@@ -348,8 +353,8 @@ impl TryFrom<u32> for Ee {
       89 => Ok(Ee::Xyz089),
       90 => Ok(Ee::Acct22Type),
       91 => Ok(Ee::Tok22AcctDiscOffset),
-      92 => Ok(Ee::NotRentExemptMint22),
-      93 => Ok(Ee::NotRentExemptTokAcct22),
+      92 => Ok(Ee::NoRentExemptMint22),
+      93 => Ok(Ee::NoRentExemptTokAcct22),
       94 => Ok(Ee::Xyz094),
       95 => Ok(Ee::PdaToBeBelowRentExempt),
       96 => Ok(Ee::ToWallet),
@@ -364,7 +369,7 @@ impl TryFrom<u32> for Ee {
       105 => Ok(Ee::EmptyData),
       106 => Ok(Ee::FunctionSelector),
       107 => Ok(Ee::ClockGet),
-      _ => Err(Ee::ErrorNotMapped.into()),
+      _ => Err(Ee::NotMapped.into()),
     }
   }
 }
@@ -372,7 +377,7 @@ impl TryFrom<u32> for Ee {
 impl ToStr for Ee {
   fn to_str<E>(&self) -> &'static str {
     match self {
-      Ee::InvalidDiscriminator => "InvalidDiscriminator",
+      Ee::MethodDiscriminator => "MethodDiscriminator",
       Ee::Xyz001 => "Xyz001",
       Ee::OnlyProgOwner => "OnlyProgOwner",
       Ee::OnlyAdmin => "OnlyAdmin",
@@ -472,8 +477,8 @@ impl ToStr for Ee {
 
       Ee::Acct22Type => "Acct22Type",
       Ee::Tok22AcctDiscOffset => "Tok22AcctDiscOffset",
-      Ee::NotRentExemptMint22 => "NotRentExemptMint22",
-      Ee::NotRentExemptTokAcct22 => "NotRentExemptTokAcct22",
+      Ee::NoRentExemptMint22 => "NoRentExemptMint22",
+      Ee::NoRentExemptTokAcct22 => "NoRentExemptTokAcct22",
       Ee::Xyz094 => "Xyz094",
       Ee::PdaToBeBelowRentExempt => "PdaToBeBelowRentExempt",
       Ee::ToWallet => "ToWallet",
@@ -489,7 +494,7 @@ impl ToStr for Ee {
       Ee::EmptyData => "EmptyData",
       Ee::FunctionSelector => "FunctionSelector",
       Ee::ClockGet => "ClockGet",
-      Ee::ErrorNotMapped => "ErrorNotMapped",
+      Ee::NotMapped => "NotMapped",
     }
   }
 }
@@ -504,13 +509,13 @@ pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
 pub fn check_mint0a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<(), ProgramError> {
   //if !mint.is_owned_by(mint_authority)
   if mint.data_len() != pinocchio_token::state::Mint::LEN {
-    return Err(Ee::MintDataLen.into());
+    return Ee::MintDataLen.e();
   }
   if !token_program.key().eq(&pinocchio_token::ID) {
-    return Err(Ee::TokenProgram.into());
+    return Ee::TokenProgram.e();
   }
   if mint.owner() != &pinocchio_token::ID {
-    return Err(Ee::MintOrTokenProgram.into());
+    return Ee::MintOrTokenProgram.e();
   }
   Ok(())
 }
@@ -526,10 +531,10 @@ pub fn check_mint0b(
     .mint_authority()
     .is_some_and(|authority| !mint_authority.key().eq(authority))
   {
-    return Err(Ee::MintOrMintAuthority.into());
+    return Ee::MintOrMintAuthority.e();
   }
   if decimals != mint_info.decimals() {
-    return Err(Ee::DecimalsValue.into());
+    return Ee::DecimalsValue.e();
   }
   check_mint0a(mint, token_program)?;
   //TODO: over mint supply?
@@ -539,13 +544,13 @@ pub fn check_mint0b(
 pub fn check_mint22a(mint: &AccountInfo, token_program: &AccountInfo) -> Result<(), ProgramError> {
   //if !mint.is_owned_by(mint_authority)
   if mint.data_len() != pinocchio_token_2022::state::Mint::BASE_LEN {
-    return Err(Ee::MintDataLen.into());
+    return Ee::MintDataLen.e();
   }
   if !token_program.key().eq(&pinocchio_token_2022::ID) {
-    return Err(Ee::TokenProgram.into());
+    return Ee::TokenProgram.e();
   }
   if mint.owner() != &pinocchio_token_2022::ID {
-    return Err(Ee::MintOrTokenProgram.into());
+    return Ee::MintOrTokenProgram.e();
   }
   Ok(())
 }
@@ -561,10 +566,10 @@ pub fn check_mint22b(
     .mint_authority()
     .is_some_and(|authority| !mint_authority.key().eq(authority))
   {
-    return Err(Ee::MintOrMintAuthority.into());
+    return Ee::MintOrMintAuthority.e();
   }
   if decimals != mint_info.decimals() {
-    return Err(Ee::DecimalsValue.into());
+    return Ee::DecimalsValue.e();
   }
   check_mint22a(mint, token_program)?;
   //TODO: over mint supply?
@@ -580,14 +585,14 @@ pub fn check_ata(
     .data_len()
     .ne(&pinocchio_token::state::TokenAccount::LEN)
   {
-    return Err(Ee::AtaDataLen.into());
+    return Ee::AtaDataLen.e();
   }
   let ata_info = pinocchio_token::state::TokenAccount::from_account_info(ata)?;
   if !ata_info.owner().eq(owner.key()) {
-    return Err(Ee::AtaOrOwner.into());
+    return Ee::AtaOrOwner.e();
   }
   if !ata_info.mint().eq(mint.key()) {
-    return Err(Ee::AtaOrMint.into());
+    return Ee::AtaOrMint.e();
   }
   Ok(())
 }
@@ -599,10 +604,10 @@ pub fn check_ata22(
   // token2022 ata has first 165 bytes the same as the legacy ata, but then some more data //log!("ata22 len:{}", ata.data_len());
   let ata_info = TokenAccount22::from_account_info(ata)?;
   if !ata_info.owner().eq(owner.key()) {
-    return Err(Ee::AtaOrOwner.into());
+    return Ee::AtaOrOwner.e();
   }
   if !ata_info.mint().eq(mint.key()) {
-    return Err(Ee::AtaOrMint.into());
+    return Ee::AtaOrMint.e();
   }
   Ok(())
 }
@@ -619,29 +624,29 @@ pub fn check_ata_x1(
   .0
   .ne(ata.key())
   {
-    return Err(Ee::AtaCheckX1.into());
+    return Ee::AtaCheckX1.e();
   }
   Ok(())
 }
 pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
   if account.lamports() == 0 {
-    return Err(Ee::PdaNoLamport.into());
+    return Ee::PdaNoLamport.e();
   }
   if !account.is_owned_by(&crate::ID) {
-    return Err(Ee::ForeignPDA.into());
+    return Ee::ForeignPDA.e();
   }
   Ok(())
 }
 pub fn check_sysprog(system_program: &AccountInfo) -> Result<(), ProgramError> {
   if !system_program.key().eq(&pinocchio_system::ID) {
-    return Err(Ee::SystemProgram.into());
+    return Ee::SystemProgram.e();
   }
   Ok(())
 }
 pub const ATOKENGPVBD: pinocchio_pubkey::reexport::Pubkey = pinocchio_system::ID; //[0, 0];
 pub fn check_atoken_gpvbd(atoken_program: &AccountInfo) -> Result<(), ProgramError> {
   if !atoken_program.key().eq(&ATOKENGPVBD) {
-    return Err(Ee::AtokenGPvbd.into());
+    return Ee::AtokenGPvbd.e();
   }
   Ok(())
 }
@@ -649,13 +654,13 @@ pub fn check_atoken_gpvbd(atoken_program: &AccountInfo) -> Result<(), ProgramErr
 //----------------== Check Account Properties
 pub fn writable(account: &AccountInfo) -> Result<(), ProgramError> {
   if !account.is_writable() {
-    return Err(Ee::NotWritable.into());
+    return Ee::NotWritable.e();
   }
   Ok(())
 }
 pub fn executable(account: &AccountInfo) -> Result<(), ProgramError> {
   if !account.executable() {
-    return Err(Ee::NotExecutable.into());
+    return Ee::NotExecutable.e();
   }
   Ok(())
 }
@@ -664,14 +669,14 @@ pub fn executable(account: &AccountInfo) -> Result<(), ProgramError> {
 pub fn rent_exempt22(account: &AccountInfo, acc_type: u8) -> Result<(), ProgramError> {
   //Check Mint
   if acc_type == 0 && account.lamports() < Rent::get()?.minimum_balance(Mint22::BASE_LEN) {
-    return Err(Ee::NotRentExemptMint22.into());
+    return Ee::NoRentExemptMint22.e();
   }
   //Check TokenAccount
   if acc_type == 1 && account.lamports() < Rent::get()?.minimum_balance(TokenAccount22::BASE_LEN) {
-    return Err(Ee::NotRentExemptTokAcct22.into());
+    return Ee::NoRentExemptTokAcct22.e();
   }
   if acc_type > 1 {
-    return Err(Ee::Acct22Type.into());
+    return Ee::Acct22Type.e();
   }
   Ok(())
 }
@@ -699,19 +704,19 @@ pub fn empty_data(account: &AccountInfo) -> Result<(), ProgramError> {
   if account.data_len() == 0 {
     return Ok(());
   }
-  Err(Ee::EmptyData.into())
+  Ee::EmptyData.e()
 }
 
 //----------------== Check Input Values
 pub fn min_data_len(data: &[u8], min: usize) -> Result<(), ProgramError> {
   if data.len() < min {
-    return Err(Ee::InputDataUnderMin.into());
+    return Ee::InputDataUnderMin.e();
   }
   Ok(())
 }
 pub fn max_data_len(data: &[u8], max: usize) -> Result<(), ProgramError> {
   if data.len() > max {
-    return Err(Ee::InputDataOverMax.into());
+    return Ee::InputDataOverMax.e();
   }
   Ok(())
 }
@@ -719,22 +724,22 @@ pub fn max_data_len(data: &[u8], max: usize) -> Result<(), ProgramError> {
 pub fn check_decimals(mint: &AccountInfo, decimals: u8) -> Result<(), ProgramError> {
   let mint_info = pinocchio_token::state::Mint::from_account_info(mint)?;
   if decimals != mint_info.decimals() {
-    return Err(Ee::DecimalsValue.into());
+    return Ee::DecimalsValue.e();
   }
   Ok(())
 }
 pub fn check_decimals_max(decimals: u8, max: u8) -> Result<(), ProgramError> {
   if decimals > max {
-    return Err(Ee::DecimalsValue.into());
+    return Ee::DecimalsValue.e();
   }
   Ok(())
 }
 pub fn check_str_len(s: &str, min_len: usize, max_len: usize) -> Result<(), ProgramError> {
   if s.len() < min_len {
-    return Err(Ee::StrOverMax.into());
+    return Ee::StrOverMax.e();
   }
   if s.len() > max_len {
-    return Err(Ee::StrUnderMin.into());
+    return Ee::StrUnderMin.e();
   }
   Ok(())
 }
@@ -821,10 +826,10 @@ pub fn check_mint_interface(mint: &AccountInfo) -> Result<(), ProgramError> {
   if !mint.is_owned_by(&pinocchio_token_2022::ID) {
     //legacy token
     if !mint.is_owned_by(&pinocchio_token::ID) {
-      return Err(Ee::MintOrTokenProgram.into());
+      return Ee::MintOrTokenProgram.e();
     } else {
       if mint.data_len().ne(&pinocchio_token::state::Mint::LEN) {
-        return Err(Ee::MintDataLen.into());
+        return Ee::MintDataLen.e();
       }
     }
   } else {
@@ -833,10 +838,10 @@ pub fn check_mint_interface(mint: &AccountInfo) -> Result<(), ProgramError> {
 
     if data.len().ne(&pinocchio_token::state::Mint::LEN) {
       if data.len().le(&TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET) {
-        return Err(Ee::Ata22DataLen.into());
+        return Ee::Ata22DataLen.e();
       }
       if data[TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET].ne(&TOKEN_2022_MINT_DISCRIMINATOR) {
-        return Err(Ee::Tok22AcctDiscOffset.into());
+        return Ee::Tok22AcctDiscOffset.e();
       }
     }
   }
@@ -847,13 +852,13 @@ pub fn check_tokacct_interface(ata: &AccountInfo) -> Result<(), ProgramError> {
   if !ata.is_owned_by(&pinocchio_token_2022::ID) {
     //Legacy ATA
     if !ata.is_owned_by(&pinocchio_token::ID) {
-      return Err(Ee::ForeignAta.into());
+      return Ee::ForeignAta.e();
     } else {
       if ata
         .data_len()
         .ne(&pinocchio_token::state::TokenAccount::LEN)
       {
-        return Err(Ee::AtaDataLen.into());
+        return Ee::AtaDataLen.e();
       }
     }
   } else {
@@ -862,10 +867,10 @@ pub fn check_tokacct_interface(ata: &AccountInfo) -> Result<(), ProgramError> {
 
     if data.len().ne(&pinocchio_token::state::TokenAccount::LEN) {
       if data.len().le(&TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET) {
-        return Err(Ee::Ata22DataLen.into());
+        return Ee::Ata22DataLen.e();
       }
       if data[TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET].ne(&TOKEN_2022_TOKEN_ACCOUNT_DISCRIMINATOR) {
-        return Err(Ee::Tok22AcctDiscOffset.into());
+        return Ee::Tok22AcctDiscOffset.e();
       }
     }
   }

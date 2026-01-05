@@ -81,7 +81,7 @@ fn ensure_deposit_accounts(user: &AccountInfo, vault: &AccountInfo) -> ProgramRe
   if vault.lamports() == 0 {
     let (expected_vault_pda, bump) = derive_pda1(user, VAULT_SEED)?;
     if vault.key() != &expected_vault_pda {
-      return Err(Ee::VaultPDA.into());
+      return Ee::VaultPDA.e();
     }
     let signer_seeds = [
       Seed::from(VAULT_SEED),
