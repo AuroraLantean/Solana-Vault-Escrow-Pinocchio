@@ -11,15 +11,9 @@ import {
 	type Keypair,
 	SystemProgram,
 	Transaction,
-	TransactionInstruction,
 } from "@solana/web3.js";
-import type {
-	FailedTransactionMetadata,
-	SimulatedTransactionInfo,
-	TransactionMetadata,
-} from "litesvm";
 import {
-	checkSuccess,
+	depositSol,
 	initBalc,
 	makeMint,
 	svm,
@@ -31,23 +25,18 @@ import {
 	adminAddr,
 	adminKp,
 	ownerKp,
-	systemProgram,
 	usdcMint,
 	user1Addr,
 	user1Kp,
-	vaultProgAddr,
 } from "./web3jsSetup";
 
-let disc = 0; //discriminator
+//let disc = 0; //discriminator
 let payerKp: Keypair;
 let amount: bigint;
 let amt: bigint;
 let argData: Uint8Array<ArrayBufferLike>;
 let blockhash: string;
-let ix: TransactionInstruction;
 let tx: Transaction;
-let simRes: FailedTransactionMetadata | SimulatedTransactionInfo;
-let sendRes: FailedTransactionMetadata | TransactionMetadata;
 
 const adminBalc = svm.getBalance(adminAddr);
 ll("admin SOL:", adminBalc);
@@ -74,62 +63,20 @@ test("transfer SOL", () => {
 
 test("Owner Deposits SOL to VaultPDA", () => {
 	ll("\n------== Owner Deposits SOL to VaultPDA");
-	disc = 0; //discriminator
 	ll("vaultPDA:", vaultPDA.toBase58());
 	payerKp = ownerKp;
 	amount = as9zBn(0.46);
-	//ll(toLam(amtSol));
-
 	argData = bigintToBytes(amount);
-
-	blockhash = svm.latestBlockhash();
-	ix = new TransactionInstruction({
-		keys: [
-			{ pubkey: payerKp.publicKey, isSigner: true, isWritable: true },
-			{ pubkey: vaultPDA, isSigner: false, isWritable: true },
-			{ pubkey: systemProgram, isSigner: false, isWritable: false },
-		],
-		programId: vaultProgAddr,
-		data: Buffer.from([disc, ...argData]),
-	});
-	tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(payerKp);
-
-	simRes = svm.simulateTransaction(tx);
-	sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	depositSol(svm, vaultPDA, argData, payerKp);
 });
 
 test("User1 Deposits SOL to vault1", () => {
 	ll("\n------== User1 Deposits SOL to vault1");
-	disc = 0; //discriminator
 	ll("vaultPDA1:", vaultPDA1.toBase58());
 	payerKp = user1Kp;
-	amount = as9zBn(1.23);
-	//ll(toLam(amtSol));1230000000n
-
+	amount = as9zBn(1.23); //1230000000n
 	argData = bigintToBytes(amount);
-
-	blockhash = svm.latestBlockhash();
-	ix = new TransactionInstruction({
-		keys: [
-			{ pubkey: payerKp.publicKey, isSigner: true, isWritable: true },
-			{ pubkey: vaultPDA1, isSigner: false, isWritable: true },
-			{ pubkey: systemProgram, isSigner: false, isWritable: false },
-		],
-		programId: vaultProgAddr,
-		data: Buffer.from([disc, ...argData]),
-	});
-	tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(payerKp);
-
-	simRes = svm.simulateTransaction(tx);
-	sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	depositSol(svm, vaultPDA1, argData, payerKp);
 });
 
 test("inputNum to/from Bytes", () => {

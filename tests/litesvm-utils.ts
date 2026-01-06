@@ -6,12 +6,13 @@ import {
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import type { Keypair } from "@solana/web3.js";
 import {
+	type Keypair,
 	LAMPORTS_PER_SOL,
 	PublicKey,
 	SystemProgram,
 	Transaction,
+	TransactionInstruction,
 } from "@solana/web3.js";
 import type {
 	FailedTransactionMetadata,
@@ -22,6 +23,7 @@ import {
 	adminAddr,
 	hackerAddr,
 	ownerAddr,
+	systemProgram,
 	user1Addr,
 	user2Addr,
 	user3Addr,
@@ -91,8 +93,32 @@ export const makeAccount = (
 	svm.sendTransaction(tx);
 };
 
-//-------------==
-
+//-------------== Program Methods
+export const depositSol = (
+	svm: LiteSVM,
+	vaultPdaX: PublicKey,
+	argData: Uint8Array<ArrayBufferLike>,
+	signer: Keypair,
+) => {
+	const disc = 0;
+	const blockhash = svm.latestBlockhash();
+	const ix = new TransactionInstruction({
+		keys: [
+			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: vaultPdaX, isSigner: false, isWritable: true },
+			{ pubkey: systemProgram, isSigner: false, isWritable: false },
+		],
+		programId: vaultProgAddr,
+		data: Buffer.from([disc, ...argData]),
+	});
+	const tx = new Transaction();
+	tx.recentBlockhash = blockhash;
+	tx.add(ix); //tx.add(...ixs);
+	tx.sign(signer);
+	const simRes = svm.simulateTransaction(tx);
+	const sendRes = svm.sendTransaction(tx);
+	checkSuccess(simRes, sendRes, vaultProgAddr);
+};
 //-------------== USDC or USDT
 export const makeMint = (
 	svm: LiteSVM,
