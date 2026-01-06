@@ -9,7 +9,7 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::{
-  check_sysprog, derive_pda1, get_time, instructions::check_signer, min_data_len, not_initialized,
+  check_sysprog, data_len, derive_pda1, get_time, instructions::check_signer, not_initialized,
   parse_u64, to32bytes, u8_to_bool, u8_to_status, Config, Ee, Status, CONFIG_SEED,
 };
 
@@ -77,7 +77,8 @@ impl<'a> InitConfig<'a> {
     config.set_prog_owner(*prog_owner.key());
     config.set_admin(*prog_admin.key());
     config.set_str_u8array(str_u8array);
-    config.set_fee(fee);
+
+    config.set_fee(fee)?;
     config.set_updated_at(time);
     config.set_is_authorized(is_authorized);
     config.set_status(status);
@@ -102,7 +103,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for InitConfig<'a> {
     not_initialized(config_pda)?;
 
     let data_size1 = 42; //1+1+8+32
-    min_data_len(data, data_size1)?;
+    data_len(data, data_size1)?;
 
     let is_authorized = u8_to_bool(data[0])?;
     let status = u8_to_status(data[1])?;

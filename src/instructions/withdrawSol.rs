@@ -4,7 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  rent_exempt, Ee, VAULT_SEED,
+  none_zero_u64, rent_exempt, Ee, VAULT_SEED,
 };
 
 //  vault is owned by the program, matches the PDA derived from user. The withdrawn amount is everything above the rent minimum.
@@ -59,7 +59,7 @@ impl<'a> WithdrawSol<'a> {
 
       *admin_lamports = admin_lamports
         .checked_add(amount)
-        .ok_or_else(|| Ee::MathOverflow)?;
+        .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
     }
     log!("{} lamports withdrawn from vault", amount);
     Ok(())
@@ -80,6 +80,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for WithdrawSol<'a> {
     check_pda(vault)?;
 
     let amount = parse_u64(data)?;
+    none_zero_u64(amount)?;
     Ok(Self {
       user,
       vault,

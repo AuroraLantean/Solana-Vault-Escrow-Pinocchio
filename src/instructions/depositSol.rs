@@ -13,7 +13,7 @@ use pinocchio_system::instructions::Transfer as SystemTransfer;
 use crate::{
   check_sysprog,
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  Ee, ACCOUNT_DISCRIMINATOR_SIZE, VAULT_SEED,
+  none_zero_u64, Ee, ACCOUNT_DISCRIMINATOR_SIZE, VAULT_SEED,
 };
 
 // Deposit SOL to program PDA
@@ -67,6 +67,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for DepositSol<'a> {
     log!("DepositSol data: {}", data);
     let amount = parse_u64(data)?;
     log!("amount: {}", amount);
+    none_zero_u64(amount)?;
     Ok(Self {
       user,
       vault,

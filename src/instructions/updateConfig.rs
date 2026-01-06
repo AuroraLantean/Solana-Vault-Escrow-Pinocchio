@@ -3,7 +3,7 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-  check_pda, get_time, instructions::check_signer, min_data_len, parse_u32, parse_u64, to32bytes,
+  check_pda, data_len, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
   u8_to_bool, u8_to_status, writable, Config, Ee, Status,
 };
 
@@ -17,10 +17,9 @@ pub struct UpdateConfig<'a> {
   pub u8s: [u8; 4],
   pub u32s: [u32; 4],
   pub u64s: [u64; 4],
-  pub str_u8array: [u8; 32], //pub str_u8: &'a [u8], //pub datalen: usize,
+  pub str_u8array: [u8; 32],
   pub config: &'a mut Config,
 }
-//impl<'a> Copy for UpdateConfig<'a> {}
 impl<'a> UpdateConfig<'a> {
   pub const DISCRIMINATOR: &'a u8 = &13;
 
@@ -52,7 +51,8 @@ impl<'a> UpdateConfig<'a> {
 
   pub fn update_fee(self) -> ProgramResult {
     log!("UpdateConfig update_fee()");
-    self.config.set_fee(self.u64s[0]);
+    let fee = self.u64s[0];
+    self.config.set_fee(fee)?;
     let time = get_time()?;
     self.config.set_updated_at(time);
 
@@ -61,7 +61,7 @@ impl<'a> UpdateConfig<'a> {
     self.config.set_str_u8array(self.str_u8array);
 
     self.config.set_admin(*self.account1.key());
-    self.add_tokens()?;
+    //self.add_tokens()?;
     Ok(())
   }
   pub fn only_owner(&self) -> ProgramResult {
@@ -107,27 +107,37 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
       return Ee::InputDataLen.e();
     }*/
     let min_data_size1 = 88;
-    min_data_len(data, min_data_size1)?; //56+32
+    data_len(data, min_data_size1)?; //56+32
 
-    log!("parse input arguments");
+    log!("parse booleans");
     let b0 = u8_to_bool(data[0])?;
     let b1 = u8_to_bool(data[1])?;
     let b2 = u8_to_bool(data[2])?;
     let b3 = u8_to_bool(data[3])?;
     let bools = [b0, b1, b2, b3];
 
+    log!("parse u8 array");
     let u8s = [data[4], data[5], data[6], data[7]];
+    log!("u8a: {}, u8b: {}", data[4], data[5]);
+    log!("parse u32 array");
     let u32a = parse_u32(&data[8..12])?;
     let u32b = parse_u32(&data[12..16])?;
     let u32c = parse_u32(&data[16..20])?;
     let u32d = parse_u32(&data[20..24])?;
     let u32s = [u32a, u32b, u32c, u32d];
-    let num64a = parse_u64(&data[24..32])?;
-    let num64b = parse_u64(&data[32..40])?;
-    let num64c = parse_u64(&data[40..48])?;
-    let num64d = parse_u64(&data[48..56])?;
-    let u64s = [num64a, num64b, num64c, num64d];
-    log!("u8s: {}, u32s: {}, u64s: {}", &u8s, &u32s, &u64s);
+    log!("u32a: {}", u32a);
+
+    log!("parse u64 array");
+    let u64a = parse_u64(&data[24..32])?;
+    let u64b = parse_u64(&data[32..40])?;
+    let u64c = parse_u64(&data[40..48])?;
+    let u64d = parse_u64(&data[48..56])?;
+    let u64s = [u64a, u64b, u64c, u64d];
+    log!("u64a: {}", u64a);
+    //TODO: WHY u64a is not parsed properly???
+    //log!("u8s: {}", &u8s);
+    //log!("u32s: {}", &u32s);
+    //log!("u64s: {}", &u64s);
 
     let str_u8array = *to32bytes(&data[56..min_data_size1])?;
     log!("str_u8array: {}", &str_u8array);

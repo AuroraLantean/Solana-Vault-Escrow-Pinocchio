@@ -1,6 +1,8 @@
-use pinocchio::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
+use pinocchio::{
+  account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey, ProgramResult,
+};
 
-use crate::Ee;
+use crate::{none_zero_u64, Ee};
 
 #[derive(Clone, Copy, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
@@ -65,8 +67,10 @@ impl Config {
   pub fn set_str_u8array(&mut self, str_u8array: [u8; 32]) {
     self.str_u8array = str_u8array;
   }
-  pub fn set_fee(&mut self, amt: u64) {
+  pub fn set_fee(&mut self, amt: u64) -> ProgramResult {
+    none_zero_u64(amt)?;
     self.fee = amt.to_le_bytes();
+    Ok(())
   }
   pub fn set_sol_balance(&mut self, amt: u64) {
     self.sol_balance = amt.to_le_bytes();

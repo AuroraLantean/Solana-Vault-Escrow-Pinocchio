@@ -24,6 +24,8 @@ import {
 	ll,
 	statusToByte,
 	strToU8Fixed,
+	u32Bytes,
+	u64Bytes,
 } from "./utils";
 import {
 	adminAddr,
@@ -45,15 +47,17 @@ let _authorityKp: Keypair;
 let _authority: PublicKey;
 let progOwner: PublicKey;
 let progAdmin: PublicKey;
-let _amount: bigint;
-let _amt: bigint;
+let tokenAmount: bigint;
+let fee: bigint;
 let isAuthorized = false;
 let status: Status;
 let str: string;
-let time32: number;
-let zeros: number[];
-let _u32s: number[];
-let _u64s: number[];
+let funcSelector: number;
+let time: number;
+let bytes4bools: number[];
+let bytes4u8s: number[];
+let bytes4u32s: number[];
+let bytes4u64s: number[];
 let argData: number[];
 let blockhash: string;
 let clock: Clock;
@@ -70,7 +74,7 @@ test("InitConfig", () => {
 	signerKp = user1Kp;
 	progOwner = ownerAddr;
 	progAdmin = user1Addr;
-	const fee = as9zBn(111);
+	fee = 111000000n;
 	isAuthorized = true;
 	status = Status.Active;
 	str = "MoonDog to the Moon!";
@@ -112,7 +116,7 @@ test("InitConfig", () => {
 	const decoded = solanaKitDecodeDev(rawAccountData);
 	expect(decoded.progOwner).toEqual(progOwner);
 	expect(decoded.admin).toEqual(progAdmin);
-	expect(decoded.strU8array).toEqual(str);
+	expect(decoded.str).toEqual(str);
 	expect(decoded.fee).toEqual(fee);
 	expect(decoded.solBalance).toEqual(0n);
 	expect(decoded.tokenBalance).toEqual(0n);
@@ -130,25 +134,40 @@ test("updateConfig + time travel", () => {
 	signerKp = ownerKp;
 	const acct1 = adminAddr;
 	const acct2 = adminAddr;
-	const fee = as9zBn(111);
+	fee = 123000000n;
+	//const fee2 = bytesToBigint(bigintToBytes(fee));	ll("fee2:", fee2);
 	isAuthorized = true;
-	status = Status.Active;
-	str = "MoonDog to the Moon!";
-	zeros = [0, 0, 0, 0, 0, 0, 0, 0];
-	time32 = getTime();
-	_u32s = [time32, 0, 0, 0];
-	_u64s = [0, 0, 0, 0];
-	argData = [
-		...zeros,
-		statusToByte(status),
+	status = Status.Paused;
+	str = "MoonDog to the Marzzz!";
+	funcSelector = 1; //0 status, 1 fee, 2 admin
+	bytes4bools = [0, 0, 0, 0];
+	bytes4u8s = [funcSelector, statusToByte(status), 0, 0];
+	time = getTime();
+	tokenAmount = as9zBn(274);
+	bytes4u32s = [
+		...bigintToBytes(time, 32),
+		...u32Bytes,
+		...u32Bytes,
+		...u32Bytes,
+	];
+	bytes4u64s = [
 		...bigintToBytes(fee),
+		...bigintToBytes(tokenAmount),
+		...u64Bytes,
+		...u64Bytes,
+	];
+	argData = [
+		...bytes4bools,
+		...bytes4u8s,
+		...bytes4u32s,
+		...bytes4u64s,
 		...strToU8Fixed(str),
 	];
 	ll("acct1:", acct1.toBase58());
 	ll("acct2:", acct2.toBase58());
 
 	clock = svm.getClock();
-	clock.unixTimestamp = BigInt(time32);
+	clock.unixTimestamp = BigInt(time);
 	svm.setClock(clock);
 
 	blockhash = svm.latestBlockhash();
@@ -177,8 +196,11 @@ test("updateConfig + time travel", () => {
 	ll("rawAccountData:", rawAccountData);
 
 	const decoded = solanaKitDecodeDev(rawAccountData);
+	expect(decoded.fee).toEqual(fee);
+	expect(decoded.updatedAt).toEqual(time);
+	expect(decoded.status).toEqual(status);
+	expect(decoded.str).toEqual(str);
 	expect(decoded.admin).toEqual(acct1);
-	expect(decoded.updatedAt).toEqual(time32);
 });
 
 /*Failure Test:

@@ -4,6 +4,7 @@ use pinocchio::{
   program_error::{ProgramError, ToStr},
   pubkey::{find_program_address, try_find_program_address, Pubkey},
   sysvars::{clock::Clock, rent::Rent, Sysvar},
+  ProgramResult,
 };
 use pinocchio_log::log;
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
@@ -38,10 +39,10 @@ pub enum Ee {
   AtokenGPvbd,
   #[error("SystemProgram")]
   SystemProgram,
-  #[error("InputDataUnderMin")]
-  InputDataUnderMin,
-  #[error("InputDataOverMax")]
-  InputDataOverMax,
+  #[error("Xyz012")]
+  Xyz012,
+  #[error("Xyz013")]
+  Xyz013,
   #[error("Xyz014")]
   Xyz014,
   #[error("Xyz015")]
@@ -55,16 +56,16 @@ pub enum Ee {
   #[error("Xyz019")]
   Xyz019,
   //Bytes for Numerical
-  #[error("ZeroAsU128")]
-  ZeroAsU128,
-  #[error("ZeroAsU64")]
-  ZeroAsU64,
-  #[error("ZeroAsU32")]
-  ZeroAsU32,
-  #[error("ZeroAsU16")]
-  ZeroAsU16,
-  #[error("ZeroAsU8")]
-  ZeroAsU8,
+  #[error("ZeroU128")]
+  ZeroU128,
+  #[error("ZeroU64")]
+  ZeroU64,
+  #[error("ZeroU32")]
+  ZeroU32,
+  #[error("ZeroU16")]
+  ZeroU16,
+  #[error("ZeroU8")]
+  ZeroU8,
   //Bytes Sizes
   #[error("ByteSizeForU128")]
   ByteSizeForU128,
@@ -98,12 +99,12 @@ pub enum Ee {
   #[error("Xyz039")]
   Xyz039,
   //Inputs
-  #[error("StrOverMax")]
-  StrOverMax,
-  #[error("StrUnderMin")]
-  StrUnderMin,
-  #[error("ArrayLength")]
-  ArrayLength,
+  #[error("InputDataLen")]
+  InputDataLen,
+  #[error("Xyz041")]
+  Xyz041,
+  #[error("Xyz042")]
+  Xyz042,
   #[error("ByteForStatus")]
   ByteForStatus,
   #[error("ByteForBool")]
@@ -225,8 +226,9 @@ pub enum Ee {
   #[error("Xyz099")]
   Xyz099,
   //Math
-  #[error("MathOverflow")]
-  MathOverflow,
+  //ArithmeticOverflow exists
+  #[error("Xyz100")]
+  Xyz100,
   #[error("MathUnderflow")]
   MathUnderflow,
   #[error("MultiplyOverflow")]
@@ -273,19 +275,19 @@ impl TryFrom<u32> for Ee {
       9 => Ok(Ee::TokenProgram),
       10 => Ok(Ee::AtokenGPvbd),
       11 => Ok(Ee::SystemProgram),
-      12 => Ok(Ee::InputDataUnderMin),
-      13 => Ok(Ee::InputDataOverMax),
+      12 => Ok(Ee::Xyz012),
+      13 => Ok(Ee::Xyz013),
       14 => Ok(Ee::Xyz014),
       15 => Ok(Ee::Xyz015),
       16 => Ok(Ee::Xyz016),
       17 => Ok(Ee::Xyz017),
       18 => Ok(Ee::Xyz018),
       19 => Ok(Ee::Xyz019),
-      20 => Ok(Ee::ZeroAsU128),
-      21 => Ok(Ee::ZeroAsU64),
-      22 => Ok(Ee::ZeroAsU32),
-      23 => Ok(Ee::ZeroAsU16),
-      24 => Ok(Ee::ZeroAsU8),
+      20 => Ok(Ee::ZeroU128),
+      21 => Ok(Ee::ZeroU64),
+      22 => Ok(Ee::ZeroU32),
+      23 => Ok(Ee::ZeroU16),
+      24 => Ok(Ee::ZeroU8),
       25 => Ok(Ee::ByteSizeForU128),
       26 => Ok(Ee::ByteSizeForU64),
       27 => Ok(Ee::ByteSizeForU32),
@@ -301,9 +303,9 @@ impl TryFrom<u32> for Ee {
       37 => Ok(Ee::Xyz037),
       38 => Ok(Ee::Xyz038),
       39 => Ok(Ee::Xyz039),
-      40 => Ok(Ee::StrOverMax),
-      41 => Ok(Ee::StrUnderMin),
-      42 => Ok(Ee::ArrayLength),
+      40 => Ok(Ee::InputDataLen),
+      41 => Ok(Ee::Xyz041),
+      42 => Ok(Ee::Xyz042),
       43 => Ok(Ee::ByteForStatus),
       44 => Ok(Ee::ByteForBool),
       45 => Ok(Ee::Xyz045),
@@ -361,7 +363,7 @@ impl TryFrom<u32> for Ee {
       97 => Ok(Ee::Xyz097),
       98 => Ok(Ee::Xyz098),
       99 => Ok(Ee::Xyz099),
-      100 => Ok(Ee::MathOverflow),
+      100 => Ok(Ee::Xyz100),
       101 => Ok(Ee::MathUnderflow),
       102 => Ok(Ee::MultiplyOverflow),
       103 => Ok(Ee::DividedByZero),
@@ -390,8 +392,8 @@ impl ToStr for Ee {
       Ee::TokenProgram => "TokenProgram",
       Ee::AtokenGPvbd => "AtokenGPvbd",
       Ee::SystemProgram => "SystemProgram",
-      Ee::InputDataUnderMin => "InputDataUnderMin",
-      Ee::InputDataOverMax => "InputDataOverMax",
+      Ee::Xyz012 => "Xyz012",
+      Ee::Xyz013 => "Xyz013",
       Ee::Xyz014 => "Xyz014",
       Ee::Xyz015 => "Xyz015",
       Ee::Xyz016 => "Xyz016",
@@ -399,11 +401,11 @@ impl ToStr for Ee {
       Ee::Xyz018 => "Xyz018",
       Ee::Xyz019 => "Xyz019",
 
-      Ee::ZeroAsU128 => "ZeroAsU128",
-      Ee::ZeroAsU64 => "ZeroAsU64",
-      Ee::ZeroAsU32 => "ZeroAsU32",
-      Ee::ZeroAsU16 => "ZeroAsU16",
-      Ee::ZeroAsU8 => "ZeroAsU8",
+      Ee::ZeroU128 => "ZeroU128",
+      Ee::ZeroU64 => "ZeroU64",
+      Ee::ZeroU32 => "ZeroU32",
+      Ee::ZeroU16 => "ZeroU16",
+      Ee::ZeroU8 => "ZeroU8",
       Ee::ByteSizeForU128 => "ByteSizeForU128",
       Ee::ByteSizeForU64 => "ByteSizeForU64",
       Ee::ByteSizeForU32 => "ByteSizeForU32",
@@ -420,9 +422,9 @@ impl ToStr for Ee {
       Ee::Xyz038 => "Xyz038",
       Ee::Xyz039 => "Xyz039",
 
-      Ee::StrOverMax => "StrOverMax",
-      Ee::StrUnderMin => "StrUnderMin",
-      Ee::ArrayLength => "ArrayLength",
+      Ee::InputDataLen => "InputDataLen",
+      Ee::Xyz041 => "Xyz041",
+      Ee::Xyz042 => "Xyz042",
       Ee::ByteForStatus => "ByteForStatus",
       Ee::ByteForBool => "ByteForBool",
       Ee::Xyz045 => "Xyz045",
@@ -486,7 +488,7 @@ impl ToStr for Ee {
       Ee::Xyz098 => "Xyz098",
       Ee::Xyz099 => "Xyz099",
 
-      Ee::MathOverflow => "MathOverflow",
+      Ee::Xyz100 => "Xyz100",
       Ee::MathUnderflow => "MathUnderflow",
       Ee::MultiplyOverflow => "MultiplyOverflow",
       Ee::DividedByZero => "DividedByZero",
@@ -708,19 +710,12 @@ pub fn empty_data(account: &AccountInfo) -> Result<(), ProgramError> {
 }
 
 //----------------== Check Input Values
-pub fn min_data_len(data: &[u8], min: usize) -> Result<(), ProgramError> {
-  if data.len() < min {
-    return Ee::InputDataUnderMin.e();
+pub fn data_len(data: &[u8], expected: usize) -> Result<(), ProgramError> {
+  if data.len() != expected {
+    return Ee::InputDataLen.e();
   }
   Ok(())
 }
-pub fn max_data_len(data: &[u8], max: usize) -> Result<(), ProgramError> {
-  if data.len() > max {
-    return Ee::InputDataOverMax.e();
-  }
-  Ok(())
-}
-
 pub fn check_decimals(mint: &AccountInfo, decimals: u8) -> Result<(), ProgramError> {
   let mint_info = pinocchio_token::state::Mint::from_account_info(mint)?;
   if decimals != mint_info.decimals() {
@@ -734,26 +729,33 @@ pub fn check_decimals_max(decimals: u8, max: u8) -> Result<(), ProgramError> {
   }
   Ok(())
 }
-pub fn check_str_len(s: &str, min_len: usize, max_len: usize) -> Result<(), ProgramError> {
-  if s.len() < min_len {
-    return Ee::StrOverMax.e();
-  }
-  if s.len() > max_len {
-    return Ee::StrUnderMin.e();
+
+//----------------== Parse Functions
+//cannot use std traits for u64, u32, ...
+pub fn none_zero_u64(uint: u64) -> ProgramResult {
+  if uint == 0u64 {
+    return Ee::ZeroU64.e();
   }
   Ok(())
 }
-
-//----------------== Parse Functions
+pub fn none_zero_u32(uint: u32) -> ProgramResult {
+  if uint == 0u32 {
+    return Ee::ZeroU32.e();
+  }
+  Ok(())
+}
+pub fn none_zero_u8(uint: u8) -> ProgramResult {
+  if uint == 0u8 {
+    return Ee::ZeroU8.e();
+  }
+  Ok(())
+}
 /// Parse a u64 from u8 array
 pub fn parse_u64(data: &[u8]) -> Result<u64, ProgramError> {
   let bytes: [u8; 8] = data.try_into().or_else(|_e| Err(Ee::ByteSizeForU64))?;
 
   let amt = u64::from_le_bytes(bytes);
   // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]]);
-  if amt == 0 {
-    return Err(Ee::ZeroAsU64.into());
-  }
   Ok(amt)
 }
 pub fn parse_u32(data: &[u8]) -> Result<u32, ProgramError> {
@@ -761,9 +763,6 @@ pub fn parse_u32(data: &[u8]) -> Result<u32, ProgramError> {
 
   let amt = u32::from_le_bytes(bytes);
   // let amount = u64::from_le_bytes([data[0], data[1], data[2], data[3]]);
-  if amt == 0 {
-    return Err(Ee::ZeroAsU32.into());
-  }
   Ok(amt)
 }
 pub fn to32bytes(byte_slice: &[u8]) -> Result<&[u8; 32], ProgramError> {

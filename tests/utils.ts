@@ -87,8 +87,14 @@ export const llbalc = (name: string, amt: string) => {
 	ll(`${chalk.bgBlue(name)} balc: ${chalk.yellow(amt)}`);
 };
 //--------------== Bytes
+export const u16Bytes = [0, 0];
+export const u32Bytes = [0, 0, 0, 0];
+export const u32x4Bytes = [...u32Bytes, ...u32Bytes, ...u32Bytes, ...u32Bytes];
+export const u64Bytes = [0, 0, 0, 0, 0, 0, 0, 0];
+export const u64x4Bytes = [...u64Bytes, ...u64Bytes, ...u64Bytes, ...u64Bytes];
 export const u32Max = 4294967295n;
 export const u8Max = 255n;
+
 export const bigintToBytes = (input: bigint | number, bit = 64) => {
 	let amtBigint = 0n;
 	if (typeof input === "number") {

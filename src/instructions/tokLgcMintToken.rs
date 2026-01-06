@@ -3,8 +3,8 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-  check_ata, check_mint0b, check_sysprog, executable, instructions::check_signer, min_data_len,
-  parse_u64, rent_exempt22, writable,
+  check_ata, check_mint0b, check_sysprog, data_len, executable, instructions::check_signer,
+  none_zero_u64, parse_u64, rent_exempt22, writable,
 };
 
 /// TokLgc Mint Tokens
@@ -91,11 +91,11 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcMintToken<'a> {
     //check_pda(config_pda)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
-    min_data_len(data, 9)?;
+    data_len(data, 9)?;
     let decimals = data[0];
     let amount = parse_u64(&data[1..])?;
     log!("decimals: {}, amount: {}", decimals, amount);
-
+    none_zero_u64(amount)?;
     Ok(Self {
       mint_authority,
       to_wallet,

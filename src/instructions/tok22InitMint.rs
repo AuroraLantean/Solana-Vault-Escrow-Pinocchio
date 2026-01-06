@@ -9,8 +9,8 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
-  check_decimals_max, check_sysprog, executable, initialized, instructions::check_signer,
-  min_data_len, not_initialized, to10bytes, to32bytes, to6bytes, writable,
+  check_decimals_max, check_sysprog, data_len, executable, initialized, instructions::check_signer,
+  not_initialized, to10bytes, to32bytes, to6bytes, writable,
 };
 use pinocchio_token_2022::{instructions::InitializeMint2, state::Mint};
 
@@ -107,7 +107,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
       None
     };
 
-    min_data_len(data, 49)?; //1+16+32=49
+    data_len(data, 49)?; //1+16+32=49
     let decimals = data[0];
     log!("decimals: {}", decimals);
     check_decimals_max(decimals, 18)?;

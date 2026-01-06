@@ -23,7 +23,7 @@ const ll = console.log;
 export type ConfigAcct = {
 	progOwner: Address;
 	admin: Address;
-	strU8array: string;
+	str: string;
 	fee: bigint;
 	solBalance: bigint;
 	tokenBalance: bigint;
@@ -46,8 +46,7 @@ export const configAcctDecoder: FixedSizeDecoder<ConfigAcct> = getStructDecoder(
 		//["discriminator", fixDecoderSize(getBytesDecoder(), 4)],//only for accounts made by Anchor
 		["progOwner", getAddressDecoder()],
 		["admin", getAddressDecoder()],
-		["strU8array", fixDecoderSize(getUtf8Decoder(), 32)],
-		//["strU8array", getArrayDecoder(getU8Decoder(), { size: 32 })],
+		["str", fixDecoderSize(getUtf8Decoder(), 32)],
 		["fee", getU64Decoder()],
 		["solBalance", getU64Decoder()],
 		["tokenBalance", getU64Decoder()],
@@ -67,7 +66,7 @@ export const solanaKitDecode = (
 	if (isVerbose) {
 		ll("progOwner:", decoded.progOwner);
 		ll("admin:", decoded.admin);
-		ll("strU8array:", decoded.strU8array);
+		ll("str:", decoded.str);
 		ll("fee:", decoded.fee);
 		ll("solBalance:", decoded.solBalance);
 		ll("tokenBalance:", decoded.tokenBalance);
@@ -87,7 +86,7 @@ export const solanaKitDecodeDev = (
 	const decodedV1: ConfigAcctV1 = {
 		progOwner: new PublicKey(decoded.progOwner.toString()),
 		admin: new PublicKey(decoded.admin.toString()),
-		strU8array: decoded.strU8array,
+		str: decoded.str,
 		fee: decoded.fee,
 		solBalance: decoded.solBalance,
 		tokenBalance: decoded.tokenBalance,
@@ -101,7 +100,7 @@ export const solanaKitDecodeDev = (
 export type ConfigAcctV1 = {
 	progOwner: PublicKey;
 	admin: PublicKey;
-	strU8array: string;
+	str: string;
 	fee: bigint;
 	solBalance: bigint;
 	tokenBalance: bigint;
@@ -120,7 +119,7 @@ export type DecodedConfigAcct = {
 	data: {
 		progOwner: string;
 		admin: string;
-		strU8array: string;
+		str: string;
 		fee: bigint;
 		solBalance: bigint;
 		tokenBalance: bigint;
