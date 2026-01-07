@@ -9,9 +9,9 @@ import {
 	getAta,
 	initBalc,
 	lgcInitAta,
-	lgcInitMint,
 	newAtaTest,
 	sendSol,
+	setMint,
 	svm,
 	vault1,
 	vaultAta1,
@@ -24,6 +24,7 @@ import {
 	adminKp,
 	dragonCoin,
 	dragonCoinAuthority,
+	dragonCoinKp,
 	hackerKp,
 	ownerKp,
 	usdtMint,
@@ -37,8 +38,8 @@ let signerKp: Keypair;
 let _mintKp: Keypair;
 let mint: PublicKey;
 let mintAuthority: PublicKey;
-let freezeAuthorityOpt: PublicKey;
-let decimals = 9;
+let _freezeAuthorityOpt: PublicKey;
+let _decimals = 9;
 let amount: bigint;
 let amtDeposit: bigint;
 let amtWithdraw: bigint;
@@ -136,25 +137,24 @@ test("New DragonCoin Mint", () => {
 	amt = 1_000_000_000n;
 	signerKp = adminKp;
 	mint = dragonCoin;
+	_mintKp = dragonCoinKp;
 	mintAuthority = dragonCoinAuthority;
-	freezeAuthorityOpt = dragonCoinAuthority;
-	decimals = 9;
+	_freezeAuthorityOpt = dragonCoinAuthority;
+	_decimals = 9;
 	ll("signer", signerKp.publicKey.toBase58());
 	ll("mint", mint.toBase58());
 
 	acctIsNull(mint);
 	acctExists(mintAuthority);
 	//TODO: mint -> mintKp & multi sign
-	lgcInitMint(signerKp, mint, mintAuthority, freezeAuthorityOpt, decimals);
-	//setNewMint(dragonCoin)
+	//lgcInitMint(signerKp, mintKp, mintAuthority, freezeAuthorityOpt, decimals);
+	setMint(dragonCoin);
+	acctExists(dragonCoin);
 });
 test("Set USDT Mint", () => {
 	ll("\n------== Set USDT Mint");
-	amt = 1_000_000_000n;
-	signerKp = adminKp;
-	freezeAuthorityOpt = admin;
-	_mintKp = adminKp;
-	//setNewMint(usdtMint); not working
+	setMint(usdtMint);
+	acctExists(usdtMint);
 });
 test("New Vault ATA", () => {
 	ll("\n------== New Vault ATA");
@@ -163,6 +163,8 @@ test("New Vault ATA", () => {
 	const vaultAta1 = getAta(usdtMint, vault1);
 	acctIsNull(vaultAta1);
 	lgcInitAta(signerKp, vault1, usdtMint, vaultAta1);
+	//setAta(mint, owner, amount)
+	acctExists(vaultAta1);
 });
 
 test.skip("copy accounts from devnet", async () => {

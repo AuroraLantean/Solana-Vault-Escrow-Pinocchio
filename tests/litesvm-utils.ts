@@ -165,7 +165,7 @@ export const withdrawSol = (
 };
 export const lgcInitMint = (
 	signer: Keypair,
-	mint: PublicKey,
+	mintKp: Keypair,
 	mintAuthority: PublicKey,
 	freezeAuthorityOpt: PublicKey,
 	decimals: number,
@@ -178,7 +178,7 @@ export const lgcInitMint = (
 	const ix = new TransactionInstruction({
 		keys: [
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
-			{ pubkey: mint, isSigner: false, isWritable: true },
+			{ pubkey: mintKp.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: mintAuthority, isSigner: false, isWritable: false },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
 			{ pubkey: freezeAuthorityOpt, isSigner: false, isWritable: false },
@@ -236,17 +236,24 @@ export const lgcInitAta = (
 
 //-------------==
 //https://solana.com/docs/tokens/basics/create-mint
-export const setNewMint = (mint: PublicKey, programId = TOKEN_PROGRAM_ID) => {
+export const setMint = (
+	mint: PublicKey,
+	decimals = 6,
+	supply = 9_000_000_000_000n,
+	mintAuthority = owner,
+	freezeAuthority = owner,
+	programId = TOKEN_PROGRAM_ID,
+) => {
 	const rawMintAcctData = Buffer.alloc(MINT_SIZE);
 	MintLayout.encode(
 		{
-			mintAuthorityOption: 0,
-			mintAuthority: PublicKey.default,
-			supply: 0n,
-			decimals: 0,
-			isInitialized: false,
-			freezeAuthorityOption: 0,
-			freezeAuthority: PublicKey.default,
+			mintAuthorityOption: 1, //0,
+			mintAuthority: mintAuthority, // PublicKey.default,
+			supply: supply, // 0n
+			decimals: decimals, //0
+			isInitialized: true, //false,
+			freezeAuthorityOption: 1, //0,
+			freezeAuthority: freezeAuthority, // PublicKey.default,
 		},
 		rawMintAcctData,
 	);
@@ -289,7 +296,7 @@ export const vaultAta1 = getAta(usdtMint, vault1);
 export const vaultAta2 = getAta(usdtMint, vault2);
 export const vaultAta3 = getAta(usdtMint, vault3);
 
-export const newAta = (
+export const setAta = (
 	mint: PublicKey,
 	owner: PublicKey,
 	tokenAmount: bigint,
@@ -387,7 +394,7 @@ export const newAtaTest = (
 	amt: bigint,
 	user_and_mint: string,
 ) => {
-	const { raw: rawData, ata } = newAta(mint, user, amt);
+	const { raw: rawData, ata } = setAta(mint, user, amt);
 	ll(user_and_mint, "ata:", ata.toBase58());
 	expect(rawData).not.toBeNull();
 	const rawAcctData = rawData?.data;
