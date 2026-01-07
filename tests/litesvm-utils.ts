@@ -20,13 +20,13 @@ import type {
 } from "litesvm";
 import { ComputeBudget, LiteSVM, TransactionMetadata } from "litesvm";
 import {
-	adminAddr,
-	hackerAddr,
-	ownerAddr,
+	admin,
+	hacker,
+	owner,
 	systemProgram,
-	user1Addr,
-	user2Addr,
-	user3Addr,
+	user1,
+	user2,
+	user3,
 	vaultProgAddr,
 } from "./web3jsSetup";
 
@@ -34,12 +34,12 @@ const ll = console.log;
 ll("\n------== litesvm-utils");
 export let svm = new LiteSVM();
 export const initBalc = BigInt(LAMPORTS_PER_SOL) * BigInt(10);
-svm.airdrop(ownerAddr, initBalc);
-svm.airdrop(adminAddr, initBalc);
-svm.airdrop(user1Addr, initBalc);
-svm.airdrop(user2Addr, initBalc);
-svm.airdrop(user3Addr, initBalc);
-svm.airdrop(hackerAddr, initBalc);
+svm.airdrop(owner, initBalc);
+svm.airdrop(admin, initBalc);
+svm.airdrop(user1, initBalc);
+svm.airdrop(user2, initBalc);
+svm.airdrop(user3, initBalc);
+svm.airdrop(hacker, initBalc);
 
 export function getRawAccount(address: PublicKey) {
 	//svm: LiteSVM
@@ -60,16 +60,16 @@ export const findPdaV1 = (
 	ll(`${pdaName} pda: ${pda.toBase58()}, bump: ${bump}`);
 	return { pda, bump };
 };
-export const configPdaBump = findPdaV1(ownerAddr, "config", "ConfigPDA");
-export const vaultPdaBump = findPdaV1(ownerAddr, "vault", "VaultPDA ");
-export const vaultPdaBump1 = findPdaV1(user1Addr, "vault", "VaultPDA1");
-export const vaultPdaBump2 = findPdaV1(user2Addr, "vault", "VaultPDA2");
-export const vaultPdaBump3 = findPdaV1(user3Addr, "vault", "VaultPDA3");
+export const configPdaBump = findPdaV1(owner, "config", "ConfigPDA");
+export const vaultPdaBump = findPdaV1(owner, "vault", "VaultO ");
+export const vaultPdaBump1 = findPdaV1(user1, "vault", "Vault1");
+export const vaultPdaBump2 = findPdaV1(user2, "vault", "Vault2");
+export const vaultPdaBump3 = findPdaV1(user3, "vault", "Vault3");
 export const configPDA = configPdaBump.pda;
-export const vaultPDA = vaultPdaBump.pda;
-export const vaultPDA1 = vaultPdaBump1.pda;
-export const vaultPDA2 = vaultPdaBump2.pda;
-export const vaultPDA3 = vaultPdaBump3.pda;
+export const vaultO = vaultPdaBump.pda;
+export const vault1 = vaultPdaBump1.pda;
+export const vault2 = vaultPdaBump2.pda;
+export const vault3 = vaultPdaBump3.pda;
 
 export const makeAccount = (
 	//svm: LiteSVM,

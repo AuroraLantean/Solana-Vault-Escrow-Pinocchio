@@ -21,7 +21,6 @@ import {
 import * as vault from "../clients/js/src/generated/index";
 import { configAcctDecoder, type DecodedConfigAcct } from "./decoder";
 import { getAta } from "./tokens";
-import type { Data1 } from "./types";
 import { findPdaV2, LAMPORTS_PER_SOL, llbalc } from "./utils";
 
 export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
@@ -112,19 +111,20 @@ const U64_SIZE = 8; // u64 is 8 bytes
 const VAULT_SIZE = ACCOUNT_DISCRIMINATOR_SIZE + U64_SIZE; // 16
 
 const pda_bump = await findPdaV2(ownerAddr, "vault", "Vault");
-export const vaultPDA = pda_bump.pda;
-ll(`✅ - Vault PDA: ${vaultPDA}`);
+export const vaultO = pda_bump.pda;
+ll(`✅ - Vault PDA: ${vaultO}`);
 const pda_bump1 = await findPdaV2(user1Addr, "vault", "Vault1");
-export const vaultPDA1 = pda_bump1.pda;
-ll(`✅ - vaultPDA1: ${vaultPDA1}`);
+export const vault1 = pda_bump1.pda;
+ll(`✅ - vault1: ${vault1}`);
 
 const configPdaBump = await findPdaV2(adminAddr, "config", "Config");
 export const configPDA = configPdaBump.pda;
 ll(`✅ - configPDA: ${configPDA}`);
 
-const vaultAtabump1 = await getAta(mint, vaultPDA1);
+const vaultAtabump1 = await getAta(mint, vault1);
 export const vaultAta1 = vaultAtabump1.ata;
 
+//------------==
 // get vault rent
 export const vaultRent = await rpc
 	.getMinimumBalanceForRentExemption(BigInt(VAULT_SIZE))
@@ -200,6 +200,41 @@ export const getTokBalc = async (ata: Address, name: string = "") => {
 		decimals,
 		amountUi,
 	};
+};
+//------------== Account Types
+export type Data1 = {
+	program: string;
+	parsed: {
+		info: {
+			isNative: boolean;
+			mint: string;
+			owner: string;
+			state: string; // "initialized";
+			tokenAmount: {
+				amount: string;
+				decimals: number;
+				uiAmount: number;
+				uiAmountString: string;
+			};
+		};
+		type: string; // "account"
+	};
+	space: number;
+};
+export type GetTokenAccountsByOwnerValue = {
+	pubkey: string;
+	account: {
+		data: Data1;
+		executable: boolean;
+		lamports: number;
+		owner: string;
+		rentEpoch: number;
+		space: number;
+	};
+};
+export type GetTokenAccountsByOwner = {
+	context: { apiVersion: string; slot: bigint };
+	value: [];
 };
 export const getTokBalc2 = async (
 	owner: Address,

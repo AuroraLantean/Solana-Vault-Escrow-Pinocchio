@@ -1,27 +1,23 @@
+import type { Lamports } from "@solana/kit";
 import {
 	type Address,
 	getAddressEncoder,
-	getProgramDerivedAddress,
-	getUtf8Encoder,
-} from "@solana/kit";
-
-export const ll = console.log;
-
-import type { Lamports } from "@solana/kit";
-import {
 	getLamportsDecoder,
 	getLamportsEncoder,
+	getProgramDerivedAddress,
 	getU8Encoder,
 	getU16Decoder,
 	getU32Encoder,
 	getU64Decoder,
 	getU64Encoder,
+	getUtf8Encoder,
 	lamports,
 } from "@solana/kit";
 import chalk from "chalk";
 import * as vault from "../clients/js/src/generated/index";
 import { Status } from "./decoder";
 
+export const ll = console.log;
 //-----------== General Config
 export const network = "mainnet-beta"; //devnet
 export const PROJECT_DIRECTORY = ""; // Leave empty if using default anchor project

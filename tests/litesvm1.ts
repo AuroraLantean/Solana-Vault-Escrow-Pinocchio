@@ -8,20 +8,20 @@ import {
 	newAtaTest,
 	sendSol,
 	svm,
-	vaultPDA,
-	vaultPDA1,
+	vault1,
+	vaultO,
 	withdrawSol,
 } from "./litesvm-utils";
 import { as9zBn, bigintToBytes, bytesToBigint, ll } from "./utils";
 import {
-	adminAddr,
+	admin,
 	adminKp,
 	hackerKp,
 	ownerKp,
 	usdtMint,
-	user1Addr,
+	user1,
 	user1Kp,
-	user2Addr,
+	user2,
 } from "./web3jsSetup";
 
 //let disc = 0; //discriminator
@@ -38,51 +38,53 @@ let balcAf: bigint | null;
 let argData: Uint8Array<ArrayBufferLike>;
 const vaultRent = 1002240n; //from Rust
 
-balcBf = svm.getBalance(adminAddr);
+balcBf = svm.getBalance(admin);
 ll("admin SOL:", balcBf);
 expect(balcBf).toStrictEqual(initBalc);
 
 test("transfer SOL", () => {
 	amount = as9zBn(0.001);
-	sendSol(user1Addr, amount, adminKp);
-	balcAf = svm.getBalance(user1Addr);
+	sendSol(user1, amount, adminKp);
+	balcAf = svm.getBalance(user1);
 	expect(balcAf).toStrictEqual(amount + initBalc);
 });
 
 test("Owner Deposits SOL to VaultPDA", () => {
 	ll("\n------== Owner Deposits SOL to VaultPDA");
-	ll("vaultPDA:", vaultPDA.toBase58());
+	ll("vaultO:", vaultO.toBase58());
 	payerKp = ownerKp;
 	amtDeposit = as9zBn(0.46);
 	argData = bigintToBytes(amtDeposit);
 
-	depositSol(vaultPDA, argData, payerKp);
-	balcAf = svm.getBalance(vaultPDA);
-	ll("vaultPDA SOL:", balcAf);
+	depositSol(vaultO, argData, payerKp);
+	balcAf = svm.getBalance(vaultO);
+	ll("vaultO SOL:", balcAf);
 	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);
 });
 
 test("User1 Deposits SOL to vault1", () => {
 	ll("\n------== User1 Deposits SOL to vault1");
-	ll("vaultPDA1:", vaultPDA1.toBase58());
+	ll("vault1:", vault1.toBase58());
 	payerKp = user1Kp;
 	amtDeposit = as9zBn(1.23); //1230000000n
 	argData = bigintToBytes(amtDeposit);
-	depositSol(vaultPDA1, argData, payerKp);
-	balcAf = svm.getBalance(vaultPDA1);
-	ll("vaultPDA1 SOL:", balcAf);
+
+	depositSol(vault1, argData, payerKp);
+	balcAf = svm.getBalance(vault1);
+	ll("vault1 SOL:", balcAf);
 	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);
 });
 
 test("User1 Withdraws SOL from vault1", () => {
 	ll("\n------== User1 Withdraws SOL from vault1");
-	ll("vaultPDA1:", vaultPDA1.toBase58());
+	ll("vault1:", vault1.toBase58());
 	payerKp = user1Kp;
 	amtWithdraw = as9zBn(0.48); //480000000n
 	argData = bigintToBytes(amtWithdraw);
-	withdrawSol(vaultPDA1, argData, payerKp);
-	balcAf = svm.getBalance(vaultPDA1);
-	ll("vaultPDA1 SOL:", balcAf);
+
+	withdrawSol(vault1, argData, payerKp);
+	balcAf = svm.getBalance(vault1);
+	ll("vault1 SOL:", balcAf);
 	expect(balcAf).toStrictEqual(vaultRent + amtDeposit - amtWithdraw);
 });
 test.failing("hacker cannot withdraw SOL from  vault1", () => {
@@ -90,7 +92,7 @@ test.failing("hacker cannot withdraw SOL from  vault1", () => {
 	payerKp = hackerKp;
 	amtWithdraw = as9zBn(0.48); //480000000n
 	argData = bigintToBytes(amtWithdraw);
-	withdrawSol(vaultPDA1, argData, payerKp);
+	withdrawSol(vault1, argData, payerKp);
 });
 
 //------------------==
@@ -111,11 +113,11 @@ test("inputNum to/from Bytes", () => {
 test("New ATA with balance(set arbitrary account data)", () => {
 	ll("\n------== New ATA with balance(set arbitrary account data)");
 	amt = 1_000_000_000n;
-	newAtaTest(usdtMint, adminAddr, amt, "Admin USDT");
-	newAtaTest(usdtMint, user1Addr, amt, "User1 USDT");
-	newAtaTest(usdtMint, user2Addr, amt, "User2 USDT");
+	newAtaTest(usdtMint, admin, amt, "Admin USDT");
+	newAtaTest(usdtMint, user1, amt, "User1 USDT");
+	newAtaTest(usdtMint, user2, amt, "User2 USDT");
 });
-//TODO: Lgc Init Vault PDA ATA1
+//TODO: Lgc Init VaultAta1
 
 test.skip("copy accounts from devnet", async () => {
 	const connection = new Connection("https://api.devnet.solana.com");

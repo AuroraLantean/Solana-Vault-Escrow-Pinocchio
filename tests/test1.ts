@@ -19,9 +19,9 @@ import {
 	sendTxn,
 	user1Addr,
 	user1Kp,
+	vault1,
 	vaultAta1,
-	vaultPDA,
-	vaultPDA1,
+	vaultO,
 	vaultProgAddr,
 	vaultRent,
 } from "./httpws";
@@ -40,11 +40,11 @@ describe("Vault Program", () => {
 			throw new Error(`Program does not exist`);
 		}
 	});
-	test("Owner deposits SOL to vaultPDA", async () => {
-		ll("\n------== Owner Deposits SOL to vaultPDA");
+	test("Owner deposits SOL to vaultO", async () => {
+		ll("\n------== Owner Deposits SOL to vaultO");
 		const methodIx = vault.getDepositInstruction({
 			user: ownerKp,
-			vault: vaultPDA,
+			vault: vaultO,
 			systemProgram: SYSTEM_PROGRAM_ADDRESS,
 			amount: lamports(amtDeposit),
 		});
@@ -53,7 +53,7 @@ describe("Vault Program", () => {
 
 		ll("Vault Rent:", vaultRent);
 		ll("amtDeposit:", amtDeposit);
-		const balc1 = await getSol(vaultPDA, "Vault");
+		const balc1 = await getSol(vaultO, "Vault");
 		expect(vaultRent + amtDeposit).toEqual(balc1.lamports);
 	}, 10000); //Timeouts
 
@@ -61,7 +61,7 @@ describe("Vault Program", () => {
 		ll("\n------== User1 Deposits SOL to vault1");
 		const methodIx = vault.getDepositInstruction({
 			user: user1Kp,
-			vault: vaultPDA1,
+			vault: vault1,
 			systemProgram: SYSTEM_PROGRAM_ADDRESS,
 			amount: lamports(amtDeposit),
 		});
@@ -70,17 +70,17 @@ describe("Vault Program", () => {
 
 		ll("Vault Rent:", vaultRent);
 		ll("amtDeposit:", amtDeposit);
-		const balc1 = await getSol(vaultPDA1, "Vault");
+		const balc1 = await getSol(vault1, "Vault");
 		expect(vaultRent + amtDeposit).toEqual(balc1.lamports);
 	});
 
 	test("User1 withdraws SOL from vault1", async () => {
 		ll("\n------== User1 Withdraws SOL from vault1");
-		await getSol(vaultPDA1, "Vault");
+		await getSol(vault1, "Vault");
 
 		const methodIx = vault.getWithdrawInstruction({
 			user: user1Kp,
-			vault: vaultPDA1,
+			vault: vault1,
 			amount: lamports(amtWithdraw),
 		});
 		await sendTxn(methodIx, user1Kp);
@@ -88,7 +88,7 @@ describe("Vault Program", () => {
 
 		ll("Vault Rent:", vaultRent);
 		ll("Vault amtWithdraw:", amtWithdraw);
-		const balc22 = await getSol(vaultPDA1, "Vault");
+		const balc22 = await getSol(vault1, "Vault");
 		expect(vaultRent + amtDeposit - amtWithdraw).toEqual(balc22.lamports);
 	}); //can withdraw from vault
 
@@ -96,7 +96,7 @@ describe("Vault Program", () => {
 	test.failing("hacker cannot withdraw SOL from  vault1", async () => {
 		const methodIx = vault.getWithdrawInstruction({
 			user: hackerKp,
-			vault: vaultPDA1,
+			vault: vault1,
 			amount: lamports(amtWithdraw),
 		});
 		await sendTxn(methodIx, hackerKp);
@@ -184,16 +184,16 @@ describe("Vault Program", () => {
 	});
 
 	//------------------==
-	test("Lgc init vault pdaAta1", async () => {
-		ll("\n------== Lgc Init Vault PDA ATA1");
+	test("Lgc init vaultAta1", async () => {
+		ll("\n------== Lgc Init VaultAta1");
 		const payer = user1Kp;
 		ll("payer:", payer.address);
-		ll("vaultPDA1:", vaultPDA1);
+		ll("vault1:", vault1);
 		ll("mint:", mint);
 
 		const methodIx = vault.getTokenLgcInitATAInstruction({
 			payer: payer,
-			toWallet: vaultPDA1,
+			toWallet: vault1,
 			mint: mint,
 			tokenAccount: vaultAta1,
 			tokenProgram: TOKEN_PROGRAM_ADDRESS,
@@ -202,7 +202,7 @@ describe("Vault Program", () => {
 		});
 		await sendTxn(methodIx, payer);
 		ll("program execution successful");
-		const balcTok = await getTokBalc(vaultAta1, "vaultPDA1 ATA");
+		const balcTok = await getTokBalc(vaultAta1, "vault1 ATA");
 		expect(balcTok.amountUi).toBe("0");
 	});
 
@@ -224,7 +224,7 @@ describe("Vault Program", () => {
 			from: user1Ata,
 			to: vaultAta1,
 			mint: mint,
-			toWallet: vaultPDA1,
+			toWallet: vault1,
 			tokenProgram: TOKEN_PROGRAM_ADDRESS,
 			systemProgram: SYSTEM_PROGRAM_ADDRESS,
 			atokenProgram: ATokenGPvbd,
@@ -242,7 +242,7 @@ describe("Vault Program", () => {
 	});
 
 	//------------------==
-	test("Lgc User1 withdraws token from vaultPDA1", async () => {
+	test("Lgc User1 withdraws token from vault1", async () => {
 		ll("\n------== Lgc User1 Withdraws Tokens from VaultPDA1");
 		ll("payer:", user1Kp.address);
 		const destAddr = user1Addr;
@@ -260,7 +260,7 @@ describe("Vault Program", () => {
 			from: vaultAta1,
 			to: user1Ata,
 			mint: mint,
-			fromWallet: vaultPDA1,
+			fromWallet: vault1,
 			tokenProgram: TOKEN_PROGRAM_ADDRESS,
 			systemProgram: SYSTEM_PROGRAM_ADDRESS,
 			atokenProgram: ATokenGPvbd,
@@ -286,7 +286,7 @@ describe("Vault Program", () => {
 		const amount = 126;
 		const atabump1 = await makeATA(user1Kp, user1Addr, mint);
 		const user1Ata = atabump1.ata;
-		const atabumpVaultPDA = await makeATA(user1Kp, vaultPDA, mint);
+		const atabumpVaultPDA = await makeATA(user1Kp, vaultO, mint);
 		const vaultPdaAta = atabumpVaultPDA.ata;
 
 		const _balcTok1a = await getTokBalc(user1Ata, "user1 ATA");
@@ -297,7 +297,7 @@ describe("Vault Program", () => {
 			user: user1Kp,
 			from: user1Ata,
 			to: vaultPdaAta,
-			toWallet: vaultPDA,
+			toWallet: vaultO,
 			mint: mint,
 			tokenProgram: TOKEN_PROGRAM_ADDRESS,
 			systemProgram: SYSTEM_PROGRAM_ADDRESS,
@@ -316,7 +316,7 @@ describe("Vault Program", () => {
 	});
 
 	//------------------==
-	test("Lgc User1 redeems tokens from vaultPDA", async () => {
+	test("Lgc User1 redeems tokens from vaultO", async () => {
 		ll("\n------== Lgc User1 Redeems Tokens from VaultPDA");
 		ll("payer:", user1Kp.address);
 		const destAddr = user1Addr;
@@ -325,7 +325,7 @@ describe("Vault Program", () => {
 		const amount = 37;
 		const atabump = await makeATA(user1Kp, destAddr, mint);
 		const user1Ata = atabump.ata;
-		const atabumpVaultPDA = await makeATA(user1Kp, vaultPDA, mint);
+		const atabumpVaultPDA = await makeATA(user1Kp, vaultO, mint);
 		const vaultPdaAta = atabumpVaultPDA.ata;
 
 		const balcTok1a = await getTokBalc(user1Ata, "user1 ATA"); //566
@@ -339,7 +339,7 @@ describe("Vault Program", () => {
 			from: vaultPdaAta,
 			to: user1Ata,
 			mint: mint,
-			fromPda: vaultPDA,
+			fromPda: vaultO,
 			fromPdaOwner: ownerAddr,
 			tokenProgram: TOKEN_PROGRAM_ADDRESS,
 			systemProgram: SYSTEM_PROGRAM_ADDRESS,
