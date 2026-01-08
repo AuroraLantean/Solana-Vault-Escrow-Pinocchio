@@ -230,8 +230,8 @@ pub enum Ee {
   //ArithmeticOverflow exists
   #[error("Xyz100")]
   Xyz100,
-  #[error("MathUnderflow")]
-  MathUnderflow,
+  #[error("Xyz101")]
+  Xyz101,
   #[error("MultiplyOverflow")]
   MultiplyOverflow,
   #[error("DividedByZero")]
@@ -365,7 +365,7 @@ impl TryFrom<u32> for Ee {
       98 => Ok(Ee::Xyz098),
       99 => Ok(Ee::Xyz099),
       100 => Ok(Ee::Xyz100),
-      101 => Ok(Ee::MathUnderflow),
+      101 => Ok(Ee::Xyz101),
       102 => Ok(Ee::MultiplyOverflow),
       103 => Ok(Ee::DividedByZero),
       104 => Ok(Ee::Remainder),
@@ -490,7 +490,7 @@ impl ToStr for Ee {
       Ee::Xyz099 => "Xyz099",
 
       Ee::Xyz100 => "Xyz100",
-      Ee::MathUnderflow => "MathUnderflow",
+      Ee::Xyz101 => "Xyz101",
       Ee::MultiplyOverflow => "MultiplyOverflow",
       Ee::DividedByZero => "DividedByZero",
       Ee::Remainder => "Remainder",
@@ -580,14 +580,14 @@ pub fn check_mint22b(
 }
 
 //----------------== ATA
-pub fn check_from_balc(from_ata: &AccountInfo, amount: u64) -> Result<(), ProgramError> {
+pub fn ata_balc(from_ata: &AccountInfo, amount: u64) -> Result<(), ProgramError> {
   let from_ata_info = TokenAccount::from_account_info(from_ata)?;
   if from_ata_info.amount() < amount {
     return Err(ProgramError::InsufficientFunds);
   }
   Ok(())
 }
-pub fn check_from_balc22(from_ata: &AccountInfo, amount: u64) -> Result<(), ProgramError> {
+pub fn ata_balc22(from_ata: &AccountInfo, amount: u64) -> Result<(), ProgramError> {
   let from_ata_info = TokenAccount22::from_account_info(from_ata)?;
   if from_ata_info.amount() < amount {
     return Err(ProgramError::InsufficientFunds);
@@ -814,7 +814,7 @@ pub fn u8_to_status(v: u8) -> Result<Status, ProgramError> {
   }
 }
 //----------------== Balance
-pub fn enough_sol(from: &AccountInfo, amount: u64) -> Result<(), ProgramError> {
+pub fn sol_balc(from: &AccountInfo, amount: u64) -> Result<(), ProgramError> {
   if from.lamports() < amount {
     return Err(ProgramError::InsufficientFunds);
   }

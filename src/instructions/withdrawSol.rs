@@ -25,33 +25,13 @@ impl<'a> WithdrawSol<'a> {
     } = self;
     log!("withdrawSol process()");
 
-    let (expected_vault_pda, _bump) = derive_pda1(user, VAULT_SEED)?;
-    if vault.key() != &expected_vault_pda {
-      return Ee::VaultPDA.e();
-    }
-
-    // Compute how much can be withdrawn while keeping the account rent-exempt
-    let (current, min_balance) = rent_exempt(vault)?;
-    log!("withdraw amt: {}", amount);
-    log!("vault balc: {}", current);
-    if current <= amount {
-      return Err(ProgramError::InsufficientFunds);
-    }
-    if current
-      <= min_balance
-        .checked_add(amount)
-        .ok_or_else(|| ProgramError::ArithmeticOverflow)?
-    {
-      return Ee::PdaToBeBelowRentExempt.e();
-    }
-
     // Transfer SOL from vault to user
     {
       let mut vault_lamports = vault.try_borrow_mut_lamports()?;
 
       *vault_lamports = vault_lamports
         .checked_sub(amount)
-        .ok_or_else(|| Ee::MathUnderflow)?;
+        .ok_or_else(|| ProgramError::InsufficientFunds)?;
     }
 
     {
@@ -81,6 +61,28 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for WithdrawSol<'a> {
 
     let amount = parse_u64(data)?;
     none_zero_u64(amount)?;
+
+    let (expected_vault_pda, _bump) = derive_pda1(user, VAULT_SEED)?;
+    if vault.key() != &expected_vault_pda {
+      return Err(Ee::VaultPDA.into());
+    }
+
+    // Compute how much can be withdrawn while keeping the account rent-exempt
+    let (vault_balc, vault_min_balc) = rent_exempt(vault)?;
+    log!("withdraw amt: {}", amount);
+    log!("vault balc: {}", vault_balc);
+    if vault_balc < amount {
+      return Err(ProgramError::InsufficientFunds);
+    }
+
+    log!("check vault balc 2");
+    if vault_balc
+      <= vault_min_balc
+        .checked_add(amount)
+        .ok_or_else(|| ProgramError::ArithmeticOverflow)?
+    {
+      return Err(Ee::PdaToBeBelowRentExempt.into());
+    }
     Ok(Self {
       user,
       vault,

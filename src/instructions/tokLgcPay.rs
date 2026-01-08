@@ -3,7 +3,7 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-  check_ata, check_decimals, check_from_balc, check_mint0a, check_pda, check_sysprog, data_len,
+  ata_balc, check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, data_len,
   executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt22, writable, Ee,
 };
 
@@ -116,7 +116,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
     log!("decimals: {}, amount: {}", decimals, amount);
 
     none_zero_u64(amount)?;
-    check_from_balc(from_ata, amount)?;
+    ata_balc(from_ata, amount)?;
 
     Ok(Self {
       user,
