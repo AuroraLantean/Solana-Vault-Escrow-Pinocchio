@@ -15,6 +15,8 @@ The only dependencies are types from the Solana SDK. This mitigates dependency i
 - Small Binaries: no no_std the Rust standard library
 - Fine-grained control over account fields,
 
+The key difference is in the implementation of AccountInfo. While solana-program writes data to an AccountInfo struct that owns the data, Pinocchio’s AccountInfo struct is itself just a pointer to the underlying input data that represents the account. This reduces the amount of data needed to be copied, saving a lot of CUs.
+
 ### Why skipping solana-program
 
 the solana-program crate brings overhead. extra deserialization, hidden allocations, and increased binary size.

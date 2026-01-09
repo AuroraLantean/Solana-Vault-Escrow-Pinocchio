@@ -37,11 +37,25 @@ impl<'a> Token2022InitMint<'a> {
       token_program,
       freeze_authority_opt,
       decimals,
-      token_name: _,
-      token_symbol: _,
-      token_uri: _,
+      token_name,
+      token_symbol,
+      token_uri,
     } = self;
     log!("Token2022InitMint process()");
+
+    /// [4 (extension discriminator) + 32 (update_authority) + 32 (metadata)]
+    pub const METADATA_POINTER_SIZE: usize = 4 + 32 + 32;
+    /// [4 (extension discriminator) + 32 (update_authority) + 32 (mint) + 10 (size of name ) + 6 (size of symbol) + 32 (size of uri) + 4 (size of additional_metadata)]
+    pub const METADATA_EXTENSION_BASE_SIZE: usize = 4 + 32 + 32 + 10 + 6 + 32 + 4;
+    /// Padding used so that Mint and Account extensions start at the same index
+    pub const EXTENSIONS_PADDING_AND_OFFSET: usize = 84;
+
+    let extension_size = METADATA_POINTER_SIZE
+      + METADATA_EXTENSION_BASE_SIZE
+      + token_name.len()
+      + token_symbol.len()
+      + token_uri.len();
+    let _total_mint_size = Mint::BASE_LEN + EXTENSIONS_PADDING_AND_OFFSET + extension_size;
 
     let lamports = Rent::get()?.minimum_balance(Mint::BASE_LEN);
     let space = Mint::BASE_LEN as u64;
@@ -69,7 +83,36 @@ impl<'a> Token2022InitMint<'a> {
       token_program: token_program.key(),
     }
     .invoke()?;
+
     //TODO: search "InitializeMetadataPointer solana token 2022" to add metadata: https://solana.com/docs/tokens/extensions/metadata
+    // Initialize MetadataPointer extension pointing to the Mint account
+    /*InitializeMetadataPointer {
+      mint: mint_account,
+      authority: Some(*payer.key()),
+      metadata_address: Some(*mint_account.key()),
+    }.invoke()?;
+
+        // Now initialize that account as a Token2022 Mint
+    InitializeMint2 {
+        mint: mint_account,
+        decimals: args.decimals,
+        mint_authority: mint_authority.key(),
+        freeze_authority: None,
+    }
+    .invoke(TokenProgramVariant::Token2022)?;
+
+     //https://www.helius.dev/blog/pinocchio#how-is-pinocchio-more-performant-than-solana-program
+
+     // Set the metadata within the Mint account
+     InitializeTokenMetadata {
+         metadata: mint,
+         update_authority: payer,
+         mint: mint,
+         mint_authority: payer,
+         name: &name,
+         symbol: &symbol,
+         uri: &uri,
+     }.invoke()?;*/
     Ok(())
   }
   pub fn init_if_needed(self) -> ProgramResult {
@@ -135,42 +178,3 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Token2022InitMint<'a> {
     })
   }
 }
-/*https://www.helius.dev/blog/pinocchio#how-is-pinocchio-more-performant-than-solana-program
-#[derive(BorshDeserialize, Debug)]
-pub struct CreateTokenArgs {
-    pub name: String,
-    pub symbol: String,
-    pub uri: String,
-    pub decimals: u8,
-}
-
-// Initialize MetadataPointer extension pointing to the Mint account
-InitializeMetadataPointer {
-    mint: mint,
-    authority: Some(*payer.key()),
-    metadata_address: Some(*mint.key()),
-}
-.invoke()?;
-
-// Set the metadata within the Mint account
-InitializeTokenMetadata {
-    metadata: mint,
-    update_authority: payer,
-    mint: mint,
-    mint_authority: payer,
-    name: &name,
-    symbol: &symbol,
-    uri: &uri,
-}
-.invoke()?;
-https://www.helius.dev/blog/pinocchio#pinocchio-vs-steel
-// within `process_instruction`
-let extension_size = METADATA_POINTER_SIZE
-            + METADATA_EXTENSION_BASE_SIZE
-            + name.len()
-            + symbol.len()
-            + uri.len();
-let total_mint_size = Mint::LEN + EXTENSIONS_PADDING_AND_OFFSET + extension_size;        */
-/*if rent_sysvar.key != &solana_program::sysvar::rent::ID {
-    return Err();
-}*/

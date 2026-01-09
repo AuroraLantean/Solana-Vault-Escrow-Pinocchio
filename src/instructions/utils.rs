@@ -834,12 +834,6 @@ pub fn derive_pda1(user: &AccountInfo, bstr: &[u8]) -> Result<(Pubkey, u8), Prog
 ) */
 
 //----------------== Token 2022 Interface
-/// [4 (extension discriminator) + 32 (update_authority) + 32 (metadata)]
-pub const METADATA_POINTER_SIZE: usize = 4 + 32 + 32;
-/// [4 (extension discriminator) + 32 (update_authority) + 32 (mint) + 4 (size of name ) + 4 (size of symbol) + 4 (size of uri) + 4 (size of additional_metadata)]
-pub const METADATA_EXTENSION_BASE_SIZE: usize = 4 + 32 + 32 + 4 + 4 + 4 + 4;
-/// Padding used so that Mint and Account extensions start at the same index
-pub const EXTENSIONS_PADDING_AND_OFFSET: usize = 84;
 const TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET: usize = 165;
 pub const TOKEN_2022_MINT_DISCRIMINATOR: u8 = 0x01;
 pub const TOKEN_2022_TOKEN_ACCOUNT_DISCRIMINATOR: u8 = 0x02;

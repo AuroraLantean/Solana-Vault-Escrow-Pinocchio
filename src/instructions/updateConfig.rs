@@ -4,7 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_pda, data_len, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
-  u8_to_bool, u8_to_status, writable, Config, Ee, Status,
+  u8_to_bool, u8_to_status, writable, Config, Ee,
 };
 
 /// Update Config PDA
@@ -44,8 +44,7 @@ impl<'a> UpdateConfig<'a> {
 
   pub fn update_status(self) -> ProgramResult {
     log!("UpdateConfig update_status()");
-    let status = Status::from(self.u8s[1]);
-    self.config.set_status(status);
+    self.config.set_status(self.u8s[1]);
     Ok(())
   }
 
@@ -56,8 +55,7 @@ impl<'a> UpdateConfig<'a> {
     let time = get_time()?;
     self.config.set_updated_at(time);
 
-    let status = u8_to_status(self.u8s[1])?;
-    self.config.set_status(status);
+    self.config.set_status(self.u8s[1]);
     self.config.set_str_u8array(self.str_u8array);
 
     self.config.set_admin(*self.account1.key());
@@ -65,7 +63,7 @@ impl<'a> UpdateConfig<'a> {
     Ok(())
   }
   pub fn only_owner(&self) -> ProgramResult {
-    if self.config.prog_owner != *self.signer.key() {
+    if self.config.prog_owner() != self.signer.key() {
       return Ee::OnlyProgOwner.e();
     }
     Ok(())
@@ -145,8 +143,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for UpdateConfig<'a> {
     let _status = u8_to_status(u8s[1])?;
 
     config_pda.can_borrow_mut_data()?;
-    let config: &mut Config = Config::load(&config_pda)?;
-    if config.admin != *signer.key() && config.prog_owner != *signer.key() {
+    let config: &mut Config = Config::from_account_info(&config_pda)?;
+
+    if config.admin().ne(signer.key()) && config.prog_owner().ne(signer.key()) {
       return Err(ProgramError::IncorrectAuthority);
     }
     // cannot use self in "0 => Self.process(),

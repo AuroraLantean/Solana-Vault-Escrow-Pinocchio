@@ -10,7 +10,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_sysprog, data_len, derive_pda1, get_time, instructions::check_signer, not_initialized,
-  parse_u64, to32bytes, u8_to_bool, u8_to_status, Config, Ee, Status, CONFIG_SEED,
+  parse_u64, to32bytes, u8_to_bool, Config, Ee, CONFIG_SEED,
 };
 
 /// Init Config PDA
@@ -22,7 +22,7 @@ pub struct InitConfig<'a> {
   pub system_program: &'a AccountInfo,
   pub fee: u64,
   pub is_authorized: bool,
-  pub status: Status,
+  pub status: u8,
   pub str_u8array: [u8; 32],
 }
 impl<'a> InitConfig<'a> {
@@ -73,7 +73,7 @@ impl<'a> InitConfig<'a> {
     log!("InitConfig after initialization");
     let time = get_time()?;
     self.config_pda.can_borrow_mut_data()?;
-    let config = Config::load(&config_pda)?;
+    let config = Config::from_account_info(&config_pda)?;
     config.set_prog_owner(*prog_owner.key());
     config.set_admin(*prog_admin.key());
     config.set_str_u8array(str_u8array);
@@ -106,7 +106,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for InitConfig<'a> {
     data_len(data, data_size1)?;
 
     let is_authorized = u8_to_bool(data[0])?;
-    let status = u8_to_status(data[1])?;
+    let status = data[1];
     let fee = parse_u64(&data[2..10])?;
     let str_u8array = *to32bytes(&data[10..data_size1])?;
 

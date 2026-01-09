@@ -51,8 +51,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for CloseConfigPda<'a> {
     check_pda(config_pda)?;
 
     config_pda.can_borrow_mut_data()?;
-    let config: &mut Config = Config::load(&config_pda)?;
-    if config.admin != *authority.key() && config.prog_owner != *authority.key() {
+    let config: &mut Config = Config::from_account_info(&config_pda)?;
+    if config.admin().ne(authority.key()) && config.prog_owner().ne(authority.key()) {
       return Err(ProgramError::IncorrectAuthority);
     }
     Ok(Self {

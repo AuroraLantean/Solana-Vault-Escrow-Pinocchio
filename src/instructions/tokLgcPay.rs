@@ -4,8 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   ata_balc, check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, data_len,
-  executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt22, writable,
-  Config, Ee,
+  executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt22, writable, Ee,
 };
 
 /// TokLgc: Users to Pay Tokens to VaultAdmin

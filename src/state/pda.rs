@@ -3,25 +3,43 @@ use pinocchio::{
 };
 
 use crate::{none_zero_u64, Ee};
-
+//TODO: Bytemuck is a great library that makes it easy to read and write byte arrays as structs.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct Config {
-  pub prog_owner: Pubkey,    // 32
-  pub admin: Pubkey,         // 32
-  pub str_u8array: [u8; 32], // 32
-  fee: [u8; 8],              // 8 for u64,
-  sol_balance: [u8; 8],      // 8
-  token_balance: [u8; 8],    // 8
-  updated_at: [u8; 4],       // 4 for u32
-  pub is_authorized: bool,   // 1
-  pub status: Status,        // 1
-  pub bump: u8,              // 1
+  prog_owner: Pubkey,     // 32
+  admin: Pubkey,          // 32
+  str_u8array: [u8; 32],  // 32
+  fee: [u8; 8],           // 8 for u64,
+  sol_balance: [u8; 8],   // 8
+  token_balance: [u8; 8], // 8
+  updated_at: [u8; 4],    // 4 for u32
+  is_authorized: bool,    // 1
+  status: u8,             // 1
+  bump: u8,               // 1
 } // padding: [u8; 6] since the struct size needs to be aligned to 32 bytes.
 
 impl Config {
   pub const LEN: usize = core::mem::size_of::<Self>();
   //Getters or Accessors: Safe Direct value copy, no reference created
+  pub fn prog_owner(&self) -> &Pubkey {
+    &self.prog_owner
+  }
+  pub fn admin(&self) -> &Pubkey {
+    &self.admin
+  }
+  pub fn str_u8array(&self) -> &[u8; 32] {
+    &self.str_u8array
+  }
+  pub fn status(&self) -> Status {
+    self.status.into()
+  }
+  pub fn is_authorized(&self) -> bool {
+    self.is_authorized
+  }
+  pub fn bump(&self) -> u8 {
+    self.bump
+  }
   pub fn fee(&self) -> u64 {
     u64::from_le_bytes(self.fee)
   }
@@ -34,10 +52,14 @@ impl Config {
   pub fn updated_at(&self) -> u32 {
     u32::from_le_bytes(self.updated_at)
   }
-  pub fn read(pda: &AccountInfo) -> Result<&Self, ProgramError> {
-    Self::check(pda)?;
-    Ok(unsafe { &*(pda.borrow_mut_data_unchecked().as_ptr() as *const Self) })
-  }
+  /* pub fn close_authority(&self) -> Option<&Pubkey> {
+      if self.has_close_authority() {
+          Some(self.close_authority_unchecked())
+      } else {
+          None
+      }
+  }*/
+  //----------== read
   pub fn check(pda: &AccountInfo) -> Result<(), ProgramError> {
     if pda.data_len() != Self::LEN {
       return Ee::ConfigDataLengh.e();
@@ -50,14 +72,28 @@ impl Config {
     Ok(())
   }
   //better to use setters below
-  pub fn load(pda: &AccountInfo) -> Result<&mut Self, ProgramError> {
+  pub fn from_account_info(pda: &AccountInfo) -> Result<&mut Self, ProgramError> {
     Self::check(pda)?;
     unsafe { Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
+    /*Ok(Ref::map(account_info.try_borrow_data()?, |data| unsafe {
+        Self::from_bytes_unchecked(data)
+    })) */
   }
-  pub fn load_unchecked(pda: &AccountInfo) -> Result<&mut Self, ProgramError> {
-    unsafe { Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
+  //Must: there are no mutable borrows of the account data
+  #[inline]
+  pub unsafe fn from_account_info_unchecked(pda: &AccountInfo) -> Result<&Self, ProgramError> {
+    Self::check(pda)?;
+    Ok(Self::from_bytes_unchecked(pda.borrow_data_unchecked()))
+    //Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self))
   }
-  //Setters
+  /// The caller must ensure that `bytes` contains a valid representation of `Account`, and
+  /// it is properly aligned to be interpreted as an instance of `Account`.
+  /// At the moment `Account` has an alignment of 1 byte.
+  /// This method does not perform a length validation.
+  pub unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
+    &*(bytes.as_ptr() as *const &Config)
+  }
+  //----------== Setters
   pub fn set_prog_owner(&mut self, prog_owner: Pubkey) {
     self.prog_owner = prog_owner;
   }
@@ -84,7 +120,7 @@ impl Config {
   pub fn set_bump(&mut self, amt: u8) {
     self.bump = amt;
   }
-  pub fn set_status(&mut self, status: Status) {
+  pub fn set_status(&mut self, status: u8) {
     self.status = status;
   }
   pub fn set_is_authorized(&mut self, boo: bool) {
@@ -94,7 +130,7 @@ impl Config {
 
 //#[repr(C)] keeps the struct layout the same across different architectures
 #[repr(u8)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Status {
   Waiting = 0,
   Active = 1,
@@ -110,12 +146,11 @@ impl From<u8> for Status {
       2 => Status::Expired,
       3 => Status::Paused,
       4 => Status::Canceled,
-      _ => Status::Expired,
+      _ => Status::Canceled,
     }
   }
-}
-
-//------------==
+} //Status::Uninitialized as u8
+  //------------==
 #[derive(Clone, Copy, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct Escrow {
