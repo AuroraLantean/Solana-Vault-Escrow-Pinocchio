@@ -56,12 +56,16 @@ export const getRawAccount = (address: PublicKey) => {
 	return rawAccount;
 };
 
+export type PdaV1Out = {
+	pda: PublicKey;
+	bump: number;
+};
 export const findPdaV1 = (
 	userAddr: PublicKey,
 	seedStr: string,
 	pdaName: string,
 	progAddr = vaultProgAddr,
-) => {
+): PdaV1Out => {
 	const [pda, bump] = PublicKey.findProgramAddressSync(
 		[Buffer.from(seedStr), userAddr.toBuffer()],
 		progAddr,
@@ -674,13 +678,14 @@ export const ataBalc = (ata: PublicKey) => {
 	const decoded = AccountLayout.decode(rawAcctData);
 	return decoded.amount;
 };
-export const ataBalcCk = (
+export const ataBalCk = (
 	ata: PublicKey,
 	expectedAmount: bigint,
 	name: string,
+	decimals = 6,
 ) => {
 	const amount = ataBalc(ata);
-	ll(name, "token:", amount);
+	ll(name, "token:", amount, amount / BigInt(10 ** decimals));
 	expect(amount).toStrictEqual(expectedAmount);
 };
 export const setAtaCheck = (

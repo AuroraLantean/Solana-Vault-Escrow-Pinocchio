@@ -3,9 +3,9 @@ use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramR
 use pinocchio_log::log;
 
 use crate::{
-  ata_balc, check_ata, check_decimals, check_mint0a, check_pda, check_sysprog, data_len,
-  executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt_mint,
-  rent_exempt_tokacct, writable,
+  ata_balc, check_ata, check_atoken_gpvbd, check_decimals, check_mint0a, check_sysprog,
+  check_vault, data_len, executable, instructions::check_signer, none_zero_u64, parse_u64,
+  rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee,
 };
 
 /// Make Escrow Token Offer
@@ -40,18 +40,6 @@ impl<'a> EscrowTokMake<'a> {
       decimals,
     } = self;
     log!("EscrowTokMake process()");
-    log!("EscrowTokMake 1");
-    rent_exempt_mint(mint_maker)?; //invalid mint_maker will also fail this txn
-    rent_exempt_mint(mint_taker)?;
-    log!("EscrowTokMake 2");
-    check_ata(from_ata, maker, mint_maker)?;
-
-    log!("EscrowTokMake 3");
-    check_decimals(mint_maker, decimals)?;
-    check_mint0a(mint_maker, token_program)?;
-    check_mint0a(mint_taker, token_program)?;
-
-    log!("EscrowTokMake 5");
     /*Make a valid program derived address without searching for a bump seed:
     let seed = [(b"escrow"), maker.key().as_slice(), bump.as_ref()];
     let seeds = &seed[..];
@@ -103,7 +91,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokMake<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [maker, from_ata, vault_ata, vault, mint_maker, mint_taker, token_program, system_program, atoken_program] =
+    let [maker, from_ata, vault_ata, vault, mint_maker, mint_taker, config_pda, token_program, system_program, atoken_program] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -111,20 +99,47 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokMake<'a> {
     check_signer(maker)?;
     executable(token_program)?;
     check_sysprog(system_program)?;
+    check_atoken_gpvbd(atoken_program)?;
+
     writable(from_ata)?;
-    check_pda(vault)?;
-    //check_pda(config_pda)?;
-    log!("precheck passed");
+    check_ata(from_ata, maker, mint_maker)?;
+    log!("EscrowTokMake try_from 5");
 
     //u8 takes 1 + u64 takes 8 bytes
     data_len(data, 9)?;
-
     let decimals = data[0];
     let amount = parse_u64(&data[1..])?;
     log!("decimals: {}, amount: {}", decimals, amount);
 
     none_zero_u64(amount)?;
     ata_balc(from_ata, amount)?;
+
+    log!("EscrowTokMake try_from 9");
+    config_pda.can_borrow_mut_data()?;
+    let config: &mut Config = Config::from_account_info(&config_pda)?;
+
+    if !config.mints().contains(&mint_maker.key()) {
+      return Err(Ee::MintNotAccepted.into());
+    }
+    if !config.mints().contains(&mint_taker.key()) {
+      return Err(Ee::MintNotAccepted.into());
+    }
+    check_vault(vault, config.vault())?;
+
+    log!("EscrowTokMake try_from 14");
+    rent_exempt_mint(mint_maker)?;
+    rent_exempt_mint(mint_taker)?;
+
+    log!("EscrowTokMake try_from 17");
+    check_decimals(mint_maker, decimals)?;
+    check_decimals(mint_taker, decimals)?;
+
+    check_mint0a(mint_maker, token_program)?;
+    check_mint0a(mint_taker, token_program)?;
+
+    log!("EscrowTokMake try_from 19");
+    check_ata(from_ata, maker, mint_maker)?;
+
     /*let seeds = &[User::SEED_PREFIX, self.accounts.payer.key().as_ref()];
     let (t_account, bump) = find_program_address(
         seeds, &crate::ID);

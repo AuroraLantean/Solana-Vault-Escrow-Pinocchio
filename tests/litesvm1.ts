@@ -6,7 +6,7 @@ import { Status } from "./decoder";
 import {
 	acctExists,
 	acctIsNull,
-	ataBalcCk,
+	ataBalCk,
 	configPDA,
 	depositSol,
 	findPdaV1,
@@ -20,6 +20,7 @@ import {
 	lgcPay,
 	lgcRedeem,
 	lgcWithdraw,
+	type PdaV1Out,
 	sendSol,
 	setAtaCheck,
 	setMint,
@@ -57,6 +58,9 @@ let signer: PublicKey;
 let mint: PublicKey;
 let mintAuthority: PublicKey;
 let ata: PublicKey;
+let fromAta: PublicKey;
+let toAta: PublicKey;
+let vaultOut: PdaV1Out;
 let decimals = 9;
 let amount: bigint;
 let amtDeposit: bigint;
@@ -147,13 +151,13 @@ test("Make DragonCoin Mint, ATA, Tokens", () => {
 	lgcInitAta(signerKp, signer, mint, ata);
 	acctExists(ata);
 	lgcMintToken(mintAuthorityKp, signer, mint, ata, decimals, amt);
-	ataBalcCk(ata, amt, "admin");
+	ataBalCk(ata, amt, "admin", 9);
 	ll("can mint to admin with ATA");
 
 	ata = getAta(mint, user1);
 	acctIsNull(ata);
 	lgcMintToken(mintAuthorityKp, user1, mint, ata, decimals, amt);
-	ataBalcCk(ata, amt, "user1");
+	ataBalCk(ata, amt, "user1", 9);
 	ll("can mint to user1 without ATA");
 	//TODO: transfer set minted tokens
 });
@@ -211,9 +215,9 @@ test("Deposit Lgc Tokens", () => {
 	amt = as6zBn(370);
 
 	signer = signerKp.publicKey;
-	const fromAta = getAta(mint, signer);
-	const vaultOut = findPdaV1(signer, "vault", "signerVault");
-	const toAta = getAta(mint, vaultOut.pda);
+	fromAta = getAta(mint, signer);
+	vaultOut = findPdaV1(signer, "vault", "signerVault");
+	toAta = getAta(mint, vaultOut.pda);
 
 	lgcDeposit(
 		signerKp,
@@ -225,8 +229,8 @@ test("Deposit Lgc Tokens", () => {
 		decimals,
 		amt,
 	);
-	ataBalcCk(toAta, as6zBn(370), "vault1");
-	ataBalcCk(fromAta, as6zBn(630), "user1 ");
+	ataBalCk(toAta, as6zBn(370), "vault1");
+	ataBalCk(fromAta, as6zBn(630), "user1 ");
 });
 test("Withdraw Lgc Tokens", () => {
 	ll("\n------== Withdraw Lgc Tokens");
@@ -236,13 +240,13 @@ test("Withdraw Lgc Tokens", () => {
 	amt = as6zBn(120);
 
 	signer = signerKp.publicKey;
-	const toAta = getAta(mint, signer);
-	const vaultOut = findPdaV1(signer, "vault", "signerVault");
-	const fromAta = getAta(mint, vaultOut.pda);
+	toAta = getAta(mint, signer);
+	vaultOut = findPdaV1(signer, "vault", "signerVault");
+	fromAta = getAta(mint, vaultOut.pda);
 
 	lgcWithdraw(signerKp, fromAta, toAta, vaultOut.pda, mint, decimals, amt);
-	ataBalcCk(fromAta, as6zBn(250), "vault1");
-	ataBalcCk(toAta, as6zBn(750), "user1 ");
+	ataBalCk(fromAta, as6zBn(250), "vault1");
+	ataBalCk(toAta, as6zBn(750), "user1 ");
 });
 
 test("Pay Lgc Tokens", () => {
@@ -253,12 +257,12 @@ test("Pay Lgc Tokens", () => {
 	amt = as6zBn(326);
 
 	signer = signerKp.publicKey;
-	const fromAta = getAta(mint, signer);
-	const toAta = getAta(mint, vaultO);
+	fromAta = getAta(mint, signer);
+	toAta = getAta(mint, vaultO);
 
 	lgcPay(signerKp, fromAta, toAta, vaultO, mint, configPDA, decimals, amt);
-	ataBalcCk(toAta, amt, "vaultO");
-	ataBalcCk(fromAta, as6zBn(424), "user1 ");
+	ataBalCk(toAta, amt, "vaultO");
+	ataBalCk(fromAta, as6zBn(424), "user1 ");
 });
 test("Redeem Lgc Tokens", () => {
 	ll("\n------== Redeem Lgc Tokens");
@@ -268,9 +272,9 @@ test("Redeem Lgc Tokens", () => {
 	amt = as6zBn(37);
 
 	signer = signerKp.publicKey;
-	const toAta = getAta(mint, signer);
-	const vaultOut = findPdaV1(owner, "vault", "Vault");
-	const fromAta = getAta(mint, vaultOut.pda);
+	toAta = getAta(mint, signer);
+	vaultOut = findPdaV1(owner, "vault", "Vault");
+	fromAta = getAta(mint, vaultOut.pda);
 
 	lgcRedeem(
 		signerKp,
@@ -282,8 +286,8 @@ test("Redeem Lgc Tokens", () => {
 		decimals,
 		amt,
 	);
-	ataBalcCk(fromAta, as6zBn(289), "vaultO");
-	ataBalcCk(toAta, as6zBn(461), "user1 ");
+	ataBalCk(fromAta, as6zBn(289), "vaultO");
+	ataBalCk(toAta, as6zBn(461), "user1 ");
 });
 
 test.skip("copy accounts from devnet", async () => {
