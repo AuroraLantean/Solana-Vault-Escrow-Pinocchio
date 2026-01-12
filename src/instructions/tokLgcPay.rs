@@ -11,9 +11,9 @@ use crate::{
 /// TokLgc: Users to Pay Tokens to VaultAdmin
 pub struct TokLgcPay<'a> {
   pub user: &'a AccountInfo, //signer
-  pub from_ata: &'a AccountInfo,
+  pub user_ata: &'a AccountInfo,
   //pub config_pda: &'a AccountInfo,
-  pub to_ata: &'a AccountInfo,
+  pub vault_ata: &'a AccountInfo,
   pub vault: &'a AccountInfo,
   pub mint: &'a AccountInfo,
   pub config_pda: &'a AccountInfo,
@@ -29,8 +29,8 @@ impl<'a> TokLgcPay<'a> {
   pub fn process(self) -> ProgramResult {
     let TokLgcPay {
       user,
-      from_ata,
-      to_ata,
+      user_ata,
+      vault_ata,
       vault,
       mint,
       config_pda: _,
@@ -42,11 +42,11 @@ impl<'a> TokLgcPay<'a> {
     } = self;
     log!("TokLgcPay process()");
 
-    if to_ata.data_is_empty() {
-      log!("Make to_ata");
+    if vault_ata.data_is_empty() {
+      log!("Make vault_ata");
       pinocchio_associated_token_account::instructions::Create {
         funding_account: user,
-        account: to_ata,
+        account: vault_ata,
         wallet: vault,
         mint,
         system_program,
@@ -55,18 +55,18 @@ impl<'a> TokLgcPay<'a> {
       .invoke()?;
       //Please upgrade to SPL Token 2022 for immutable owner support
     } else {
-      log!("to_ata has data");
-      check_ata(to_ata, vault, mint)?;
+      log!("vault_ata has data");
+      check_ata(vault_ata, vault, mint)?;
     }
-    writable(to_ata)?;
-    rent_exempt_tokacct(to_ata)?;
+    writable(vault_ata)?;
+    rent_exempt_tokacct(vault_ata)?;
     log!("ToATA is found/verified");
 
     log!("Transfer Tokens");
     pinocchio_token::instructions::TransferChecked {
-      from: from_ata,
+      from: user_ata,
       mint,
-      to: to_ata,
+      to: vault_ata,
       authority: user,
       amount,
       decimals,
@@ -83,7 +83,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, from_ata, to_ata, vault, mint, config_pda, token_program, system_program, atoken_program] =
+    let [user, user_ata, vault_ata, vault, mint, config_pda, token_program, system_program, atoken_program] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -93,9 +93,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
     check_sysprog(system_program)?;
     check_atoken_gpvbd(atoken_program)?;
 
-    writable(from_ata)?;
-    check_ata(from_ata, user, mint)?;
+    writable(user_ata)?;
+    check_ata(user_ata, user, mint)?;
     log!("TokLgcPay try_from 5");
+
     //1+8: u8 takes 1, u64 takes 8 bytes
     data_len(data, 9)?;
     let decimals = data[0];
@@ -103,7 +104,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
     log!("decimals: {}, amount: {}", decimals, amount);
 
     none_zero_u64(amount)?;
-    ata_balc(from_ata, amount)?;
+    ata_balc(user_ata, amount)?;
 
     log!("TokLgcPay try_from 9");
     config_pda.can_borrow_mut_data()?;
@@ -121,8 +122,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for TokLgcPay<'a> {
 
     Ok(Self {
       user,
-      from_ata,
-      to_ata,
+      user_ata,
+      vault_ata,
       vault,
       mint,
       config_pda,

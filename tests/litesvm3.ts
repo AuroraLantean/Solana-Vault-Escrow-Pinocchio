@@ -178,7 +178,7 @@ test("updateConfig + time travel", () => {
 	expect(decoded.str).toEqual(str);
 	expect(decoded.admin).toEqual(acct1);
 });
-
+//TODO: config close
 /*Failure Test:
 const failed = svm.sendTransaction(tx);
 	if (failed instanceof FailedTransactionMetadata) {

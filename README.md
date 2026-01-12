@@ -95,7 +95,10 @@ Codama takes the Shank IDL and emits a TypeScript client. The generated code inc
   pnpm dlx codama run js
 ```
 
-You'll see a clients/js/src/generated/ folder in our project with the program types our client code uses to send transactions to our program.
+You'll see a clients/js/src/gene` 1qw12qw3erdft6yhj7u8iokl./90You'll see a clients/js/src/generated/ folder in our project with the program types our client code uses to send transactions to our program.
+p[;'/]\
+
+  rated/ folder in our project with the program types our client code uses to send transactions to our program.
 
 ### Run Tests via LiteSVM
 

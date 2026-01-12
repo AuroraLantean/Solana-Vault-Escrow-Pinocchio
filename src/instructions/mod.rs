@@ -126,8 +126,8 @@ pub enum ProgramIx {
 
   /// 7 TokLgc User Pays Tokens to VaultPDA
   #[account(0, signer, writable, name = "user", desc = "User")]
-  #[account(1, writable, name = "from", desc = "From ATA")]
-  #[account(2, writable, name = "to", desc = "To ATA")]
+  #[account(1, writable, name = "from", desc = "User ATA")]
+  #[account(2, writable, name = "to", desc = "Vault ATA")]
   #[account(3, name = "vault", desc = "Vault as To Wallet")]
   #[account(4, name = "mint", desc = "Mint")]
   #[account(5, writable, name = "config_pda", desc = "config_pda")]
@@ -219,16 +219,22 @@ pub enum ProgramIx {
 
   //---------------== Escrow PDA
   /// 15 Escrow Token Make Offer
-  #[account(0, signer, writable, name = "maker", desc = "Maker")]
-  #[account(1, writable, name = "from", desc = "From ATA")]
-  #[account(2, writable, name = "to", desc = "To ATA")]
-  #[account(3, name = "to_wallet", desc = "To Wallet")]
-  #[account(4, name = "mint_maker", desc = "Mint Maker")]
-  #[account(5, name = "mint_taker", desc = "Mint Taker")]
-  #[account(6, name = "token_program", desc = "Token Program")]
-  #[account(7, name = "system_program", desc = "System Program")]
-  #[account(8, name = "atoken_program", desc = "AToken Program")]
-  EscrowTokMake { decimals: u8, bump: u8, amount: u64 },
+  #[account(0, signer, writable, name = "user_x", desc = "User X")]
+  #[account(1, writable, name = "user_x_ata", desc = "User X ATA")]
+  #[account(2, writable, name = "vault_ata", desc = "Vault ATA")]
+  #[account(3, writable, name = "vault", desc = "Vault as To Wallet")]
+  #[account(4, name = "mint_x", desc = "Mint X")]
+  #[account(5, name = "mint_y", desc = "Mint Y")]
+  #[account(6, writable, name = "config_pda", desc = "Config PDA")]
+  #[account(7, name = "token_program", desc = "Token Program")]
+  #[account(8, name = "system_program", desc = "System Program")]
+  #[account(9, name = "atoken_program", desc = "AToken Program")]
+  EscrowTokMake {
+    decimal_x: u8,
+    amount_x: u64,
+    decimal_y: u8,
+    amount_y: u64,
+  },
   //---------------== Admin PDA
   //---------------== User PDA
   //---------------== Action PDA

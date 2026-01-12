@@ -10,47 +10,51 @@ use crate::{
 
 /// Make Escrow Token Offer
 pub struct EscrowTokMake<'a> {
-  pub maker: &'a AccountInfo, //signer
-  pub from_ata: &'a AccountInfo,
+  pub user_x: &'a AccountInfo, //signer
+  pub user_x_ata: &'a AccountInfo,
   pub vault_ata: &'a AccountInfo, //as to_ata
   pub vault: &'a AccountInfo,     //PDA or to_wallet
-  pub mint_maker: &'a AccountInfo,
-  pub mint_taker: &'a AccountInfo,
+  pub mint_x: &'a AccountInfo,
+  pub mint_y: &'a AccountInfo,
   pub token_program: &'a AccountInfo,
   pub system_program: &'a AccountInfo,
   pub atoken_program: &'a AccountInfo,
-  pub amount: u64,
-  pub decimals: u8,
+  pub decimal_x: u8,
+  pub decimal_y: u8,
+  pub amount_x: u64,
+  pub amount_y: u64,
 }
 impl<'a> EscrowTokMake<'a> {
   pub const DISCRIMINATOR: &'a u8 = &15;
 
   pub fn process(self) -> ProgramResult {
     let EscrowTokMake {
-      maker,
-      from_ata,
+      user_x,
+      user_x_ata,
       vault_ata,
       vault,
-      mint_maker,
-      mint_taker,
+      mint_x,
+      mint_y,
       token_program,
       system_program,
       atoken_program: _,
-      amount,
-      decimals,
+      decimal_x,
+      decimal_y,
+      amount_x,
+      amount_y,
     } = self;
     log!("EscrowTokMake process()");
     /*Make a valid program derived address without searching for a bump seed:
-    let seed = [(b"escrow"), maker.key().as_slice(), bump.as_ref()];
+    let seed = [(b"escrow"), user_x.key().as_slice(), bump.as_ref()];
     let seeds = &seed[..];
     let pda = pubkey::checked_create_program_address(seeds, &crate::ID).unwrap();*/
     if vault_ata.data_is_empty() {
       log!("Make vault_ata");
       pinocchio_associated_token_account::instructions::Create {
-        funding_account: maker,
+        funding_account: user_x,
         account: vault_ata,
         wallet: vault,
-        mint: mint_maker,
+        mint: mint_x,
         system_program,
         token_program,
       }
@@ -58,7 +62,7 @@ impl<'a> EscrowTokMake<'a> {
       //Please upgrade to SPL Token 2022 for immutable owner support
     } else {
       log!("vault_ata has data");
-      check_ata(vault_ata, vault, mint_maker)?;
+      check_ata(vault_ata, vault, mint_x)?;
     }
     writable(vault_ata)?;
     rent_exempt_tokacct(vault_ata)?;
@@ -66,12 +70,12 @@ impl<'a> EscrowTokMake<'a> {
 
     log!("EscrowTokMake 8: Transfer Tokens");
     pinocchio_token::instructions::TransferChecked {
-      from: from_ata,
-      mint: mint_maker,
+      from: user_x_ata,
+      mint: mint_x,
       to: vault_ata,
-      authority: maker,
-      amount,
-      decimals,
+      authority: user_x,
+      amount: amount_x,
+      decimals: decimal_x,
     }
     .invoke()?;
     /*  pinocchio_token::instructions::Transfer {
@@ -91,73 +95,70 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokMake<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [maker, from_ata, vault_ata, vault, mint_maker, mint_taker, config_pda, token_program, system_program, atoken_program] =
+    let [user_x, user_x_ata, vault_ata, vault, mint_x, mint_y, config_pda, token_program, system_program, atoken_program] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
-    check_signer(maker)?;
+    check_signer(user_x)?;
     executable(token_program)?;
     check_sysprog(system_program)?;
     check_atoken_gpvbd(atoken_program)?;
 
-    writable(from_ata)?;
-    check_ata(from_ata, maker, mint_maker)?;
+    writable(user_x_ata)?;
+    check_ata(user_x_ata, user_x, mint_x)?;
     log!("EscrowTokMake try_from 5");
 
-    //u8 takes 1 + u64 takes 8 bytes
-    data_len(data, 9)?;
-    let decimals = data[0];
-    let amount = parse_u64(&data[1..])?;
-    log!("decimals: {}, amount: {}", decimals, amount);
+    //2x u8 takes 2 + 2x u64 takes 16 bytes
+    data_len(data, 18)?;
+    let decimal_x = data[0];
+    let amount_x = parse_u64(&data[1..9])?;
+    log!("decimal_x: {}, amount_x: {}", decimal_x, amount_x);
+    let decimal_y = data[10];
+    let amount_y = parse_u64(&data[11..19])?;
+    log!("decimal_y: {}, amount_y: {}", decimal_y, amount_y);
 
-    none_zero_u64(amount)?;
-    ata_balc(from_ata, amount)?;
+    none_zero_u64(amount_x)?;
+    ata_balc(user_x_ata, amount_x)?;
+    none_zero_u64(amount_y)?;
 
     log!("EscrowTokMake try_from 9");
     config_pda.can_borrow_mut_data()?;
     let config: &mut Config = Config::from_account_info(&config_pda)?;
 
-    if !config.mints().contains(&mint_maker.key()) {
-      return Err(Ee::MintNotAccepted.into());
-    }
-    if !config.mints().contains(&mint_taker.key()) {
-      return Err(Ee::MintNotAccepted.into());
-    }
     check_vault(vault, config.vault())?;
 
     log!("EscrowTokMake try_from 14");
-    rent_exempt_mint(mint_maker)?;
-    rent_exempt_mint(mint_taker)?;
+    rent_exempt_mint(mint_x)?;
+    rent_exempt_mint(mint_y)?;
+    //TODO: fee is part of exchange amount
 
-    log!("EscrowTokMake try_from 17");
-    check_decimals(mint_maker, decimals)?;
-    check_decimals(mint_taker, decimals)?;
+    log!("EscrowTokMake try_from 16");
+    check_decimals(mint_x, decimal_x)?;
+    check_decimals(mint_y, decimal_y)?;
 
-    check_mint0a(mint_maker, token_program)?;
-    check_mint0a(mint_taker, token_program)?;
-
-    log!("EscrowTokMake try_from 19");
-    check_ata(from_ata, maker, mint_maker)?;
+    log!("EscrowTokMake try_from 18");
+    check_mint0a(mint_x, token_program)?;
+    check_mint0a(mint_y, token_program)?;
 
     /*let seeds = &[User::SEED_PREFIX, self.accounts.payer.key().as_ref()];
     let (t_account, bump) = find_program_address(
         seeds, &crate::ID);
-    if t_account.ne(self.accounts.target_account.key()) {
-        return Err(ProgramError::InvalidAccountData);
-        }*/
+    if t_account.ne(self.accounts.target_account.key()) { return Err(ProgramError::InvalidAccountData); }*/
     Ok(Self {
-      maker,
-      from_ata,
+      user_x,
+      user_x_ata,
       vault_ata,
       vault,
-      mint_maker,
-      mint_taker,
+      mint_x,
+      mint_y,
       token_program,
       system_program,
       atoken_program,
-      decimals,
-      amount,
+      decimal_x,
+      decimal_y,
+      amount_x,
+      amount_y,
     })
   }
 }
