@@ -213,12 +213,12 @@ impl From<u8> for Status {
 #[derive(Clone, Copy, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct Escrow {
-  maker_x: Pubkey,   //32
-  mint_x: Pubkey,    //32
-  mint_y: Pubkey,    //32
-  amount_y: [u8; 8], //8 the wanted amount
-  id: [u8; 8],       //8
-  bump: u8,          //1
+  maker0: Pubkey,   //32
+  mint0: Pubkey,    //32
+  mint1: Pubkey,    //32
+  amount1: [u8; 8], //8 the wanted amount
+  id: [u8; 8],      //8
+  bump: u8,         //1
 }
 impl Escrow {
   pub const LEN: usize = core::mem::size_of::<Escrow>();
@@ -226,40 +226,40 @@ impl Escrow {
 
   pub const SEED: &[u8] = b"escrow";
 
-  pub fn maker_x(&self) -> &Pubkey {
-    &self.maker_x
+  pub fn maker0(&self) -> &Pubkey {
+    &self.maker0
   }
-  pub fn mint_x(&self) -> &Pubkey {
-    &self.mint_x
+  pub fn mint0(&self) -> &Pubkey {
+    &self.mint0
   }
-  pub fn mint_y(&self) -> &Pubkey {
-    &self.mint_y
+  pub fn mint1(&self) -> &Pubkey {
+    &self.mint1
   }
   pub fn id(&self) -> u64 {
     u64::from_le_bytes(self.id)
   }
-  pub fn amount_y(&self) -> u64 {
-    u64::from_le_bytes(self.amount_y)
+  pub fn amount1(&self) -> u64 {
+    u64::from_le_bytes(self.amount1)
   }
   pub fn bump(&self) -> u8 {
     self.bump
   }
-  pub fn set_maker_x(&mut self, maker_x: &Pubkey) {
-    self.maker_x = *maker_x;
+  pub fn set_maker0(&mut self, maker0: &Pubkey) {
+    self.maker0 = *maker0;
   }
-  pub fn set_mint_x(&mut self, mint_x: &Pubkey) {
-    self.mint_x = *mint_x;
+  pub fn set_mint0(&mut self, mint0: &Pubkey) {
+    self.mint0 = *mint0;
   }
-  pub fn set_mint_y(&mut self, mint_y: &Pubkey) {
-    self.mint_y = *mint_y;
+  pub fn set_mint1(&mut self, mint1: &Pubkey) {
+    self.mint1 = *mint1;
   }
   pub fn set_id(&mut self, amt: u64) -> ProgramResult {
     self.id = amt.to_le_bytes();
     Ok(())
   }
-  pub fn set_amount_y(&mut self, amt: u64) -> ProgramResult {
+  pub fn set_amount1(&mut self, amt: u64) -> ProgramResult {
     none_zero_u64(amt)?;
-    self.amount_y = amt.to_le_bytes();
+    self.amount1 = amt.to_le_bytes();
     Ok(())
   }
   pub fn set_bump(&mut self, amt: u8) {

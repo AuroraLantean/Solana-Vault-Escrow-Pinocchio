@@ -330,7 +330,6 @@ test("Make Token Escrow", () => {
 		amountY,
 		id,
 	);
-	//TODO: make decoder
 	//ataBalCk(toAta, amt, "vaultO");
 	//ataBalCk(fromAta, as6zBn(424), "user1 ");
 });

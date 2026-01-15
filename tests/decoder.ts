@@ -22,6 +22,20 @@ import { PublicKey } from "@solana/web3.js";
 const ll = console.log;
 //Methods to decode: use SolanaKit, Borsh, or BufferLayout, or separate str then decode the rest;
 
+export enum Status {
+	Waiting,
+	Active,
+	Expired,
+	Paused,
+	Canceled,
+}
+/*const base64Encoder = getBase64Encoder();
+let bytes = base64Encoder.encode(value.data[0]);
+const decoded = ammConfigDecoder.decode(bytes);*/
+
+//https://www.quicknode.com/guides/solana-development/tooling/web3-2/account-deserialization
+//https://github.com/anza-xyz/kit/tree/main/packages/codecs-core#fixed-size-and-variable-size-codecs
+//---------------== ConfigPDA
 //converted from Rust code. XyzAcct, xyzAcctDecoder, DecodedXyzAcct should all match in field order and types!
 export type ConfigAcct = {
 	mint0: Address;
@@ -41,19 +55,6 @@ export type ConfigAcct = {
 	vaultBump: number;
 	bump: number;
 };
-export enum Status {
-	Waiting,
-	Active,
-	Expired,
-	Paused,
-	Canceled,
-}
-/*const base64Encoder = getBase64Encoder();
-let bytes = base64Encoder.encode(value.data[0]);
-const decoded = ammConfigDecoder.decode(bytes);*/
-
-//https://www.quicknode.com/guides/solana-development/tooling/web3-2/account-deserialization
-//https://github.com/anza-xyz/kit/tree/main/packages/codecs-core#fixed-size-and-variable-size-codecs
 export const configAcctDecoder: FixedSizeDecoder<ConfigAcct> = getStructDecoder(
 	[
 		//["discriminator", fixDecoderSize(getBytesDecoder(), 4)],//only for accounts made by Anchor
@@ -77,7 +78,7 @@ export const configAcctDecoder: FixedSizeDecoder<ConfigAcct> = getStructDecoder(
 		//["padding", getArrayDecoder(getU64Decoder(), { size: 3 })],
 	],
 );
-export const solanaKitDecode = (
+export const solanaKitDecodeConfig = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike>,
 	isVerbose = false,
 ) => {
@@ -106,7 +107,7 @@ export const solanaKitDecodeDev = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
 ) => {
 	if (!bytes) throw new Error("bytes invalid");
-	const decoded = solanaKitDecode(bytes, true);
+	const decoded = solanaKitDecodeConfig(bytes, true);
 	const decodedV1: ConfigAcctDev = {
 		mint0: new PublicKey(decoded.mint0.toString()),
 		mint1: new PublicKey(decoded.mint1.toString()),
@@ -144,21 +145,14 @@ export type ConfigAcctDev = {
 	bump: number;
 };
 
-export type DecodedConfigAcct = {
+//---------------==
+export type DecodedAccount = {
 	executable: boolean;
 	lamports: bigint;
 	programAddress: string;
 	space: bigint;
 	address: string;
 	data: {
-		progOwner: string;
-		admin: string;
-		str: string;
-		fee: bigint;
-		solBalance: bigint;
-		tokenBalance: bigint;
-		isAuthorized: boolean;
-		status: Status;
 		bump: number;
 	};
 	exists: boolean;

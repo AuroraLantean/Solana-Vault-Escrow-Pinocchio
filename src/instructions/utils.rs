@@ -509,7 +509,7 @@ pub fn check_signer(account: &AccountInfo) -> Result<(), ProgramError> {
   }
   Ok(())
 }
-pub fn check_mint_xy(mint_x: &AccountInfo, mint_y: &AccountInfo) -> Result<(), ProgramError> {
+pub fn check_escrow_mints(mint_x: &AccountInfo, mint_y: &AccountInfo) -> Result<(), ProgramError> {
   if mint_x.key() == mint_y.key() {
     return Ee::MintsAreTheSame.e();
   }
