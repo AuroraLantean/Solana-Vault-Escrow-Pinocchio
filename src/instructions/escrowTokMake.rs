@@ -49,13 +49,12 @@ impl<'a> EscrowTokMake<'a> {
       system_program,
       atoken_program: _,
       decimal_x,
-      decimal_y: _,
+      decimal_y,
       amount_x,
       amount_y,
       id,
     } = self;
-    log!("EscrowTokMake process()");
-
+    log!("---------== process()");
     config_pda.can_borrow_mut_data()?;
     let _config: &mut Config = Config::from_account_info(&config_pda)?;
 
@@ -137,7 +136,10 @@ impl<'a> EscrowTokMake<'a> {
     escrow.set_mint_x(mint_x.key());
     escrow.set_mint_y(mint_y.key());
     escrow.set_id(id)?;
+    escrow.set_amount_x(amount_x)?;
     escrow.set_amount_y(amount_y)?; // unsafe { *(data.as_ptr().add(1) as *const u64) };
+    escrow.set_decimal_x(decimal_x);
+    escrow.set_decimal_y(decimal_y);
     escrow.set_bump(bump); // unsafe { *data.as_ptr() };
 
     Ok(())
@@ -192,6 +194,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokMake<'a> {
 
     log!("EscrowTokMake try_from 6");
     check_decimals(mint_x, decimal_x)?;
+    check_decimals(mint_y, decimal_y)?;
     check_mint0a(mint_x, token_program)?;
     check_mint0a(mint_y, token_program)?; // Not needed since CPI since deposit will fail if not owned by token program
 

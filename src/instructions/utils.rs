@@ -50,10 +50,10 @@ pub enum Ee {
   EscrowMintY,
   #[error("EscrowId")]
   EscrowId,
-  #[error("Xyz017")]
-  Xyz017,
-  #[error("Xyz018")]
-  Xyz018,
+  #[error("EscrowAmtOfTokenX")]
+  EscrowAmtOfTokenX,
+  #[error("TakerInsufficientTokenY")]
+  TakerInsufficientTokenY,
   #[error("Xyz019")]
   Xyz019,
   //Bytes for Numerical
@@ -108,10 +108,10 @@ pub enum Ee {
   ByteForBool,
   #[error("ByteForStatus")]
   ByteForStatus,
-  #[error("InputAmount")]
-  InputAmount,
-  #[error("Xyz045")]
-  Xyz045,
+  #[error("InputAmountX")]
+  InputAmountX,
+  #[error("InputAmountY")]
+  InputAmountY,
   #[error("EscrowDataEmpty")]
   EscrowDataEmpty,
   #[error("EscrowExists")]
@@ -281,8 +281,8 @@ impl TryFrom<u32> for Ee {
       14 => Ok(Ee::EscrowMintX),
       15 => Ok(Ee::EscrowMintY),
       16 => Ok(Ee::EscrowId),
-      17 => Ok(Ee::Xyz017),
-      18 => Ok(Ee::Xyz018),
+      17 => Ok(Ee::EscrowAmtOfTokenX),
+      18 => Ok(Ee::TakerInsufficientTokenY),
       19 => Ok(Ee::Xyz019),
       20 => Ok(Ee::ZeroU128),
       21 => Ok(Ee::ZeroU64),
@@ -308,8 +308,8 @@ impl TryFrom<u32> for Ee {
       41 => Ok(Ee::InputDataBump),
       42 => Ok(Ee::ByteForBool),
       43 => Ok(Ee::ByteForStatus),
-      44 => Ok(Ee::InputAmount),
-      45 => Ok(Ee::Xyz045),
+      44 => Ok(Ee::InputAmountX),
+      45 => Ok(Ee::InputAmountY),
       46 => Ok(Ee::EscrowDataEmpty),
       47 => Ok(Ee::EscrowExists),
       48 => Ok(Ee::EscrowIsForeign),
@@ -398,8 +398,8 @@ impl ToStr for Ee {
       Ee::EscrowMintX => "EscrowMintX",
       Ee::EscrowMintY => "EscrowMintY",
       Ee::EscrowId => "EscrowId",
-      Ee::Xyz017 => "Xyz017",
-      Ee::Xyz018 => "Xyz018",
+      Ee::EscrowAmtOfTokenX => "EscrowAmtOfTokenX",
+      Ee::TakerInsufficientTokenY => "TakerInsufficientTokenY",
       Ee::Xyz019 => "Xyz019",
 
       Ee::ZeroU128 => "ZeroU128",
@@ -427,8 +427,8 @@ impl ToStr for Ee {
       Ee::InputDataBump => "InputDataBump",
       Ee::ByteForBool => "ByteForBool",
       Ee::ByteForStatus => "ByteForStatus",
-      Ee::InputAmount => "InputAmount",
-      Ee::Xyz045 => "Xyz045",
+      Ee::InputAmountX => "InputAmountX",
+      Ee::InputAmountY => "InputAmountY",
       Ee::EscrowDataEmpty => "EscrowDataEmpty",
       Ee::EscrowExists => "EscrowExists",
       Ee::EscrowIsForeign => "EscrowIsForeign",

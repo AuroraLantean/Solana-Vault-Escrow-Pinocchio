@@ -217,8 +217,11 @@ pub struct Escrow {
   //taker: Pubkey,   //32 hidden from maker
   mint_x: Pubkey,    //32
   mint_y: Pubkey,    //32
+  amount_x: [u8; 8], //8 the offered amount from maker. This field gives taker easier way to view
   amount_y: [u8; 8], //8 the wanted amount to maker. The token_y price in mint_x = this Escrow PDA ATA_X amount / amount_y
   id: [u8; 8],       //8
+  decimal_x: u8,     //1
+  decimal_y: u8,     //1
   bump: u8,          //1
 }
 impl Escrow {
@@ -239,8 +242,17 @@ impl Escrow {
   pub fn id(&self) -> u64 {
     u64::from_le_bytes(self.id)
   }
+  pub fn amount_x(&self) -> u64 {
+    u64::from_le_bytes(self.amount_x)
+  }
   pub fn amount_y(&self) -> u64 {
     u64::from_le_bytes(self.amount_y)
+  }
+  pub fn decimal_x(&self) -> u8 {
+    self.decimal_x
+  }
+  pub fn decimal_y(&self) -> u8 {
+    self.decimal_y
   }
   pub fn bump(&self) -> u8 {
     self.bump
@@ -258,10 +270,21 @@ impl Escrow {
     self.id = amt.to_le_bytes();
     Ok(())
   }
+  pub fn set_amount_x(&mut self, amt: u64) -> ProgramResult {
+    none_zero_u64(amt)?;
+    self.amount_x = amt.to_le_bytes();
+    Ok(())
+  }
   pub fn set_amount_y(&mut self, amt: u64) -> ProgramResult {
     none_zero_u64(amt)?;
     self.amount_y = amt.to_le_bytes();
     Ok(())
+  }
+  pub fn set_decimal_x(&mut self, amt: u8) {
+    self.decimal_x = amt;
+  }
+  pub fn set_decimal_y(&mut self, amt: u8) {
+    self.decimal_y = amt;
   }
   pub fn set_bump(&mut self, amt: u8) {
     self.bump = amt;

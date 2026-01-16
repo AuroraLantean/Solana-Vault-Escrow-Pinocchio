@@ -151,8 +151,11 @@ export type EscrowAcct = {
 	//taker: Address;
 	mintX: Address;
 	mintY: Address;
+	amountX: bigint;
 	amountY: bigint;
 	id: bigint;
+	decimalX: number;
+	decimalY: number;
 	bump: number;
 };
 export const escrowAcctDecoder: FixedSizeDecoder<EscrowAcct> = getStructDecoder(
@@ -160,8 +163,11 @@ export const escrowAcctDecoder: FixedSizeDecoder<EscrowAcct> = getStructDecoder(
 		["maker", getAddressDecoder()],
 		["mintX", getAddressDecoder()],
 		["mintY", getAddressDecoder()],
+		["amountX", getU64Decoder()],
 		["amountY", getU64Decoder()],
 		["id", getU64Decoder()],
+		["decimalX", getU8Decoder()],
+		["decimalY", getU8Decoder()],
 		["bump", getU8Decoder()],
 	],
 );
@@ -174,8 +180,11 @@ export const solanaKitDecodeEscrow = (
 		ll("maker :", decoded.maker);
 		ll("mintX  :", decoded.mintX);
 		ll("mintY  :", decoded.mintY);
+		ll("amountX:", decoded.amountX);
 		ll("amountY:", decoded.amountY);
 		ll("id:", decoded.id);
+		ll("decimalX:", decoded.decimalX);
+		ll("decimalY:", decoded.decimalY);
 		ll("bump:", decoded.bump);
 	}
 	return decoded;
@@ -190,8 +199,11 @@ export const solanaKitDecodeEscrowDev = (
 		maker: new PublicKey(decoded.maker.toString()),
 		mintX: new PublicKey(decoded.mintX.toString()),
 		mintY: new PublicKey(decoded.mintY.toString()),
+		amountX: decoded.amountX,
 		amountY: decoded.amountY,
 		id: decoded.id,
+		decimalX: decoded.decimalX,
+		decimalY: decoded.decimalY,
 		bump: decoded.bump,
 	};
 	return decodedV1;
@@ -200,8 +212,11 @@ export type EscrowAcctDev = {
 	maker: PublicKey;
 	mintX: PublicKey;
 	mintY: PublicKey;
+	amountX: bigint;
 	amountY: bigint;
 	id: bigint;
+	decimalX: number;
+	decimalY: number;
 	bump: number;
 };
 //---------------==

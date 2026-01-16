@@ -23,7 +23,14 @@ import type {
 
 import { ComputeBudget, LiteSVM, TransactionMetadata } from "litesvm";
 import type { Status } from "./decoder";
-import { bigintToBytes, boolToByte, statusToByte, strToU8Fixed } from "./utils";
+import {
+	bigintToBytes,
+	boolToByte,
+	checkBigint,
+	checkDecimals,
+	statusToByte,
+	strToU8Fixed,
+} from "./utils";
 import {
 	ATokenGPvbd,
 	admin,
@@ -296,6 +303,7 @@ export const lgcInitMint = (
 	tokenProg = TOKEN_PROGRAM_ID,
 ) => {
 	const disc = 2;
+	checkDecimals(decimals);
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -359,8 +367,9 @@ export const lgcMintToken = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 4;
+	checkDecimals(decimals);
+	checkBigint(amount, "amount");
 	const argData = [decimals, ...bigintToBytes(amount)];
-
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -397,6 +406,8 @@ export const lgcDeposit = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 5;
+	checkDecimals(decimals);
+	checkBigint(amount, "amount");
 	const argData = [decimals, ...bigintToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -434,6 +445,8 @@ export const lgcWithdraw = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 6;
+	checkDecimals(decimals);
+	checkBigint(amount, "amount");
 	const argData = [decimals, ...bigintToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -471,6 +484,8 @@ export const lgcPay = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 7;
+	checkDecimals(decimals);
+	checkBigint(amount, "amount");
 	const argData = [decimals, ...bigintToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -509,6 +524,8 @@ export const lgcRedeem = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 8;
+	checkDecimals(decimals);
+	checkBigint(amount, "amount");
 	const argData = [decimals, ...bigintToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -551,6 +568,11 @@ export const makeTokEscrow = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 15;
+	checkDecimals(decimalX, "decimalX");
+	checkDecimals(decimalX, "decimalY");
+	checkBigint(amountX, "amountX");
+	checkBigint(amountY, "amountY");
+	checkBigint(id, "id");
 	const argData = [
 		decimalX,
 		...bigintToBytes(amountX),
@@ -564,6 +586,64 @@ export const makeTokEscrow = (
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: fromAta, isSigner: false, isWritable: true },
 			{ pubkey: toAta, isSigner: false, isWritable: true },
+			{ pubkey: mintX, isSigner: false, isWritable: false },
+			{ pubkey: mintY, isSigner: false, isWritable: false },
+			{ pubkey: escrowPDA, isSigner: false, isWritable: true },
+			{ pubkey: configPDA, isSigner: false, isWritable: true },
+			{ pubkey: tokenProg, isSigner: false, isWritable: false },
+			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
+			{ pubkey: atokenProg, isSigner: false, isWritable: false },
+		],
+		programId: vaultProgAddr,
+		data: Buffer.from([disc, ...argData]),
+	});
+	const tx = new Transaction();
+	tx.recentBlockhash = blockhash;
+	tx.add(ix); //tx.add(...ixs);
+	tx.sign(userSigner);
+	const simRes = svm.simulateTransaction(tx);
+	const sendRes = svm.sendTransaction(tx);
+	checkSuccess(simRes, sendRes, vaultProgAddr);
+};
+export const takeTokEscrow = (
+	userSigner: Keypair,
+	takerAtaX: PublicKey,
+	takerAtaY: PublicKey,
+	escrowAtaX: PublicKey,
+	escrowAtaY: PublicKey,
+	mintX: PublicKey,
+	mintY: PublicKey,
+	escrowPDA: PublicKey,
+	configPDA: PublicKey,
+	decimalX: number,
+	amountX: bigint,
+	decimalY: number,
+	amountY: bigint,
+	id: bigint,
+	tokenProg = TOKEN_PROGRAM_ID,
+	atokenProg = ATokenGPvbd,
+) => {
+	const disc = 16;
+	checkDecimals(decimalX, "decimalX");
+	checkDecimals(decimalX, "decimalY");
+	checkBigint(amountX, "amountX");
+	checkBigint(amountY, "amountY");
+	checkBigint(id, "id");
+	const argData = [
+		decimalX,
+		...bigintToBytes(amountX),
+		decimalY,
+		...bigintToBytes(amountY),
+		...bigintToBytes(id),
+	];
+	const blockhash = svm.latestBlockhash();
+	const ix = new TransactionInstruction({
+		keys: [
+			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: takerAtaX, isSigner: false, isWritable: true },
+			{ pubkey: takerAtaY, isSigner: false, isWritable: true },
+			{ pubkey: escrowAtaX, isSigner: false, isWritable: true },
+			{ pubkey: escrowAtaY, isSigner: false, isWritable: true },
 			{ pubkey: mintX, isSigner: false, isWritable: false },
 			{ pubkey: mintY, isSigner: false, isWritable: false },
 			{ pubkey: escrowPDA, isSigner: false, isWritable: true },
@@ -737,11 +817,16 @@ export const tokBalc = (
 	const decoded = AccountLayout.decode(rawAcctData);
 	return decoded.amount;
 };
-export const ataBalc = (ata: PublicKey) => {
+export const ataBalc = (
+	ata: PublicKey,
+	name = "token balc",
+	isVerbose = true,
+) => {
 	const raw = svm.getAccount(ata);
 	if (!raw) throw new Error("Ata is null");
 	const rawAcctData = raw?.data;
 	const decoded = AccountLayout.decode(rawAcctData);
+	if (isVerbose) ll(name, ":", decoded.amount);
 	return decoded.amount;
 };
 export const ataBalCk = (
@@ -750,7 +835,7 @@ export const ataBalCk = (
 	name: string,
 	decimals = 6,
 ) => {
-	const amount = ataBalc(ata);
+	const amount = ataBalc(ata, name, false);
 	ll(name, "token:", amount, amount / BigInt(10 ** decimals));
 	expect(amount).toStrictEqual(expectedAmount);
 };

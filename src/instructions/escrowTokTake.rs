@@ -6,9 +6,10 @@ use pinocchio::{
   ProgramResult,
 };
 use pinocchio_log::log;
+use pinocchio_token::state::TokenAccount;
 
 use crate::{
-  ata_balc, check_ata, check_ata_escrow, check_atoken_gpvbd, check_decimals, check_escrow_mints,
+  check_ata, check_ata_escrow, check_atoken_gpvbd, check_decimals, check_escrow_mints,
   check_mint0a, check_sysprog, data_len, executable, instructions::check_signer, none_zero_u64,
   parse_u64, rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee, Escrow,
 };
@@ -56,8 +57,7 @@ impl<'a> EscrowTokTake<'a> {
       decimal_x,
       decimal_y,
     } = self;
-    log!("EscrowTokTake process()");
-
+    log!("---------== process()");
     config_pda.can_borrow_mut_data()?;
     let _config: &mut Config = Config::from_account_info(&config_pda)?;
 
@@ -74,11 +74,14 @@ impl<'a> EscrowTokTake<'a> {
     if escrow.mint_y().ne(mint_y.key()) {
       return Ee::EscrowMintY.e();
     }
-    if escrow.id() != id {
-      return Ee::EscrowId.e();
+    if escrow.amount_x() != amount_x {
+      return Ee::InputAmountX.e();
     }
     if escrow.amount_y() != amount_y {
-      return Ee::InputAmount.e();
+      return Ee::InputAmountY.e();
+    }
+    if escrow.id() != id {
+      return Ee::EscrowId.e();
     }
 
     log!("Check Escrow ATA Y");
@@ -206,13 +209,20 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokTake<'a> {
     let amount_x = parse_u64(&data[1..9])?;
     log!("decimal_x: {}, amount_x: {}", decimal_x, amount_x);
     none_zero_u64(amount_x)?;
-    ata_balc(escrow_ata_x, amount_x)?;
+
+    let escrow_ata_x_info = TokenAccount::from_account_info(escrow_ata_x)?;
+    if escrow_ata_x_info.amount() != amount_x {
+      return Err(Ee::EscrowAmtOfTokenX.into());
+    } //ata_balc(escrow_ata_x, amount_x)?;
 
     let decimal_y = data[9];
     let amount_y = parse_u64(&data[10..18])?;
     log!("decimal_y: {}, amount_y: {}", decimal_y, amount_y);
     none_zero_u64(amount_y)?;
-    ata_balc(taker_ata_y, amount_y)?;
+    let taker_ata_y_info = TokenAccount::from_account_info(taker_ata_y)?;
+    if taker_ata_y_info.amount() < amount_y {
+      return Err(Ee::TakerInsufficientTokenY.into());
+    } //ata_balc(taker_ata_y, amount_y)?;
 
     let id = parse_u64(&data[18..26])?;
     log!("id: {}", id);
@@ -225,6 +235,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokTake<'a> {
 
     log!("EscrowTokTake try_from 6");
     check_decimals(mint_x, decimal_x)?;
+    check_decimals(mint_y, decimal_y)?;
     check_mint0a(mint_x, token_program)?;
     check_mint0a(mint_y, token_program)?; // Not needed since CPI since deposit will fail if not owned by token program
 

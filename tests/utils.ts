@@ -33,6 +33,8 @@ export const Transaction_Fee = 5000n;
 export const day = 86400;
 export const week = 604800;
 
+export const zero = BigInt(0);
+export const ten = BigInt(10);
 export const decimalsSOL = BigInt(9);
 export const baseSOL = BigInt(10) ** decimalsSOL;
 
@@ -48,7 +50,12 @@ export const as9zBn = (amt: number) => {
 	return BigInt(amt * 10 ** 9);
 };
 export const fromLam = (amt: number) => BigInt(amt) / baseSOL;
-
+export const checkDecimals = (decimals: number, decimalName = "decimals") => {
+	if (decimals > 12 || decimals < 0) throw new Error(`${decimalName} invalid`);
+};
+export const checkBigint = (bint: bigint, bigintName = "bigint") => {
+	if (bint <= 0) throw new Error(`${bigintName} invalid`);
+};
 //-----------== SolanaKit setup
 export const vaultProgAddr = vault.PINOCCHIO_VAULT_PROGRAM_ADDRESS;
 ll("vaultProgAddr:", vaultProgAddr);
