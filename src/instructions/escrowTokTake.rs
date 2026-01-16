@@ -58,6 +58,111 @@ impl<'a> EscrowTokTake<'a> {
     } = self;
     log!("EscrowTokTake process()");
 
+    config_pda.can_borrow_mut_data()?;
+    let _config: &mut Config = Config::from_account_info(&config_pda)?;
+
+    escrow_pda.can_borrow_mut_data()?;
+    let escrow: &mut Escrow = Escrow::from_account_info(&escrow_pda)?;
+
+    log!("Check args against EscrowPDA fields");
+    //cannot convert the maker in EscrowPDA from Pubkey to AccountInfo! Also hide the maker
+    let bump = escrow.bump();
+    let maker = escrow.maker();
+    if escrow.mint_x().ne(mint_x.key()) {
+      return Ee::EscrowMintX.e();
+    }
+    if escrow.mint_y().ne(mint_y.key()) {
+      return Ee::EscrowMintY.e();
+    }
+    if escrow.id() != id {
+      return Ee::EscrowId.e();
+    }
+    if escrow.amount_y() != amount_y {
+      return Ee::InputAmount.e();
+    }
+
+    log!("Check Escrow ATA Y");
+    if escrow_ata_y.data_is_empty() {
+      log!("Make escrow_ata_y");
+      pinocchio_associated_token_account::instructions::Create {
+        funding_account: taker,
+        account: escrow_ata_y,
+        wallet: escrow_pda,
+        mint: mint_y,
+        system_program,
+        token_program,
+      }
+      .invoke()?;
+      //Please upgrade to SPL Token 2022 for immutable owner support
+    } else {
+      log!("escrow_ata_y has data");
+      check_ata_escrow(escrow_ata_y, escrow_pda, mint_y)?;
+    }
+    writable(escrow_ata_y)?;
+    rent_exempt_tokacct(escrow_ata_y)?;
+
+    log!("Check Taker ATA X");
+    if taker_ata_x.data_is_empty() {
+      log!("Make taker_ata_x");
+      pinocchio_associated_token_account::instructions::Create {
+        funding_account: taker,
+        account: taker_ata_x,
+        wallet: taker,
+        mint: mint_x,
+        system_program,
+        token_program,
+      }
+      .invoke()?;
+      //Please upgrade to SPL Token 2022 for immutable owner support
+    } else {
+      log!("taker_ata_x has data");
+      check_ata(taker_ata_x, taker, mint_x)?;
+    }
+    writable(taker_ata_x)?;
+    rent_exempt_tokacct(taker_ata_x)?;
+
+    log!("Transfer Token Y to Escrow ATA Y");
+    pinocchio_token::instructions::TransferChecked {
+      from: taker_ata_y,
+      mint: mint_y,
+      to: escrow_ata_y,
+      authority: taker,
+      amount: amount_y,
+      decimals: decimal_y,
+    }
+    .invoke()?;
+
+    log!("Make Seed Signer");
+    let id_bytes = &id.to_le_bytes();
+    let signer_seeds = [
+      Seed::from(Escrow::SEED),
+      Seed::from(maker.as_ref()),
+      Seed::from(id_bytes),
+      Seed::from(core::slice::from_ref(&bump)),
+    ];
+    let seed_signer = Signer::from(&signer_seeds);
+
+    log!("Transfer Token X to Taker ATA X");
+    pinocchio_token::instructions::TransferChecked {
+      from: escrow_ata_x,
+      mint: mint_x,
+      to: taker_ata_x,
+      authority: escrow_pda,
+      amount: amount_x,
+      decimals: decimal_x,
+    }
+    .invoke_signed(&[seed_signer])?;
+
+    /*TODO
+    log!("Maker withdraws Token Y");
+
+    log!("Close Escrow and its X ATA and Y ATA");
+    pinocchio_token::instructions::CloseAccount {
+      account: escrow_ata_x,
+      authority: escrow_pda,
+      destination: maker
+    }
+    .invoke_signed(&[seed_signer])?;*/
     Ok(())
   }
 }
