@@ -68,7 +68,8 @@ impl<'a> EscrowTokCancel<'a> {
     }
 
     let decimal_x = escrow.decimal_x();
-    log!("decimal_: {}", decimal_x);
+    let amount_x = escrow.amount_x();
+    log!("decimal_x: {}, amount_x: {}", decimal_x, amount_x);
     let amount_y = escrow.amount_y();
     let decimal_y = escrow.decimal_y();
     log!("decimal_y: {}, amount_y: {}", decimal_y, amount_y);
@@ -83,6 +84,122 @@ impl<'a> EscrowTokCancel<'a> {
     drop(escrow_ata_y_info);
 
     //TODO: withdraw both token X and token Y if exists
+    log!("Check Maker ATA X");
+    if maker_ata_x.data_is_empty() {
+      log!("Make maker_ata_x");
+      pinocchio_associated_token_account::instructions::Create {
+        funding_account: maker,
+        account: maker_ata_x,
+        wallet: maker,
+        mint: mint_x,
+        system_program,
+        token_program,
+      }
+      .invoke()?;
+      //Please upgrade to SPL Token 2022 for immutable owner support
+    } else {
+      log!("maker_ata_y has data");
+      check_ata(maker_ata_x, maker, mint_x)?;
+    }
+    writable(maker_ata_x)?;
+    rent_exempt_tokacct(maker_ata_x)?;
+
+    log!("Make Seed Signer");
+    let id_bytes = &id.to_le_bytes();
+    let signer_seeds = [
+      Seed::from(Escrow::SEED),
+      Seed::from(maker.key().as_ref()),
+      Seed::from(id_bytes),
+      Seed::from(core::slice::from_ref(&bump)),
+    ];
+    let seed_signer = Signer::from(&signer_seeds);
+
+    log!("Transfer Token X to Maker ATA X");
+    //escrow_pda.can_borrow_mut_data()?;
+    //escrow_ata_y.can_borrow_mut_data()?;
+    pinocchio_token::instructions::TransferChecked {
+      from: escrow_ata_x,
+      mint: mint_x,
+      to: maker_ata_x,
+      authority: escrow_pda,
+      amount: amount_x,
+      decimals: decimal_x,
+    }
+    .invoke_signed(&[seed_signer.clone()])?;
+
+    log!("Check Unknown token in Escrow ATA Y");
+    let escrow_ata_y_info = TokenAccount::from_account_info(escrow_ata_y)?;
+    let unknown_amt_y = escrow_ata_y_info.amount();
+    drop(escrow_ata_y_info);
+    if unknown_amt_y > 0 {
+      log!("Found unknown token in Escrow ATA Y");
+      if maker_ata_y.data_is_empty() {
+        log!("Make maker_ata_y");
+        pinocchio_associated_token_account::instructions::Create {
+          funding_account: maker,
+          account: maker_ata_y,
+          wallet: maker,
+          mint: mint_y,
+          system_program,
+          token_program,
+        }
+        .invoke()?;
+        //Please upgrade to SPL Token 2022 for immutable owner support
+      } else {
+        log!("maker_ata_y has data");
+        check_ata(maker_ata_y, maker, mint_y)?;
+      }
+      writable(maker_ata_y)?;
+      rent_exempt_tokacct(maker_ata_y)?;
+
+      log!("Send token y to maker_ata_y");
+      pinocchio_token::instructions::TransferChecked {
+        from: escrow_ata_y,
+        mint: mint_y,
+        to: maker_ata_y,
+        authority: escrow_pda,
+        amount: unknown_amt_y,
+        decimals: decimal_y,
+      }
+      .invoke_signed(&[seed_signer.clone()])?;
+    } else {
+      log!("No token in Escrow ATA Y");
+    }
+
+    log!("Close Escrow ATA Y");
+    //escrow_ata_y.can_borrow_mut_data()?;
+    //escrow_pda.can_borrow_mut_data()?;
+    pinocchio_token::instructions::CloseAccount {
+      account: escrow_ata_y,
+      authority: escrow_pda,
+      destination: maker,
+    }
+    .invoke_signed(&[seed_signer.clone()])?;
+
+    log!("Close Escrow ATA X");
+    //escrow_pda.can_borrow_mut_data()?;
+    //escrow_ata_x.can_borrow_mut_data()?;
+    pinocchio_token::instructions::CloseAccount {
+      account: escrow_ata_x,
+      authority: escrow_pda,
+      destination: maker,
+    }
+    .invoke_signed(&[seed_signer.clone()])?;
+
+    log!("Close EscrowPDA 1");
+    //set the first byte to 255
+    {
+      let mut data = escrow_pda.try_borrow_mut_data()?;
+      data[0] = 0xff;
+    }
+    log!("Close EscrowPDA 2");
+    //https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-accounts
+    *maker.try_borrow_mut_lamports()? += *escrow_pda.try_borrow_lamports()?;
+
+    log!("Close EscrowPDA 3");
+    //resize the account to only the 1st byte
+    escrow_pda.resize(1)?;
+    escrow_pda.close()?;
     Ok(())
   }
 }
