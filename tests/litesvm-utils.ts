@@ -244,6 +244,33 @@ export const updateConfig = (
 	const sendRes = svm.sendTransaction(tx);
 	checkSuccess(simRes, sendRes, vaultProgAddr);
 };
+export const closeConfig = (
+	signerKp: Keypair,
+	configPDA: PublicKey,
+	dest: PublicKey,
+) => {
+	const disc = 14;
+	ll("configPDA:", configPDA.toBase58());
+	ll("dest:", dest.toBase58());
+
+	const blockhash = svm.latestBlockhash();
+	const ix = new TransactionInstruction({
+		keys: [
+			{ pubkey: signerKp.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: configPDA, isSigner: false, isWritable: true },
+			{ pubkey: dest, isSigner: false, isWritable: false },
+		],
+		programId: vaultProgAddr,
+		data: Buffer.from([disc]),
+	});
+	const tx = new Transaction();
+	tx.recentBlockhash = blockhash;
+	tx.add(ix); //tx.add(...ixs);
+	tx.sign(signerKp);
+	const simRes = svm.simulateTransaction(tx);
+	const sendRes = svm.sendTransaction(tx);
+	checkSuccess(simRes, sendRes, vaultProgAddr);
+};
 
 export const depositSol = (
 	vaultPdaX: PublicKey,
@@ -866,7 +893,7 @@ export const ataBalc = (
 ) => {
 	const raw = svm.getAccount(ata);
 	if (!raw) {
-		ll(name, ": ata is null");
+		if (isVerbose) ll(name, ": ata is null");
 		return zero;
 	}
 	const rawAcctData = raw?.data;

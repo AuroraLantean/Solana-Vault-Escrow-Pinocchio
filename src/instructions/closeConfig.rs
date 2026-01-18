@@ -2,7 +2,7 @@ use core::convert::TryFrom;
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 
-use crate::{check_pda, instructions::check_signer, writable, Config};
+use crate::{check_pda, data_len, instructions::check_signer, writable, Config};
 
 /// Close PDA
 pub struct CloseConfigPda<'a> {
@@ -42,6 +42,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for CloseConfigPda<'a> {
     log!("CloseConfigPda try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
+    data_len(data, 0)?;
 
     let [authority, config_pda, dest] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);

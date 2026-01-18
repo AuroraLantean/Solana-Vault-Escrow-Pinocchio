@@ -216,9 +216,8 @@ pub enum ProgramIx {
 
   /// 14 Close Config PDA
   #[account(0, signer, writable, name = "authority", desc = "Authority")]
-  #[account(1, name = "pda", desc = "PDA")]
+  #[account(1, writable, name = "config_pda", desc = "PDA")]
   #[account(2, name = "dest", desc = "Destination")]
-  //#[account(5, name = "system_program", desc = "System Program")]
   CloseConfigPda {},
 
   //---------------== Escrow PDA

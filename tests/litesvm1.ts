@@ -2,6 +2,7 @@
 import { expect, test } from "bun:test";
 //Tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
 import { Connection, type Keypair, type PublicKey } from "@solana/web3.js";
+import type { AccountInfoBytes } from "litesvm";
 import { Status, solanaKitDecodeEscrowDev } from "./decoder";
 import {
 	acctExists,
@@ -81,6 +82,7 @@ let vaultOut: PdaOut;
 let escrowOut: PdaOut;
 let escrowU1_1: PublicKey;
 let _escrowU2_2: PublicKey;
+let rawAccount: AccountInfoBytes | null;
 let decimals = 9;
 let amount: bigint;
 let amtDeposit: bigint;
@@ -423,6 +425,7 @@ test("Withdraw TokenY on Escrow", () => {
 	mintX = usdcMint;
 	mintY = dragonCoin;
 	escrowPDA = escrowU1_1;
+	//amountY = amountY... also from EscrowPDA
 
 	signer = signerKp.publicKey;
 	makerAtaX = getAta(mintX, signer);
@@ -447,6 +450,12 @@ test("Withdraw TokenY on Escrow", () => {
 	ataBalCk(escrowAtaY, zero, "Escrow Y");
 	ataBalCk(makerAtaX, prevBalcX, "user1 X");
 	ataBalCk(makerAtaY, prevBalcY + amountY, "user1 Y");
+	rawAccount = svm.getAccount(escrowAtaX);
+	expect(rawAccount).toBeNull();
+	rawAccount = svm.getAccount(escrowAtaY);
+	expect(rawAccount).toBeNull();
+	rawAccount = svm.getAccount(escrowPDA);
+	expect(rawAccount).toBeNull();
 });
 
 test.skip("copy accounts from devnet", async () => {

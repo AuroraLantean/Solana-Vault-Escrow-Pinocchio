@@ -5,6 +5,7 @@ import type { Clock } from "litesvm";
 import { Status, solanaKitDecodeDev } from "./decoder";
 import {
 	acctExists,
+	closeConfig,
 	configBump,
 	configPDA,
 	initConfig,
@@ -47,6 +48,7 @@ let mints: PublicKey[];
 let _vault: PublicKey;
 let progOwner: PublicKey;
 let progAdmin: PublicKey;
+let dest: PublicKey;
 let tokenAmount: bigint;
 let fee: bigint;
 let isAuthorized = false;
@@ -178,7 +180,14 @@ test("updateConfig + time travel", () => {
 	expect(decoded.str).toEqual(str);
 	expect(decoded.admin).toEqual(acct1);
 });
-//TODO: config close
+test("close configPDA", () => {
+	ll("\n------== Close configPDA");
+	signerKp = ownerKp;
+	dest = signerKp.publicKey;
+	closeConfig(signerKp, configPDA, dest);
+	const rawAccount = svm.getAccount(configPDA);
+	expect(rawAccount).toBeNull();
+});
 /*Failure Test:
 const failed = svm.sendTransaction(tx);
 	if (failed instanceof FailedTransactionMetadata) {
