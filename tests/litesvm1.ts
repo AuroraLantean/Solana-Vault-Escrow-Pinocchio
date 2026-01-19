@@ -9,6 +9,7 @@ import {
 	acctIsNull,
 	ataBalCk,
 	ataBalc,
+	cancelTokEscrow,
 	configPDA,
 	depositSol,
 	findEscrow,
@@ -448,6 +449,62 @@ test("Withdraw TokenY on Escrow", () => {
 	ataBalCk(escrowAtaY, zero, "Escrow Y");
 	ataBalCk(makerAtaX, prevBalcX, "user1 X");
 	ataBalCk(makerAtaY, prevBalcY + amountY, "user1 Y");
+	rawAccount = svm.getAccount(escrowAtaX);
+	expect(rawAccount).toBeNull();
+	rawAccount = svm.getAccount(escrowAtaY);
+	expect(rawAccount).toBeNull();
+	rawAccount = svm.getAccount(escrowPDA);
+	expect(rawAccount).toBeNull();
+});
+
+test("Make & Cancel Token Escrow", () => {
+	ll("\n------== Make & Cancel Token Escrow");
+	signerKp = user1Kp;
+	mintX = usdcMint;
+	mintY = dragonCoin;
+	decimalX = 6;
+	decimalY = decDgc;
+	amountX = bigintAmt(135, decimalX);
+	amountY = bigintAmt(2700, decimalY);
+	id = BigInt(1);
+	signer = signerKp.publicKey;
+	escrowOut = findEscrow(signer, id);
+	escrowU1_1 = escrowOut.pda;
+	escrowPDA = escrowU1_1;
+
+	escrowAtaX = getAta(mintX, escrowPDA);
+	makerAtaX = getAta(mintX, signer);
+	prevBalcX = ataBalc(makerAtaX, "makerAtaX");
+	makeTokEscrow(
+		signerKp,
+		makerAtaX,
+		escrowAtaX,
+		mintX,
+		mintY,
+		escrowPDA,
+		configPDA,
+		decimalX,
+		amountX,
+		decimalY,
+		amountY,
+		id,
+	);
+	ataBalCk(escrowAtaX, amountX, "Escrow");
+	ataBalCk(makerAtaX, prevBalcX - amountX, "user1 ");
+
+	cancelTokEscrow(
+		signerKp,
+		makerAtaX,
+		makerAtaY,
+		escrowAtaX,
+		escrowAtaY,
+		mintX,
+		mintY,
+		escrowPDA,
+		configPDA,
+	);
+	ataBalCk(escrowAtaX, zero, "Escrow");
+	ataBalCk(makerAtaX, prevBalcX, "user1 ");
 	rawAccount = svm.getAccount(escrowAtaX);
 	expect(rawAccount).toBeNull();
 	rawAccount = svm.getAccount(escrowAtaY);

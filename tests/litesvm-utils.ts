@@ -647,6 +647,41 @@ export const withdrawTokEscrow = (
 	});
 	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
+export const cancelTokEscrow = (
+	makerSigner: Keypair,
+	makerAtaX: PublicKey,
+	makerAtaY: PublicKey,
+	escrowAtaX: PublicKey,
+	escrowAtaY: PublicKey,
+	mintX: PublicKey,
+	mintY: PublicKey,
+	escrowPDA: PublicKey,
+	configPDA: PublicKey,
+	tokenProg = TOKEN_PROGRAM_ID,
+	atokenProg = ATokenGPvbd,
+) => {
+	const disc = 18;
+	const blockhash = svm.latestBlockhash();
+	const ix = new TransactionInstruction({
+		keys: [
+			{ pubkey: makerSigner.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: makerAtaX, isSigner: false, isWritable: true },
+			{ pubkey: makerAtaY, isSigner: false, isWritable: true },
+			{ pubkey: escrowAtaX, isSigner: false, isWritable: true },
+			{ pubkey: escrowAtaY, isSigner: false, isWritable: true },
+			{ pubkey: mintX, isSigner: false, isWritable: false },
+			{ pubkey: mintY, isSigner: false, isWritable: false },
+			{ pubkey: escrowPDA, isSigner: false, isWritable: true },
+			{ pubkey: configPDA, isSigner: false, isWritable: true },
+			{ pubkey: tokenProg, isSigner: false, isWritable: false },
+			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
+			{ pubkey: atokenProg, isSigner: false, isWritable: false },
+		],
+		programId: vaultProgAddr,
+		data: Buffer.from([disc]),
+	});
+	sendTxns(svm, blockhash, [ix], [makerSigner]);
+};
 
 //-------------==
 //When you want to make Mint without the Mint Keypair. E.g. UsdtMintKp;
