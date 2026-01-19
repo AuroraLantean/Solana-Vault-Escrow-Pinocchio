@@ -111,30 +111,23 @@ export const findEscrow = (
 	return { pda, bump };
 };
 
-//Or just send some SOL
-export const makeAccount = (
-	payer: Keypair,
-	newAccount: PublicKey,
-	programId: PublicKey,
+//-------------== LiteSVM Methods
+export const sendTxns = (
+	svm: LiteSVM,
+	blockhash: string,
+	ixs: TransactionInstruction[],
+	signerKps: Keypair[],
+	programId = vaultProgAddr,
 ) => {
-	const ixs = [
-		SystemProgram.createAccount({
-			fromPubkey: payer.publicKey,
-			newAccountPubkey: newAccount,
-			lamports: Number(svm.minimumBalanceForRentExemption(BigInt(4))),
-			space: 4,
-			programId: programId,
-		}),
-	];
 	const tx = new Transaction();
-	const blockhash = svm.latestBlockhash();
 	tx.recentBlockhash = blockhash;
 	tx.add(...ixs);
-	tx.sign(payer);
-	svm.sendTransaction(tx);
+	tx.sign(...signerKps); //first signature is considered "primary" and is used identify and confirm transactions.
+	const simRes = svm.simulateTransaction(tx);
+	const sendRes = svm.sendTransaction(tx);
+	checkSuccess(simRes, sendRes, programId);
+	//svm.sendTransaction(tx);
 };
-
-//-------------== LiteSVM Methods
 export const sendSol = (addrTo: PublicKey, amount: bigint, signer: Keypair) => {
 	const blockhash = svm.latestBlockhash();
 	const ixs = [
@@ -144,11 +137,24 @@ export const sendSol = (addrTo: PublicKey, amount: bigint, signer: Keypair) => {
 			lamports: amount,
 		}),
 	];
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(...ixs);
-	tx.sign(signer);
-	svm.sendTransaction(tx);
+	sendTxns(svm, blockhash, ixs, [signer], SYSTEM_PROGRAM);
+};
+export const makeAccount = (
+	signer: Keypair,
+	newAccount: PublicKey,
+	programId: PublicKey,
+) => {
+	const blockhash = svm.latestBlockhash();
+	const ixs = [
+		SystemProgram.createAccount({
+			fromPubkey: signer.publicKey,
+			newAccountPubkey: newAccount,
+			lamports: Number(svm.minimumBalanceForRentExemption(BigInt(4))),
+			space: 4,
+			programId: programId,
+		}),
+	];
+	sendTxns(svm, blockhash, ixs, [signer], SYSTEM_PROGRAM);
 };
 //-------------== Program Methods
 const _testMint = (item: PublicKey) => item === undefined;
@@ -160,7 +166,7 @@ export const initConfig = (
 	status: Status,
 	fee: bigint,
 	str: string,
-	signerKp: Keypair,
+	signer: Keypair,
 ) => {
 	const disc = 12;
 	const argData = [
@@ -182,7 +188,7 @@ export const initConfig = (
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: signerKp.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
 			{ pubkey: mints[0], isSigner: false, isWritable: false },
 			{ pubkey: mints[1], isSigner: false, isWritable: false },
@@ -196,13 +202,7 @@ export const initConfig = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(signerKp);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const updateConfig = (
 	bytes4bools: number[],
@@ -212,7 +212,7 @@ export const updateConfig = (
 	acct1: PublicKey,
 	acct2: PublicKey,
 	str: string,
-	signerKp: Keypair,
+	signer: Keypair,
 ) => {
 	const disc = 13;
 	const argData = [
@@ -228,7 +228,7 @@ export const updateConfig = (
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: signerKp.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
 			{ pubkey: acct1, isSigner: false, isWritable: false },
 			{ pubkey: acct2, isSigner: false, isWritable: false },
@@ -236,16 +236,10 @@ export const updateConfig = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(signerKp);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const closeConfig = (
-	signerKp: Keypair,
+	signer: Keypair,
 	configPDA: PublicKey,
 	dest: PublicKey,
 ) => {
@@ -256,22 +250,15 @@ export const closeConfig = (
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: signerKp.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
 			{ pubkey: dest, isSigner: false, isWritable: false },
 		],
 		programId: vaultProgAddr,
 		data: Buffer.from([disc]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(signerKp);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [signer]);
 };
-
 export const depositSol = (
 	vaultPdaX: PublicKey,
 	amount: bigint,
@@ -289,13 +276,7 @@ export const depositSol = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(signer);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const withdrawSol = (
 	vaultPdaX: PublicKey,
@@ -313,13 +294,7 @@ export const withdrawSol = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(signer);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const lgcInitMint = (
 	signer: Keypair,
@@ -345,13 +320,7 @@ export const lgcInitMint = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, decimals]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(signer, mintKp); //first signature is considered "primary" and is used identify and confirm transactions.
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [signer, mintKp]);
 };
 export const lgcInitAta = (
 	signer: Keypair,
@@ -376,13 +345,7 @@ export const lgcInitAta = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(signer);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const lgcMintToken = (
 	mintAuthority: Keypair,
@@ -412,13 +375,7 @@ export const lgcMintToken = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(mintAuthority);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [mintAuthority]);
 };
 
 export const lgcDeposit = (
@@ -453,13 +410,7 @@ export const lgcDeposit = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(userSigner);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
 export const lgcWithdraw = (
 	userSigner: Keypair,
@@ -491,13 +442,7 @@ export const lgcWithdraw = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(userSigner);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
 export const lgcPay = (
 	userSigner: Keypair,
@@ -531,13 +476,7 @@ export const lgcPay = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(userSigner);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
 export const lgcRedeem = (
 	userSigner: Keypair,
@@ -571,13 +510,7 @@ export const lgcRedeem = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(userSigner);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
 export const makeTokEscrow = (
 	userSigner: Keypair,
@@ -625,13 +558,7 @@ export const makeTokEscrow = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(userSigner);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
 export const takeTokEscrow = (
 	userSigner: Keypair,
@@ -683,13 +610,7 @@ export const takeTokEscrow = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(userSigner);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
 export const withdrawTokEscrow = (
 	userSigner: Keypair,
@@ -724,14 +645,9 @@ export const withdrawTokEscrow = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc]),
 	});
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(ix); //tx.add(...ixs);
-	tx.sign(userSigner);
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, vaultProgAddr);
+	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
+
 //-------------==
 //When you want to make Mint without the Mint Keypair. E.g. UsdtMintKp;
 //https://solana.com/docs/tokens/basics/create-mint

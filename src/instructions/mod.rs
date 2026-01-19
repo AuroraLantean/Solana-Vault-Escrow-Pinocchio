@@ -234,7 +234,7 @@ pub enum ProgramIx {
   #[account(2, writable, name = "escrow_ata_x", desc = "Escrow ATA X")]
   #[account(3, name = "mint_x", desc = "Mint X")]
   #[account(4, name = "mint_y", desc = "Mint Y")]
-  #[account(5, writable, name = "escrow_pda", desc = "Escrow PDA as ToWallet")]
+  #[account(5, writable, name = "escrow_pda", desc = "Escrow PDA")]
   #[account(6, writable, name = "config_pda", desc = "Config PDA")]
   #[account(7, name = "token_program", desc = "Token Program")]
   #[account(8, name = "system_program", desc = "System Program")]
@@ -284,21 +284,17 @@ pub enum ProgramIx {
   /// 18 Escrow Token Cancel Offer
   #[account(0, signer, writable, name = "maker", desc = "Maker X")]
   #[account(1, writable, name = "maker_ata_x", desc = "Maker ATA X")]
-  #[account(2, writable, name = "escrow_ata_x", desc = "Escrow ATA X")]
-  #[account(3, name = "mint_x", desc = "Mint X")]
-  #[account(4, name = "mint_y", desc = "Mint Y")]
-  #[account(5, writable, name = "escrow_pda", desc = "Escrow PDA as ToWallet")]
-  #[account(6, writable, name = "config_pda", desc = "Config PDA")]
-  #[account(7, name = "token_program", desc = "Token Program")]
-  #[account(8, name = "system_program", desc = "System Program")]
-  #[account(9, name = "atoken_program", desc = "Associated Token Program")]
-  EscrowTokCancel {
-    decimal_x: u8,
-    amount_x: u64,
-    decimal_y: u8,
-    amount_y: u64,
-    id: u64,
-  },
+  #[account(2, writable, name = "maker_ata_y", desc = "Maker ATA Y")]
+  #[account(3, writable, name = "escrow_ata_x", desc = "Escrow ATA X")]
+  #[account(4, writable, name = "escrow_ata_y", desc = "Escrow ATA Y")]
+  #[account(5, name = "mint_x", desc = "Mint X")]
+  #[account(6, name = "mint_y", desc = "Mint Y")]
+  #[account(7, writable, name = "escrow_pda", desc = "Escrow PDA")]
+  #[account(8, writable, name = "config_pda", desc = "Config PDA")]
+  #[account(9, name = "token_program", desc = "Token Program")]
+  #[account(10, name = "system_program", desc = "System Program")]
+  #[account(11, name = "atoken_program", desc = "Associated Token Program")]
+  EscrowTokCancel {},
   //---------------== Admin PDA
   //---------------== User PDA
   //---------------== Action PDA

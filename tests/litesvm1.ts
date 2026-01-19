@@ -190,7 +190,6 @@ test("Make DragonCoin Mint, ATA, Tokens", () => {
 	lgcMintToken(mintAuthorityKp, user, mint, ata, decimals, amt);
 	ataBalCk(ata, amt, "user2", decDgc);
 	ll("can mint to user2 without ATA");
-	//TODO: transfer set minted tokens
 });
 
 test("Set USDT Mint and ATAs", () => {

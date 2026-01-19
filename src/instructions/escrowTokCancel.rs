@@ -14,7 +14,7 @@ use crate::{
   Config, Ee, Escrow,
 };
 //TODO: add Token2022 interface
-/// Make Withdraw Escrow Token Y
+/// Make Cancel Escrow
 pub struct EscrowTokCancel<'a> {
   pub maker: &'a AccountInfo, //signer
   pub maker_ata_x: &'a AccountInfo,
@@ -77,16 +77,18 @@ impl<'a> EscrowTokCancel<'a> {
     check_decimals(mint_x, decimal_x)?;
     check_decimals(mint_y, decimal_y)?;
 
-    let escrow_ata_y_info = TokenAccount::from_account_info(escrow_ata_y)?;
-    if escrow_ata_y_info.amount() >= amount_y {
-      return Ee::MakerToWithdrawTokenY.e();
+    log!("Check if Escrow ATA Y has value");
+    if escrow_ata_y.data_len() > 0 {
+      let escrow_ata_y_info = TokenAccount::from_account_info(escrow_ata_y)?;
+      if escrow_ata_y_info.amount() >= amount_y {
+        return Ee::MakerToWithdrawTokenY.e();
+      }
+      drop(escrow_ata_y_info);
     }
-    drop(escrow_ata_y_info);
 
-    //TODO: withdraw both token X and token Y if exists
     log!("Check Maker ATA X");
     if maker_ata_x.data_is_empty() {
-      log!("Make maker_ata_x");
+      log!("Make Maker_Ata_X");
       pinocchio_associated_token_account::instructions::Create {
         funding_account: maker,
         account: maker_ata_x,
@@ -98,7 +100,7 @@ impl<'a> EscrowTokCancel<'a> {
       .invoke()?;
       //Please upgrade to SPL Token 2022 for immutable owner support
     } else {
-      log!("maker_ata_y has data");
+      log!("Maker_Ata_Y has data");
       check_ata(maker_ata_x, maker, mint_x)?;
     }
     writable(maker_ata_x)?;
@@ -128,63 +130,6 @@ impl<'a> EscrowTokCancel<'a> {
     .invoke_signed(&[seed_signer.clone()])?;
 
     log!("Check Unknown token in Escrow ATA Y");
-    let escrow_ata_y_info = TokenAccount::from_account_info(escrow_ata_y)?;
-    let unknown_amt_y = escrow_ata_y_info.amount();
-    drop(escrow_ata_y_info);
-    if unknown_amt_y > 0 {
-      log!("Found unknown token in Escrow ATA Y");
-      if maker_ata_y.data_is_empty() {
-        log!("Make maker_ata_y");
-        pinocchio_associated_token_account::instructions::Create {
-          funding_account: maker,
-          account: maker_ata_y,
-          wallet: maker,
-          mint: mint_y,
-          system_program,
-          token_program,
-        }
-        .invoke()?;
-        //Please upgrade to SPL Token 2022 for immutable owner support
-      } else {
-        log!("maker_ata_y has data");
-        check_ata(maker_ata_y, maker, mint_y)?;
-      }
-      writable(maker_ata_y)?;
-      rent_exempt_tokacct(maker_ata_y)?;
-
-      log!("Send token y to maker_ata_y");
-      pinocchio_token::instructions::TransferChecked {
-        from: escrow_ata_y,
-        mint: mint_y,
-        to: maker_ata_y,
-        authority: escrow_pda,
-        amount: unknown_amt_y,
-        decimals: decimal_y,
-      }
-      .invoke_signed(&[seed_signer.clone()])?;
-    } else {
-      log!("No token in Escrow ATA Y");
-    }
-
-    log!("Close Escrow ATA Y");
-    //escrow_ata_y.can_borrow_mut_data()?;
-    //escrow_pda.can_borrow_mut_data()?;
-    pinocchio_token::instructions::CloseAccount {
-      account: escrow_ata_y,
-      authority: escrow_pda,
-      destination: maker,
-    }
-    .invoke_signed(&[seed_signer.clone()])?;
-
-    log!("Close Escrow ATA X");
-    //escrow_pda.can_borrow_mut_data()?;
-    //escrow_ata_x.can_borrow_mut_data()?;
-    pinocchio_token::instructions::CloseAccount {
-      account: escrow_ata_x,
-      authority: escrow_pda,
-      destination: maker,
-    }
-    .invoke_signed(&[seed_signer.clone()])?;
 
     log!("Close EscrowPDA 1");
     //set the first byte to 255
@@ -228,8 +173,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokCancel<'a> {
 
     log!("EscrowTokCancel try_from 2");
     writable(escrow_ata_y)?;
-    check_ata(escrow_ata_y, escrow_pda, mint_y)?;
-    log!("EscrowTokCancel try_from 3");
+    //check_ata(escrow_ata_y, escrow_pda, mint_y)?; ... escrow_ata_y does not yet exist
 
     writable(escrow_pda)?;
     writable(config_pda)?;
@@ -239,7 +183,6 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for EscrowTokCancel<'a> {
     log!("EscrowTokCancel try_from 5");
     rent_exempt_mint(mint_x)?;
     rent_exempt_mint(mint_y)?;
-    //TODO: fee is part of exchange amount
 
     log!("EscrowTokCancel try_from 6");
     check_mint0a(mint_x, token_program)?;

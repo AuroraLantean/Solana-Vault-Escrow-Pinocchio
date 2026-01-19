@@ -196,8 +196,8 @@ pub enum Ee {
   AtaCheckX1,
   #[error("ForeignAta")]
   ForeignAta,
-  #[error("Xyz086")]
-  Xyz086,
+  #[error("AtaHasNoData")]
+  AtaHasNoData,
   #[error("Xyz087")]
   Xyz087,
   #[error("Xyz088")]
@@ -350,7 +350,7 @@ impl TryFrom<u32> for Ee {
       83 => Ok(Ee::AtaOrMint),
       84 => Ok(Ee::AtaCheckX1),
       85 => Ok(Ee::ForeignAta),
-      86 => Ok(Ee::Xyz086),
+      86 => Ok(Ee::AtaHasNoData),
       87 => Ok(Ee::Xyz087),
       88 => Ok(Ee::Xyz088),
       89 => Ok(Ee::Xyz089),
@@ -473,7 +473,7 @@ impl ToStr for Ee {
       Ee::AtaOrMint => "AtaOrMint",
       Ee::AtaCheckX1 => "AtaCheckX1",
       Ee::ForeignAta => "ForeignAta",
-      Ee::Xyz086 => "Xyz086",
+      Ee::AtaHasNoData => "AtaHasNoData",
       Ee::Xyz087 => "Xyz087",
       Ee::Xyz088 => "Xyz088",
       Ee::Xyz089 => "Xyz089",
@@ -605,10 +605,11 @@ pub fn check_ata(
   owner: &AccountInfo,
   mint: &AccountInfo,
 ) -> Result<(), ProgramError> {
-  if ata
-    .data_len()
-    .ne(&pinocchio_token::state::TokenAccount::LEN)
-  {
+  let ata_len = ata.data_len();
+  if ata_len == 0 {
+    return Ee::AtaHasNoData.e();
+  }
+  if ata_len.ne(&pinocchio_token::state::TokenAccount::LEN) {
     return Ee::AtaDataLen.e();
   }
   let ata_info = pinocchio_token::state::TokenAccount::from_account_info(ata)?;
@@ -626,6 +627,10 @@ pub fn check_ata22(
   mint: &AccountInfo,
 ) -> Result<(), ProgramError> {
   // token2022 ata has first 165 bytes the same as the legacy ata, but then some more data //log!("ata22 len:{}", ata.data_len());
+  let ata_len = ata.data_len();
+  if ata_len == 0 {
+    return Ee::AtaHasNoData.e();
+  }
   let ata_info = TokenAccount22::from_account_info(ata)?;
   if !ata_info.owner().eq(owner.key()) {
     return Ee::AtaOrOwner.e();
@@ -660,10 +665,11 @@ pub fn check_ata_escrow(
   // if !owner.is_owned_by(&crate::ID) {
   //   return Ee::ToWalletForeignPDA.e();
   // } ... escrow as owner may not exist yet
-  if ata
-    .data_len()
-    .ne(&pinocchio_token::state::TokenAccount::LEN)
-  {
+  let ata_len = ata.data_len();
+  if ata_len == 0 {
+    return Ee::AtaHasNoData.e();
+  }
+  if ata_len.ne(&pinocchio_token::state::TokenAccount::LEN) {
     return Ee::AtaDataLen.e();
   }
   let ata_info = pinocchio_token::state::TokenAccount::from_account_info(ata)?;
