@@ -151,11 +151,12 @@ test("User1 Withdraws SOL from vault1", () => {
 	ll("vault1 SOL:", balcAf);
 	expect(balcAf).toStrictEqual(vaultRent + amtDeposit - amtWithdraw);
 });
-test.failing("hacker cannot withdraw SOL from  vault1", () => {
+//test.failing
+test("hacker cannot withdraw SOL from  vault1", () => {
 	ll("\n------== Hacker cannot withdraw SOL from vault1");
 	signerKp = hackerKp;
 	amtWithdraw = as9zBn(0.48); //480000000n
-	withdrawSol(vault1, amtWithdraw, signerKp);
+	withdrawSol(vault1, amtWithdraw, signerKp, "0x35");
 });
 
 //------------------==
@@ -514,6 +515,7 @@ test("Make & Cancel Token Escrow", () => {
 });
 
 test.skip("copy accounts from devnet", async () => {
+	//https://litesvm.github.io/litesvm/tutorial.html#copying-accounts-from-a-live-environment
 	const connection = new Connection("https://api.devnet.solana.com");
 	const accountInfo = await connection.getAccountInfo(usdcMint);
 	// the rent epoch goes above 2**53 which breaks web3.js, so just set it to 0;

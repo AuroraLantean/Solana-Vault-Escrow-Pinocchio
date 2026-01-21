@@ -188,19 +188,3 @@ test("close configPDA", () => {
 	const rawAccount = svm.getAccount(configPDA);
 	expect(rawAccount).toBeNull();
 });
-/*Failure Test:
-const failed = svm.sendTransaction(tx);
-	if (failed instanceof FailedTransactionMetadata) {
-		assert.ok(failed.err().toString().includes("ProgramFailedToComplete"));
-	} else {
-		throw new Error("Expected transaction failure here");
-	}
-    
-Test with arbitrary accounts
-https://litesvm.github.io/litesvm/tutorial.html#time-travel      
-
-Copying Accounts from a live environment 
-https://litesvm.github.io/litesvm/tutorial.html#copying-accounts-from-a-live-environment
-*/
-
-ll("LiteSVM3 finished");

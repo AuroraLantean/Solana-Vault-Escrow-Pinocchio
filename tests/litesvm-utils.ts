@@ -16,12 +16,13 @@ import {
 	Transaction,
 	TransactionInstruction,
 } from "@solana/web3.js";
-import type {
-	FailedTransactionMetadata,
-	SimulatedTransactionInfo,
+import {
+	ComputeBudget,
+	type FailedTransactionMetadata,
+	LiteSVM,
+	type SimulatedTransactionInfo,
+	TransactionMetadata,
 } from "litesvm";
-
-import { ComputeBudget, LiteSVM, TransactionMetadata } from "litesvm";
 import type { Status } from "./decoder";
 import {
 	bigintToBytes,
@@ -112,22 +113,6 @@ export const findEscrow = (
 };
 
 //-------------== LiteSVM Methods
-export const sendTxns = (
-	svm: LiteSVM,
-	blockhash: string,
-	ixs: TransactionInstruction[],
-	signerKps: Keypair[],
-	programId = vaultProgAddr,
-) => {
-	const tx = new Transaction();
-	tx.recentBlockhash = blockhash;
-	tx.add(...ixs);
-	tx.sign(...signerKps); //first signature is considered "primary" and is used identify and confirm transactions.
-	const simRes = svm.simulateTransaction(tx);
-	const sendRes = svm.sendTransaction(tx);
-	checkSuccess(simRes, sendRes, programId);
-	//svm.sendTransaction(tx);
-};
 export const sendSol = (addrTo: PublicKey, amount: bigint, signer: Keypair) => {
 	const blockhash = svm.latestBlockhash();
 	const ixs = [
@@ -137,7 +122,7 @@ export const sendSol = (addrTo: PublicKey, amount: bigint, signer: Keypair) => {
 			lamports: amount,
 		}),
 	];
-	sendTxns(svm, blockhash, ixs, [signer], SYSTEM_PROGRAM);
+	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
 };
 export const makeAccount = (
 	signer: Keypair,
@@ -154,7 +139,7 @@ export const makeAccount = (
 			programId: programId,
 		}),
 	];
-	sendTxns(svm, blockhash, ixs, [signer], SYSTEM_PROGRAM);
+	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
 };
 //-------------== Program Methods
 const _testMint = (item: PublicKey) => item === undefined;
@@ -282,6 +267,7 @@ export const withdrawSol = (
 	vaultPdaX: PublicKey,
 	amount: bigint,
 	signer: Keypair,
+	expectedError = "",
 ) => {
 	const disc = 1;
 	const argData = bigintToBytes(amount);
@@ -294,7 +280,7 @@ export const withdrawSol = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(svm, blockhash, [ix], [signer], expectedError);
 };
 export const lgcInitMint = (
 	signer: Keypair,
@@ -744,6 +730,7 @@ export const vaultAta1 = getAta(usdtMint, vault1);
 export const vaultAta2 = getAta(usdtMint, vault2);
 export const vaultAta3 = getAta(usdtMint, vault3);
 
+//Test with arbitrary accounts: https://litesvm.github.io/litesvm/tutorial.html#time-travel
 export const setAta = (
 	mint: PublicKey,
 	owner: PublicKey,
@@ -894,10 +881,28 @@ export const vaultProgram = (computeMaxUnits?: bigint) => {
 };
 vaultProgram();
 
-export const checkSuccess = (
+//---------------== Run Test
+export const sendTxns = (
+	svm: LiteSVM,
+	blockhash: string,
+	ixs: TransactionInstruction[],
+	signerKps: Keypair[],
+	expectedError = "",
+	programId = vaultProgAddr,
+) => {
+	const tx = new Transaction();
+	tx.recentBlockhash = blockhash;
+	tx.add(...ixs);
+	tx.sign(...signerKps); //first signature is considered "primary" and is used identify and confirm transactions.
+	const simRes = svm.simulateTransaction(tx);
+	const sendRes = svm.sendTransaction(tx);
+	checkLogs(simRes, sendRes, programId, expectedError);
+};
+export const checkLogs = (
 	simRes: FailedTransactionMetadata | SimulatedTransactionInfo,
 	sendRes: TransactionMetadata | FailedTransactionMetadata,
 	programId: PublicKey,
+	expectedError = "",
 	isVerbose = false,
 ) => {
 	ll("\nsimRes meta prettylogs:", simRes.meta().prettyLogs());
@@ -939,7 +944,15 @@ export const checkSuccess = (
 		ll(
 			"find error here: https://docs.rs/solana-sdk/latest/solana_sdk/transaction/enum.TransactionError.html",
 		);
-		throw new Error("Unexpected tx failure");
+		if (expectedError) {
+			const foundErrorMesg = sendRes
+				.toString()
+				.includes(`custom program error: ${expectedError}`);
+			ll("found error?:", foundErrorMesg);
+			expect(foundErrorMesg).toEqual(true);
+		} else {
+			throw new Error("This error is unexpected");
+		}
 	}
 };
 /*export const setAta22 = (
