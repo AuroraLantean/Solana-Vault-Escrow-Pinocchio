@@ -17,6 +17,12 @@ The only dependencies are types from the Solana SDK. This mitigates dependency i
 
 The key difference is in the implementation of AccountInfo. While solana-program writes data to an AccountInfo struct that owns the data, Pinocchio’s AccountInfo struct is itself just a pointer to the underlying input data that represents the account. This reduces the amount of data needed to be copied, saving a lot of CUs.
 
+See references:
+
+- [Pinocchio: The Game-Changing SDK for Efficient ...
+Solana Compass](https://solanacompass.com/learn/accelerate-25/scale-or-die-2025-no-strings-attached-programs-w-pinocchio)
+- [Pinocchio Repository](<https://github.com/anza-xyz/pinocchio>)
+
 ### Why skipping solana-program
 
 the solana-program crate brings overhead. extra deserialization, hidden allocations, and increased binary size.
@@ -150,7 +156,6 @@ bun test ./tests/test1.ts
 
 ### References
 
-- Pinocchio: <https://github.com/anza-xyz/pinocchio>
 - Native Development: <https://solana.com/docs/programs/rust>
 - Bun Js Test: <https://bun.com/docs/test>
 - Solana Kit: <https://www.solanakit.com/docs/getting-started/send-transaction>

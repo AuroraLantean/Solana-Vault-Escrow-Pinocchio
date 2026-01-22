@@ -2,7 +2,7 @@ use pinocchio::{
   account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey, ProgramResult,
 };
 
-use crate::{none_zero_u64, Ee};
+use crate::{none_zero_u64, Ee, ID};
 
 //Vault to hold SOL and control Tokens, and has no struct to be declared
 pub const VAULT_SEED: &[u8] = b"vault";
@@ -98,7 +98,7 @@ impl Config {
     if pda.data_len() != Self::LEN {
       return Ee::ConfigDataLengh.e();
     }
-    if pda.owner() != &crate::ID {
+    if pda.owner() != &ID {
       return Ee::ConfigIsForeign.e();
     }
     // CHECK alignment for the most restrictive field (u64 in this case)... Alignment requirement checking can be removed ONLY IF you know all numbers are using u8 arrays
@@ -293,7 +293,7 @@ impl Escrow {
     if pda.data_len() != Self::LEN {
       return Ee::EscrowDataLengh.e();
     }
-    if pda.owner() != &crate::ID {
+    if pda.owner() != &ID {
       return Ee::EscrowIsForeign.e();
     }
     Ok(())

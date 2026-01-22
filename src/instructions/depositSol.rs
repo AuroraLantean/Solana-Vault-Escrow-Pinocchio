@@ -12,7 +12,7 @@ use pinocchio_system::instructions::Transfer as SystemTransfer;
 use crate::{
   check_sysprog,
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  none_zero_u64, sol_balc, Ee, VAULT_SEED, VAULT_SIZE,
+  none_zero_u64, sol_balc, Ee, ID, VAULT_SEED, VAULT_SIZE,
 };
 
 // Deposit SOL to program PDA
@@ -103,7 +103,7 @@ fn ensure_deposit_accounts(user: &AccountInfo, vault: &AccountInfo) -> ProgramRe
       to: vault,
       lamports: needed_lamports,
       space: VAULT_SIZE as u64,
-      owner: &crate::ID,
+      owner: &ID,
     }
     .invoke_signed(&[signer])?;
 

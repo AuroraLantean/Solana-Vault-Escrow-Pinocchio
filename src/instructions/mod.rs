@@ -3,6 +3,8 @@
 #[allow(non_snake_case)]
 pub mod closeConfig;
 #[allow(non_snake_case)]
+pub mod configResize;
+#[allow(non_snake_case)]
 pub mod depositSol;
 #[allow(non_snake_case)]
 pub mod escrowTokCancel;
@@ -42,6 +44,7 @@ pub mod withdrawSol;
 
 //file names start with a lower case + Camel cases, but struct names start with Upper case + Camel cases!
 pub use closeConfig::*;
+pub use configResize::*;
 pub use depositSol::*;
 pub use escrowTokCancel::*;
 pub use escrowTokMake::*;
@@ -295,6 +298,12 @@ pub enum ProgramIx {
   #[account(10, name = "system_program", desc = "System Program")]
   #[account(11, name = "atoken_program", desc = "Associated Token Program")]
   EscrowTokCancel {},
+
+  /// 19 Resize Config PDA
+  #[account(0, signer, writable, name = "authority", desc = "Authority")]
+  #[account(1, writable, name = "config_pda", desc = "PDA")]
+  #[account(2, name = "system_program", desc = "System Program")]
+  ConfigResize { new_size: u64 },
   //---------------== Admin PDA
   //---------------== User PDA
   //---------------== Action PDA

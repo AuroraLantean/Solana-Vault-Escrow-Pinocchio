@@ -12,7 +12,7 @@ use pinocchio_log::log;
 use crate::{
   ata_balc, check_ata, check_ata_escrow, check_atoken_gpvbd, check_decimals, check_escrow_mints,
   check_mint0a, check_sysprog, data_len, executable, instructions::check_signer, none_zero_u64,
-  parse_u64, rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee, Escrow,
+  parse_u64, rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee, Escrow, ID,
 };
 
 /// Make Escrow Token Offer
@@ -63,11 +63,11 @@ impl<'a> EscrowTokMake<'a> {
     let seed = [Escrow::SEED, maker.key().as_slice(), &id.to_le_bytes()];
     let seeds = &seed[..];
 
-    let (expected_escrow, bump) = find_program_address(seeds, &crate::ID); //TODO: may incur unknown cost
+    let (expected_escrow, bump) = find_program_address(seeds, &ID); //TODO: may incur unknown cost
     if expected_escrow.ne(escrow_pda.key()) {
       return Ee::EscrowPDA.e();
     }
-    //let expected_escrow = checked_create_program_address(seeds, &crate::ID)?;
+    //let expected_escrow = checked_create_program_address(seeds, &ID)?;
     log!("EscrowTokMake EscrowPDA verified");
 
     if escrow_pda.data_is_empty() {
@@ -92,7 +92,7 @@ impl<'a> EscrowTokMake<'a> {
         to: escrow_pda,
         lamports,
         space: Escrow::LEN as u64,
-        owner: &crate::ID,
+        owner: &ID,
       }
       .invoke_signed(&[seed_signer])?;
     } else {

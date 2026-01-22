@@ -11,7 +11,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_sysprog, data_len, derive_pda1, get_time, instructions::check_signer, not_initialized,
-  parse_u64, rent_exempt_mint22, to32bytes, u8_to_bool, Config, Ee, VAULT_SEED,
+  parse_u64, rent_exempt_mint22, to32bytes, u8_to_bool, Config, Ee, ID, VAULT_SEED,
 };
 
 /// Init Config PDA
@@ -73,7 +73,7 @@ impl<'a> InitConfig<'a> {
       to: config_pda,
       lamports,
       space,
-      owner: &crate::ID,
+      owner: &ID,
     }
     .invoke_signed(&[seed_signer])?;
 

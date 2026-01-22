@@ -11,7 +11,7 @@ use pinocchio_token::state::{Mint, TokenAccount};
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 use thiserror::Error;
 
-use crate::Status;
+use crate::{Status, ID};
 
 //TODO: put errors in error.rs ... https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-errors
 #[derive(Clone, Debug, Eq, Error, PartialEq)] //FromPrimitive
@@ -662,7 +662,7 @@ pub fn check_ata_escrow(
   owner: &AccountInfo,
   mint: &AccountInfo,
 ) -> Result<(), ProgramError> {
-  // if !owner.is_owned_by(&crate::ID) {
+  // if !owner.is_owned_by(&ID) {
   //   return Ee::ToWalletForeignPDA.e();
   // } ... escrow as owner may not exist yet
   let ata_len = ata.data_len();
@@ -684,20 +684,19 @@ pub fn check_ata_escrow(
 //----------------== PDAs and Other Accounts
 pub fn derive_pda1(user: &Pubkey, bstr: &[u8]) -> Result<(Pubkey, u8), ProgramError> {
   log!("derive_pda1");
-  //find_program_address(&[b"vault", user.key().as_ref()], &crate::ID)
+  //find_program_address(&[b"vault", user.key().as_ref()], &ID)
   // let (pda, _bump) =
-  try_find_program_address(&[bstr, user.as_ref()], &crate::ID)
-    .ok_or_else(|| ProgramError::InvalidSeeds)
+  try_find_program_address(&[bstr, user.as_ref()], &ID).ok_or_else(|| ProgramError::InvalidSeeds)
 }
 /*let pda = pubkey::create_program_address(
     &[PDA_SEED, &[self.datas.bump as u8]],
-    &crate::ID,
+    &ID,
 ) */
 pub fn check_pda(account: &AccountInfo) -> Result<(), ProgramError> {
   if account.lamports() == 0 {
     return Ee::PdaNoLamport.e();
   }
-  if !account.is_owned_by(&crate::ID) {
+  if !account.is_owned_by(&ID) {
     return Ee::ForeignPDA.e();
   }
   Ok(())
@@ -706,7 +705,7 @@ pub fn check_vault(input_vault: &AccountInfo, config_vault: &[u8; 32]) -> Result
   if input_vault.lamports() == 0 {
     return Ee::ToWalletNoLamport.e();
   }
-  if !input_vault.is_owned_by(&crate::ID) {
+  if !input_vault.is_owned_by(&ID) {
     return Ee::ToWalletForeignPDA.e();
   }
   if input_vault.key() != config_vault {

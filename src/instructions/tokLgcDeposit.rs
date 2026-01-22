@@ -12,7 +12,7 @@ use pinocchio_system::instructions::CreateAccount;
 use crate::{
   ata_balc, check_ata, check_atoken_gpvbd, check_decimals, check_mint0a, check_pda, check_sysprog,
   data_len, derive_pda1, executable, instructions::check_signer, none_zero_u64, parse_u64,
-  rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee, VAULT_SEED, VAULT_SIZE,
+  rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee, ID, VAULT_SEED, VAULT_SIZE,
 };
 
 /// TokLgc: Users to Deposit Tokens
@@ -66,7 +66,7 @@ impl<'a> TokLgcDeposit<'a> {
         to: to_wallet,
         lamports: needed_lamports,
         space: VAULT_SIZE as u64,
-        owner: &crate::ID,
+        owner: &ID,
       }
       .invoke_signed(&[seed_signer])?;
       log!("TokLgcDeposit 6b");
