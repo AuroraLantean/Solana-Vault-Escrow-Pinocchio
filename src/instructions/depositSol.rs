@@ -23,6 +23,7 @@ use crate::{
 pub struct DepositSol<'a> {
   pub user: &'a AccountView,
   pub vault: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
   pub amount: u64,
 }
 impl<'a> DepositSol<'a> {
@@ -32,10 +33,11 @@ impl<'a> DepositSol<'a> {
     let DepositSol {
       user,
       vault,
+      sysvar_rent111,
       amount,
     } = self;
     log!("DepositSol process");
-    ensure_deposit_accounts(user, vault)?;
+    ensure_deposit_accounts(user, vault, sysvar_rent111)?;
 
     log!("DepositSol 2");
     SystemTransfer {
@@ -56,7 +58,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, vault, system_program] = accounts else {
+    let [user, vault, system_program, sysvar_rent111] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(user)?;
@@ -71,13 +73,18 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
     Ok(Self {
       user,
       vault,
+      sysvar_rent111,
       amount,
     })
   }
 }
 
 /// Ensure the vault exists; if not, create it with PDA seeds. user must be a signer, vault must be writable, and rent minimum must be respected for creation.
-fn ensure_deposit_accounts(user: &AccountView, vault: &AccountView) -> ProgramResult {
+fn ensure_deposit_accounts(
+  user: &AccountView,
+  vault: &AccountView,
+  sysvar_rent111: &AccountView,
+) -> ProgramResult {
   log!("ensure_deposit_accounts");
   // Create when empty and fund rent-exempt.
   if vault.lamports() == 0 {
@@ -93,8 +100,8 @@ fn ensure_deposit_accounts(user: &AccountView, vault: &AccountView) -> ProgramRe
     let signer = Signer::from(&signer_seeds);
 
     // Make the account rent-exempt.
-    let rent = Rent::from_account_view(vault)?;
-    let needed_lamports = Rent::try_minimum_balance(&rent, VAULT_SIZE)?;
+    let rent = Rent::from_account_view(sysvar_rent111)?;
+    let needed_lamports = rent.try_minimum_balance(VAULT_SIZE)?;
     log!("needed_lamports: {}", needed_lamports);
     log!("VAULT_SIZE: {}", VAULT_SIZE);
 

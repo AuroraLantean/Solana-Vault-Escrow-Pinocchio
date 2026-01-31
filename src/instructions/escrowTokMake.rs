@@ -25,6 +25,7 @@ pub struct EscrowTokMake<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
   pub amount_x: u64,
   pub amount_y: u64,
   pub id: u64,
@@ -46,6 +47,7 @@ impl<'a> EscrowTokMake<'a> {
       token_program,
       system_program,
       atoken_program: _,
+      sysvar_rent111,
       decimal_x,
       decimal_y,
       amount_x,
@@ -70,8 +72,8 @@ impl<'a> EscrowTokMake<'a> {
 
     if escrow_pda.is_data_empty() {
       log!("Make Escrow PDA 1");
-      let rent = Rent::from_account_view(escrow_pda)?;
-      let lamports = Rent::try_minimum_balance(&rent, Escrow::LEN)?;
+      let rent = Rent::from_account_view(sysvar_rent111)?;
+      let lamports = rent.try_minimum_balance(Escrow::LEN)?;
 
       log!("Make Escrow PDA 2");
       let id_bytes = &id.to_le_bytes();
@@ -152,7 +154,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokMake<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [maker, maker_ata_x, escrow_ata_x, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program] =
+    let [maker, maker_ata_x, escrow_ata_x, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program, sysvar_rent111] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -187,8 +189,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokMake<'a> {
 
     log!("EscrowTokMake try_from 5");
     check_escrow_mints(mint_x, mint_y)?;
-    rent_exempt_mint(mint_x)?;
-    rent_exempt_mint(mint_y)?;
+    rent_exempt_mint(mint_x, sysvar_rent111)?;
+    rent_exempt_mint(mint_y, sysvar_rent111)?;
     //TODO: fee is part of exchange amount
 
     log!("EscrowTokMake try_from 6");
@@ -208,6 +210,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokMake<'a> {
       token_program,
       system_program,
       atoken_program,
+      sysvar_rent111,
       amount_x,
       amount_y,
       id,

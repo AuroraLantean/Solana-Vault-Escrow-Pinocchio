@@ -165,7 +165,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokTake<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [taker, taker_ata_x, taker_ata_y, escrow_ata_x, escrow_ata_y, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program] =
+    let [taker, taker_ata_x, taker_ata_y, escrow_ata_x, escrow_ata_y, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program, sysvar_rent111] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -218,8 +218,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokTake<'a> {
 
     log!("EscrowTokTake try_from 5");
     check_escrow_mints(mint_x, mint_y)?;
-    rent_exempt_mint(mint_x)?;
-    rent_exempt_mint(mint_y)?;
+    rent_exempt_mint(mint_x, sysvar_rent111)?;
+    rent_exempt_mint(mint_y, sysvar_rent111)?;
     //TODO: fee is part of exchange amount
 
     log!("EscrowTokTake try_from 6");

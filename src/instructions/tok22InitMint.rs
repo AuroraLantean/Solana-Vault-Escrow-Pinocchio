@@ -53,7 +53,7 @@ impl<'a> Token2022InitMint<'a> {
     let _total_mint_size = Mint::BASE_LEN + EXTENSIONS_PADDING_AND_OFFSET + extension_size;
 
     let rent = Rent::from_account_view(mint)?;
-    let lamports = Rent::try_minimum_balance(&rent, Mint::BASE_LEN)?;
+    let lamports = rent.try_minimum_balance(Mint::BASE_LEN)?;
     let space = Mint::BASE_LEN as u64;
     log!("lamports: {}, space: {}", lamports, space);
     //let mint = Keypair::new();

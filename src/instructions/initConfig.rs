@@ -20,6 +20,7 @@ pub struct InitConfig<'a> {
   pub mints: [&'a Address; 4],
   pub vault: &'a Address,
   pub system_program: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
   pub fee: u64,
   pub is_authorized: bool,
   pub status: u8,
@@ -38,6 +39,7 @@ impl<'a> InitConfig<'a> {
       mints,
       vault,
       system_program: _,
+      sysvar_rent111,
       fee,
       is_authorized,
       status,
@@ -45,10 +47,12 @@ impl<'a> InitConfig<'a> {
       str_u8array,
     } = self;
     log!("InitConfig process()");
-    let config_rent = Rent::from_account_view(config_pda)?;
-    let lamports = Rent::try_minimum_balance(&config_rent, Config::LEN)?;
-    let space = Config::LEN as u64;
+    let rent = Rent::from_account_view(sysvar_rent111)?;
+    log!("InitConfig 01");
+    let min_lam = rent.try_minimum_balance(Config::LEN)?;
+    log!("min_lam: {}", min_lam);
 
+    let space = Config::LEN as u64;
     log!("InitConfig 4. space: {}", space);
     let (expected_config_pda, bump) = derive_pda1(prog_owner, Config::SEED)?;
 
@@ -69,7 +73,7 @@ impl<'a> InitConfig<'a> {
     pinocchio_system::instructions::CreateAccount {
       from: signer,
       to: config_pda,
-      lamports,
+      lamports: min_lam,
       space,
       owner: &PROG_ADDR,
     }
@@ -102,26 +106,29 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [signer, config_pda, mint0, mint1, mint2, mint3, vault, prog_owner, prog_admin, system_program] =
+    let [signer, config_pda, mint0, mint1, mint2, mint3, vault, prog_owner, prog_admin, system_program, sysvar_rent111] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
+    log!("initConfig try 1");
     check_signer(signer)?;
     check_sysprog(system_program)?;
     //writable(config_pda)?;
     not_initialized(config_pda)?;
-    log!("try check mints");
-    rent_exempt_mint22(mint0)?;
-    rent_exempt_mint22(mint1)?;
-    rent_exempt_mint22(mint2)?;
-    rent_exempt_mint22(mint3)?;
+    log!("initConfig try 2");
+    rent_exempt_mint22(mint0, sysvar_rent111)?;
+    rent_exempt_mint22(mint1, sysvar_rent111)?;
+    rent_exempt_mint22(mint2, sysvar_rent111)?;
+    rent_exempt_mint22(mint3, sysvar_rent111)?;
 
+    log!("initConfig try 3");
     let (vault_expected, vault_bump) = derive_pda1(prog_owner.address(), VAULT_SEED)?;
     if vault.address() != &vault_expected {
       return Err(Ee::VaultPDA.into());
     }
 
+    log!("initConfig try 4");
     let data_size1 = 42; //1+1+8+32
     data_len(data, data_size1)?;
 
@@ -130,6 +137,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
     let fee = parse_u64(&data[2..10])?;
     let str_u8array = *to32bytes(&data[10..data_size1])?;
 
+    log!("initConfig try 5");
     Ok(Self {
       signer,
       config_pda,
@@ -143,6 +151,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
       ],
       vault: vault.address(),
       system_program,
+      sysvar_rent111,
       fee,
       is_authorized,
       status,

@@ -59,7 +59,7 @@ impl<'a> TokLgcDeposit<'a> {
       let seed_signer = Signer::from(&signer_seeds);
 
       let rent = Rent::from_account_view(to_wallet)?;
-      let needed_lamports = Rent::try_minimum_balance(&rent, VAULT_SIZE)?;
+      let needed_lamports = rent.try_minimum_balance(VAULT_SIZE)?;
 
       CreateAccount {
         from: user,
@@ -114,7 +114,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, from_ata, to_ata, to_wallet, mint, config_pda, token_program, system_program, atoken_program] =
+    let [user, from_ata, to_ata, to_wallet, mint, config_pda, token_program, system_program, atoken_program, sysvar_rent111] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -144,7 +144,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
       return Err(Ee::MintNotAccepted.into());
     }
     log!("TokLgcDeposit try_from 10");
-    rent_exempt_mint(mint)?;
+    rent_exempt_mint(mint, sysvar_rent111)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 

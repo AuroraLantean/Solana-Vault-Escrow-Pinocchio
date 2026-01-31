@@ -3,8 +3,9 @@ use pinocchio::{error::ProgramError, AccountView, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
+  get_rent_exempt,
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  none_zero_u64, rent_exempt, Ee, VAULT_SEED,
+  none_zero_u64, Ee, VAULT_SEED, VAULT_SIZE,
 };
 
 //  vault is owned by the program, matches the PDA derived from user. The withdrawn amount is everything above the rent minimum.
@@ -66,8 +67,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for WithdrawSol<'a> {
     }
 
     // Compute how much can be withdrawn while keeping the account rent-exempt
-    let (vault_balc, vault_min_balc) = rent_exempt(vault)?;
+    let vault_min_balc = get_rent_exempt(vault, VAULT_SIZE)?;
     log!("withdraw amt: {}", amount);
+    let vault_balc = vault.lamports();
     log!("vault balc: {}", vault_balc);
     if vault_balc < amount {
       return Err(ProgramError::InsufficientFunds);

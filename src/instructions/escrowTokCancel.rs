@@ -226,7 +226,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokCancel<'a> {
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
     data_len(data, 0)?;
 
-    let [maker, maker_ata_x, maker_ata_y, escrow_ata_x, escrow_ata_y, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program] =
+    let [maker, maker_ata_x, maker_ata_y, escrow_ata_x, escrow_ata_y, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program, sysvar_rent111] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -250,8 +250,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokCancel<'a> {
       return Err(Ee::EscrowDataEmpty.into());
     }
     log!("EscrowTokCancel try_from 5");
-    rent_exempt_mint(mint_x)?;
-    rent_exempt_mint(mint_y)?;
+    rent_exempt_mint(mint_x, sysvar_rent111)?;
+    rent_exempt_mint(mint_y, sysvar_rent111)?;
 
     log!("EscrowTokCancel try_from 6");
     check_mint0a(mint_x, token_program)?;

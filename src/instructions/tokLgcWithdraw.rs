@@ -93,7 +93,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcWithdraw<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, from_ata, to_ata, vault, mint, token_program, system_program, atoken_program] =
+    let [user, from_ata, to_ata, vault, mint, token_program, system_program, atoken_program, sysvar_rent111] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -121,7 +121,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcWithdraw<'a> {
     }
 
     log!("TokLgcWithdraw try_from 12");
-    rent_exempt_mint(mint)?;
+    rent_exempt_mint(mint, sysvar_rent111)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 

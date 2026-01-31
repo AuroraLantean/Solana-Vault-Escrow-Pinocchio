@@ -64,7 +64,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Token2022InitAta<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [payer, to_wallet, mint, ata, token_program, system_program, atoken_program] = accounts
+    let [payer, to_wallet, mint, ata, token_program, system_program, atoken_program, sysvar_rent111] =
+      accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -76,7 +77,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Token2022InitAta<'a> {
     writable(ata)?;
     initialized(to_wallet)?;
     log!("Token2022InitAta try_from 3");
-    rent_exempt_mint22(mint)?;
+    rent_exempt_mint22(mint, sysvar_rent111)?;
     check_mint22a(mint, token_program)?;
 
     Ok(Self {

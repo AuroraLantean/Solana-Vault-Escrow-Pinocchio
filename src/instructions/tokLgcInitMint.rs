@@ -15,6 +15,7 @@ pub struct TokenLgcInitMint<'a> {
   pub mint: &'a AccountView,
   pub mint_authority: &'a AccountView,
   pub token_program: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
   pub freeze_authority_opt: Option<&'a Address>, // or Pubkey
   pub decimals: u8,
 }
@@ -27,13 +28,14 @@ impl<'a> TokenLgcInitMint<'a> {
       mint_authority,
       mint,
       token_program,
+      sysvar_rent111,
       freeze_authority_opt,
       decimals,
     } = self;
     log!("TokenLgcInitMint process()");
 
-    let rent = Rent::from_account_view(mint)?;
-    let lamports = Rent::try_minimum_balance(&rent, Mint::LEN)?;
+    let rent = Rent::from_account_view(sysvar_rent111)?;
+    let lamports = rent.try_minimum_balance(Mint::LEN)?;
 
     log!("TokenLgcInitMint 6");
     let space = Mint::LEN as u64;
@@ -77,7 +79,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitMint<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [payer, mint, mint_authority, token_program, freeze_authority_opt1, system_program] =
+    let [payer, mint, mint_authority, token_program, freeze_authority_opt1, system_program, sysvar_rent111] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -106,6 +108,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitMint<'a> {
       mint,
       mint_authority, //.try_into()
       token_program,
+      sysvar_rent111,
       freeze_authority_opt,
       decimals,
     })

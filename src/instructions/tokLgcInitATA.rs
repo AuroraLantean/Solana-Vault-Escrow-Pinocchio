@@ -56,7 +56,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitAta<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [payer, to_wallet, mint, ata, token_program, system_program, atoken_program] = accounts
+    let [payer, to_wallet, mint, ata, token_program, system_program, atoken_program, sysvar_rent111] =
+      accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -67,10 +68,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitAta<'a> {
     not_initialized(ata)?;
     initialized(to_wallet)?;
     log!("TokenLgcInitAta try_from 3");
-    rent_exempt_mint(mint)?;
+    rent_exempt_mint(mint, sysvar_rent111)?;
+    log!("TokenLgcInitAta try_from 4");
     check_mint0a(mint, token_program)?;
 
-    log!("TokenLgcInitAta try_from end");
     Ok(Self {
       payer,
       to_wallet,

@@ -79,6 +79,7 @@ pub enum ProgramIx {
   #[account(0, signer, writable, name = "user", desc = "User")]
   #[account(1, writable, name = "vault", desc = "VaultPDA")]
   #[account(2, name = "system_program", desc = "System Program")]
+  #[account(3, name = "sysvar_rent111", desc = "SysvarRent111")]
   Deposit { amount: u64 },
 
   /// 1 Withdraw lamports from the vault
@@ -93,6 +94,7 @@ pub enum ProgramIx {
   #[account(3, name = "token_program", desc = "Token Program")]
   #[account(4, name = "freeze_authority_opt", desc = "Freeze Authority")]
   #[account(5, name = "system_program", desc = "System Program")]
+  #[account(6, name = "sysvar_rent111", desc = "SysvarRent111")]
   TokenLgcInitMint { decimals: u8 },
 
   /// 3 TokLgc Init ATA(Associated Token Acct)
@@ -103,6 +105,7 @@ pub enum ProgramIx {
   #[account(4, name = "token_program", desc = "Token Program")]
   #[account(5, name = "system_program", desc = "System Program")]
   #[account(6, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(7, name = "sysvar_rent111", desc = "SysvarRent111")]
   TokenLgcInitATA {},
 
   /// 4 TokLgc Mint Token
@@ -113,6 +116,7 @@ pub enum ProgramIx {
   #[account(4, name = "token_program", desc = "Token Program")]
   #[account(5, name = "system_program", desc = "System Program")]
   #[account(6, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(7, name = "sysvar_rent111", desc = "SysvarRent111")]
   TokLgcMintToken { decimals: u8, amount: u64 },
 
   /// 5 TokLgc Deposit Tokens
@@ -136,6 +140,7 @@ pub enum ProgramIx {
   #[account(5, name = "token_program", desc = "Token Program")]
   #[account(6, name = "system_program", desc = "System Program")]
   #[account(7, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(8, name = "sysvar_rent111", desc = "SysvarRent111")]
   TokLgcWithdraw { decimals: u8, amount: u64 },
 
   /// 7 TokLgc User Pays Tokens to VaultPDA
@@ -148,6 +153,7 @@ pub enum ProgramIx {
   #[account(6, name = "token_program", desc = "Token Program")]
   #[account(7, name = "system_program", desc = "System Program")]
   #[account(8, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(9, name = "sysvar_rent111", desc = "SysvarRent111")]
   TokLgcPay { decimals: u8, amount: u64 },
 
   /// 8 TokLgc Redeem Tokens
@@ -160,6 +166,7 @@ pub enum ProgramIx {
   #[account(6, name = "token_program", desc = "Token Program")]
   #[account(7, name = "system_program", desc = "System Program")]
   #[account(8, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(9, name = "sysvar_rent111", desc = "SysvarRent111")]
   TokLgcRedeem { decimals: u8, amount: u64 },
 
   //---------== Token2022
@@ -185,6 +192,7 @@ pub enum ProgramIx {
   #[account(4, name = "token_program", desc = "Token Program")]
   #[account(5, name = "system_program", desc = "System Program")]
   #[account(6, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(7, name = "sysvar_rent111", desc = "SysvarRent111")]
   Token2022InitATA {},
 
   /// 11 Token2022 Mint Token
@@ -209,6 +217,7 @@ pub enum ProgramIx {
   #[account(7, name = "prog_owner", desc = "Program Owner")]
   #[account(8, name = "prog_admin", desc = "Program Admin")]
   #[account(9, name = "system_program", desc = "System Program")]
+  #[account(10, name = "sysvar_rent111", desc = "SysvarRent111")]
   InitConfig { fee: u64, is_authorized: bool },
 
   /// 13 Update Config PDA
@@ -242,6 +251,7 @@ pub enum ProgramIx {
   #[account(7, name = "token_program", desc = "Token Program")]
   #[account(8, name = "system_program", desc = "System Program")]
   #[account(9, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(10, name = "sysvar_rent111", desc = "SysvarRent111")]
   EscrowTokMake {
     decimal_x: u8,
     amount_x: u64,
@@ -262,6 +272,7 @@ pub enum ProgramIx {
   #[account(9, name = "token_program", desc = "Token Program")]
   #[account(10, name = "system_program", desc = "System Program")]
   #[account(11, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(12, name = "sysvar_rent111", desc = "SysvarRent111")]
   EscrowTokTake {
     decimal_x: u8,
     amount_x: u64,
@@ -282,6 +293,7 @@ pub enum ProgramIx {
   #[account(9, name = "token_program", desc = "Token Program")]
   #[account(10, name = "system_program", desc = "System Program")]
   #[account(11, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(12, name = "sysvar_rent111", desc = "SysvarRent111")]
   EscrowTokWithdraw {},
 
   /// 18 Escrow Token Cancel Offer
@@ -297,6 +309,7 @@ pub enum ProgramIx {
   #[account(9, name = "token_program", desc = "Token Program")]
   #[account(10, name = "system_program", desc = "System Program")]
   #[account(11, name = "atoken_program", desc = "Associated Token Program")]
+  #[account(12, name = "sysvar_rent111", desc = "SysvarRent111")]
   EscrowTokCancel {},
 
   /// 19 Resize Config PDA
