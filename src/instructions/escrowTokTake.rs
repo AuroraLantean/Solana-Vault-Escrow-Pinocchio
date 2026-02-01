@@ -27,6 +27,7 @@ pub struct EscrowTokTake<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
   pub amount_x: u64,
   pub amount_y: u64,
   pub id: u64,
@@ -50,6 +51,7 @@ impl<'a> EscrowTokTake<'a> {
       token_program,
       system_program,
       atoken_program: _,
+      sysvar_rent111,
       amount_x,
       amount_y,
       id,
@@ -101,7 +103,7 @@ impl<'a> EscrowTokTake<'a> {
       check_ata_escrow(escrow_ata_y, escrow_pda, mint_y)?;
     }
     writable(escrow_ata_y)?;
-    rent_exempt_tokacct(escrow_ata_y)?;
+    rent_exempt_tokacct(escrow_ata_y, sysvar_rent111)?;
 
     log!("Check Taker ATA X");
     if taker_ata_x.is_data_empty() {
@@ -121,7 +123,7 @@ impl<'a> EscrowTokTake<'a> {
       check_ata(taker_ata_x, taker, mint_x)?;
     }
     writable(taker_ata_x)?;
-    rent_exempt_tokacct(taker_ata_x)?;
+    rent_exempt_tokacct(taker_ata_x, sysvar_rent111)?;
 
     log!("Transfer Token Y to Escrow ATA Y");
     pinocchio_token::instructions::TransferChecked {
@@ -241,6 +243,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokTake<'a> {
       token_program,
       system_program,
       atoken_program,
+      sysvar_rent111,
       amount_x,
       amount_y,
       id,

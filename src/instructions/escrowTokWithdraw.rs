@@ -27,6 +27,7 @@ pub struct EscrowTokWithdraw<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
 }
 impl<'a> EscrowTokWithdraw<'a> {
   pub const DISCRIMINATOR: &'a u8 = &17;
@@ -45,6 +46,7 @@ impl<'a> EscrowTokWithdraw<'a> {
       token_program,
       system_program,
       atoken_program: _,
+      sysvar_rent111,
     } = self;
     log!("---------== process()");
     config_pda.check_borrow_mut()?;
@@ -99,7 +101,7 @@ impl<'a> EscrowTokWithdraw<'a> {
       check_ata(maker_ata_y, maker, mint_y)?;
     }
     writable(maker_ata_y)?;
-    rent_exempt_tokacct(maker_ata_y)?;
+    rent_exempt_tokacct(maker_ata_y, sysvar_rent111)?;
 
     log!("Make Seed Signer");
     let id_bytes = &id.to_le_bytes();
@@ -147,7 +149,7 @@ impl<'a> EscrowTokWithdraw<'a> {
         check_ata(maker_ata_x, maker, mint_x)?;
       }
       writable(maker_ata_x)?;
-      rent_exempt_tokacct(maker_ata_x)?;
+      rent_exempt_tokacct(maker_ata_x, sysvar_rent111)?;
 
       log!("Send token x to maker_ata_x");
       pinocchio_token::instructions::TransferChecked {
@@ -261,6 +263,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokWithdraw<'a> {
       token_program,
       system_program,
       atoken_program,
+      sysvar_rent111,
     })
   }
 }

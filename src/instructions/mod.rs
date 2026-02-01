@@ -80,12 +80,13 @@ pub enum ProgramIx {
   #[account(1, writable, name = "vault", desc = "VaultPDA")]
   #[account(2, name = "system_program", desc = "System Program")]
   #[account(3, name = "sysvar_rent111", desc = "SysvarRent111")]
-  Deposit { amount: u64 },
+  DepositSol { amount: u64 },
 
   /// 1 Withdraw lamports from the vault
   #[account(0, signer, writable, name = "user", desc = "User")]
   #[account(1, writable, name = "vault", desc = "Vault PDA")]
-  Withdraw { amount: u64 },
+  #[account(2, name = "sysvar_rent111", desc = "SysvarRent111")]
+  WithdrawSol { amount: u64 },
 
   /// 2 TokLgc Init Mint
   #[account(0, signer, writable, name = "payer", desc = "Payer")]

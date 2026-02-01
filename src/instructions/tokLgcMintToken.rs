@@ -59,7 +59,7 @@ impl<'a> TokLgcMintToken<'a> {
       check_ata(ata, to_wallet, mint)?;
     }
     writable(ata)?;
-    rent_exempt_tokacct(ata)?;
+    rent_exempt_tokacct(ata, sysvar_rent111)?;
     log!("Token Account found/verified");
 
     log!("Mint Tokens");

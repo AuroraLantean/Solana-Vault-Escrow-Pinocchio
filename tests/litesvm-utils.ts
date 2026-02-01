@@ -303,6 +303,7 @@ export const withdrawSol = (
 		keys: [
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: vaultPdaX, isSigner: false, isWritable: true },
+			{ pubkey: Sysvar_Rent111, isSigner: false, isWritable: false },
 		],
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),

@@ -118,7 +118,7 @@ impl<'a> EscrowTokMake<'a> {
       check_ata_escrow(escrow_ata_x, escrow_pda, mint_x)?;
     }
     writable(escrow_ata_x)?;
-    rent_exempt_tokacct(escrow_ata_x)?;
+    rent_exempt_tokacct(escrow_ata_x, sysvar_rent111)?;
     log!("Vault ATA is found/verified");
 
     pinocchio_token::instructions::TransferChecked {

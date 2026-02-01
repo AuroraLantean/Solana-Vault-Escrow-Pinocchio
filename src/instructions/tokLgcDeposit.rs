@@ -24,6 +24,7 @@ pub struct TokLgcDeposit<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
   pub decimals: u8,
   pub amount: u64,
 }
@@ -40,6 +41,7 @@ impl<'a> TokLgcDeposit<'a> {
       token_program,
       system_program,
       atoken_program: _,
+      sysvar_rent111,
       decimals,
       amount,
     } = self;
@@ -91,7 +93,7 @@ impl<'a> TokLgcDeposit<'a> {
       check_ata(to_ata, to_wallet, mint)?;
     }
     writable(to_ata)?;
-    rent_exempt_tokacct(to_ata)?;
+    rent_exempt_tokacct(to_ata, sysvar_rent111)?;
     log!("ToATA is found/verified");
 
     pinocchio_token::instructions::TransferChecked {
@@ -157,6 +159,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
       token_program,
       system_program,
       atoken_program,
+      sysvar_rent111,
       decimals,
       amount,
     })

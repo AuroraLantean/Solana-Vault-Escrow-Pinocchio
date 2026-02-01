@@ -19,6 +19,7 @@ pub struct TokLgcPay<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
+  pub sysvar_rent111: &'a AccountView,
   pub decimals: u8,
   pub amount: u64,
 }
@@ -36,6 +37,7 @@ impl<'a> TokLgcPay<'a> {
       token_program,
       system_program,
       atoken_program: _,
+      sysvar_rent111,
       decimals,
       amount,
     } = self;
@@ -58,7 +60,7 @@ impl<'a> TokLgcPay<'a> {
       check_ata(vault_ata, vault, mint)?;
     }
     writable(vault_ata)?;
-    rent_exempt_tokacct(vault_ata)?;
+    rent_exempt_tokacct(vault_ata, sysvar_rent111)?;
     log!("Vault ATA is found/verified");
 
     pinocchio_token::instructions::TransferChecked {
@@ -128,6 +130,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcPay<'a> {
       token_program,
       system_program,
       atoken_program,
+      sysvar_rent111,
       decimals,
       amount,
     })

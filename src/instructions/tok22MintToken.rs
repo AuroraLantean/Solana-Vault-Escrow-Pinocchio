@@ -60,7 +60,7 @@ impl<'a> Token2022MintToken<'a> {
     }
     log!("Token2022MintToken 7");
     writable(ata)?;
-    rent_exempt_tokacct22(ata)?;
+    rent_exempt_tokacct22(ata, sysvar_rent111)?;
     log!("Token Account found/verified");
 
     log!("Mint Tokens");
