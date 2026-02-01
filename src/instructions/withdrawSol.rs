@@ -52,7 +52,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for WithdrawSol<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, vault, sysvar_rent111] = accounts else {
+    let [user, vault, rent_sysvar] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(user)?;
@@ -67,7 +67,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for WithdrawSol<'a> {
     }
 
     // Compute how much can be withdrawn while keeping the account rent-exempt
-    let vault_min_balc = get_rent_exempt(vault, sysvar_rent111, VAULT_SIZE)?;
+    let vault_min_balc = get_rent_exempt(vault, rent_sysvar, VAULT_SIZE)?;
     log!("withdraw amt: {}", amount);
     let vault_balc = vault.lamports();
     log!("vault balc: {}", vault_balc);

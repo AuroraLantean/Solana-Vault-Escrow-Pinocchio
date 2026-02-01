@@ -24,7 +24,7 @@ pub struct TokLgcDeposit<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
-  pub sysvar_rent111: &'a AccountView,
+  pub rent_sysvar: &'a AccountView,
   pub decimals: u8,
   pub amount: u64,
 }
@@ -41,7 +41,7 @@ impl<'a> TokLgcDeposit<'a> {
       token_program,
       system_program,
       atoken_program: _,
-      sysvar_rent111,
+      rent_sysvar,
       decimals,
       amount,
     } = self;
@@ -93,7 +93,7 @@ impl<'a> TokLgcDeposit<'a> {
       check_ata(to_ata, to_wallet, mint)?;
     }
     writable(to_ata)?;
-    rent_exempt_tokacct(to_ata, sysvar_rent111)?;
+    rent_exempt_tokacct(to_ata, rent_sysvar)?;
     log!("ToATA is found/verified");
 
     pinocchio_token::instructions::TransferChecked {
@@ -116,7 +116,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, from_ata, to_ata, to_wallet, mint, config_pda, token_program, system_program, atoken_program, sysvar_rent111] =
+    let [user, from_ata, to_ata, to_wallet, mint, config_pda, token_program, system_program, atoken_program, rent_sysvar] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -146,7 +146,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
       return Err(Ee::MintNotAccepted.into());
     }
     log!("TokLgcDeposit try_from 10");
-    rent_exempt_mint(mint, sysvar_rent111)?;
+    rent_exempt_mint(mint, rent_sysvar)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
@@ -159,7 +159,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
       token_program,
       system_program,
       atoken_program,
-      sysvar_rent111,
+      rent_sysvar,
       decimals,
       amount,
     })

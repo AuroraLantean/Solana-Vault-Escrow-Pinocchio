@@ -22,7 +22,7 @@ pub struct TokLgcWithdraw<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
-  pub sysvar_rent111: &'a AccountView,
+  pub rent_sysvar: &'a AccountView,
   pub vault_bump: u8,
   pub decimals: u8,
   pub amount: u64,
@@ -40,7 +40,7 @@ impl<'a> TokLgcWithdraw<'a> {
       token_program,
       system_program,
       atoken_program: _,
-      sysvar_rent111,
+      rent_sysvar,
       vault_bump,
       decimals,
       amount,
@@ -64,7 +64,7 @@ impl<'a> TokLgcWithdraw<'a> {
       check_ata(to_ata, user, mint)?;
     }
     writable(to_ata)?;
-    rent_exempt_tokacct(to_ata, sysvar_rent111)?;
+    rent_exempt_tokacct(to_ata, rent_sysvar)?;
     log!("ToATA is found/verified");
 
     let signer_seeds = [
@@ -95,7 +95,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcWithdraw<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, from_ata, to_ata, vault, mint, token_program, system_program, atoken_program, sysvar_rent111] =
+    let [user, from_ata, to_ata, vault, mint, token_program, system_program, atoken_program, rent_sysvar] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -123,7 +123,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcWithdraw<'a> {
     }
 
     log!("TokLgcWithdraw try_from 12");
-    rent_exempt_mint(mint, sysvar_rent111)?;
+    rent_exempt_mint(mint, rent_sysvar)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 
@@ -136,7 +136,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcWithdraw<'a> {
       token_program,
       system_program,
       atoken_program,
-      sysvar_rent111,
+      rent_sysvar,
       vault_bump,
       decimals,
       amount,

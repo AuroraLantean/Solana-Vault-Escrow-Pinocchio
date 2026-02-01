@@ -743,30 +743,27 @@ pub fn executable(account: &AccountView) -> ProgramResult {
 
 pub fn get_rent_exempt(
   account: &AccountView,
-  sysvar_rent111: &AccountView,
+  rent_sysvar: &AccountView,
   data_len: usize,
 ) -> Result<u64, ProgramError> {
   if account.lamports() == 0 {
     return Err(ProgramError::UninitializedAccount);
   }
-  let rent = Rent::from_account_view(sysvar_rent111)?;
+  let rent = Rent::from_account_view(rent_sysvar)?;
   //let rent = Rent::from_account_view(account)?;
   let min_lam = rent.try_minimum_balance(data_len)?;
   log!("rent_exempt: {}", min_lam);
   Ok(min_lam)
 }
-pub fn rent_exempt(
-  account: &AccountView,
-  sysvar_rent111: &AccountView,
-) -> Result<(), ProgramError> {
-  let rent = Rent::from_account_view(sysvar_rent111)?;
+pub fn rent_exempt(account: &AccountView, rent_sysvar: &AccountView) -> Result<(), ProgramError> {
+  let rent = Rent::from_account_view(rent_sysvar)?;
   if !rent.is_exempt(account.lamports(), account.data_len()) {
     return Err(ProgramError::AccountNotRentExempt);
   }
   Ok(())
 }
-pub fn rent_exempt_mint22(account: &AccountView, sysvar_rent111: &AccountView) -> ProgramResult {
-  let rent = Rent::from_account_view(sysvar_rent111)?;
+pub fn rent_exempt_mint22(account: &AccountView, rent_sysvar: &AccountView) -> ProgramResult {
+  let rent = Rent::from_account_view(rent_sysvar)?;
   if !rent.is_exempt(account.lamports(), Mint22::BASE_LEN) {
     return Ee::NoRentExemptMint22.e();
   }
@@ -774,23 +771,23 @@ pub fn rent_exempt_mint22(account: &AccountView, sysvar_rent111: &AccountView) -
 }
 //TODO: Mint and ATA from TokenLgc works. For mint and ATA from Token2022?
 /// acc_type: 0 Mint, 1 TokenAccount
-pub fn rent_exempt_mint(account: &AccountView, sysvar_rent111: &AccountView) -> ProgramResult {
-  let rent = Rent::from_account_view(sysvar_rent111)?;
+pub fn rent_exempt_mint(account: &AccountView, rent_sysvar: &AccountView) -> ProgramResult {
+  let rent = Rent::from_account_view(rent_sysvar)?;
   if !rent.is_exempt(account.lamports(), Mint::LEN) {
     return Ee::NoRentExemptMint.e();
   }
   Ok(())
 }
 
-pub fn rent_exempt_tokacct(account: &AccountView, sysvar_rent111: &AccountView) -> ProgramResult {
-  let rent = Rent::from_account_view(sysvar_rent111)?;
+pub fn rent_exempt_tokacct(account: &AccountView, rent_sysvar: &AccountView) -> ProgramResult {
+  let rent = Rent::from_account_view(rent_sysvar)?;
   if !rent.is_exempt(account.lamports(), TokenAccount::LEN) {
     return Ee::NoRentExemptTokAcct.e();
   }
   Ok(())
 }
-pub fn rent_exempt_tokacct22(account: &AccountView, sysvar_rent111: &AccountView) -> ProgramResult {
-  let rent = Rent::from_account_view(sysvar_rent111)?;
+pub fn rent_exempt_tokacct22(account: &AccountView, rent_sysvar: &AccountView) -> ProgramResult {
+  let rent = Rent::from_account_view(rent_sysvar)?;
   if !rent.is_exempt(account.lamports(), TokenAccount22::BASE_LEN) {
     return Ee::NoRentExemptTokAcct22.e();
   }

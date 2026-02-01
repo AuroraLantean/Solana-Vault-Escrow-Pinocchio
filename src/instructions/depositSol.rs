@@ -23,7 +23,7 @@ use crate::{
 pub struct DepositSol<'a> {
   pub user: &'a AccountView,
   pub vault: &'a AccountView,
-  pub sysvar_rent111: &'a AccountView,
+  pub rent_sysvar: &'a AccountView,
   pub amount: u64,
 }
 impl<'a> DepositSol<'a> {
@@ -33,11 +33,11 @@ impl<'a> DepositSol<'a> {
     let DepositSol {
       user,
       vault,
-      sysvar_rent111,
+      rent_sysvar,
       amount,
     } = self;
     log!("DepositSol process");
-    ensure_deposit_accounts(user, vault, sysvar_rent111)?;
+    ensure_deposit_accounts(user, vault, rent_sysvar)?;
 
     log!("DepositSol 2");
     SystemTransfer {
@@ -58,7 +58,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, vault, system_program, sysvar_rent111] = accounts else {
+    let [user, vault, system_program, rent_sysvar] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(user)?;
@@ -73,7 +73,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
     Ok(Self {
       user,
       vault,
-      sysvar_rent111,
+      rent_sysvar,
       amount,
     })
   }
@@ -83,7 +83,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
 fn ensure_deposit_accounts(
   user: &AccountView,
   vault: &AccountView,
-  sysvar_rent111: &AccountView,
+  rent_sysvar: &AccountView,
 ) -> ProgramResult {
   log!("ensure_deposit_accounts");
   // Create when empty and fund rent-exempt.
@@ -100,7 +100,7 @@ fn ensure_deposit_accounts(
     let signer = Signer::from(&signer_seeds);
 
     // Make the account rent-exempt.
-    let rent = Rent::from_account_view(sysvar_rent111)?;
+    let rent = Rent::from_account_view(rent_sysvar)?;
     let needed_lamports = rent.try_minimum_balance(VAULT_SIZE)?;
     log!("needed_lamports: {}", needed_lamports);
     log!("VAULT_SIZE: {}", VAULT_SIZE);

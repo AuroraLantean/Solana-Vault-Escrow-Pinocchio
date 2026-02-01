@@ -16,7 +16,7 @@ pub struct Token2022MintToken<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub atoken_program: &'a AccountView,
-  pub sysvar_rent111: &'a AccountView,
+  pub rent_sysvar: &'a AccountView,
   pub decimals: u8,
   pub amount: u64,
 }
@@ -32,12 +32,12 @@ impl<'a> Token2022MintToken<'a> {
       token_program,
       system_program,
       atoken_program: _,
-      sysvar_rent111,
+      rent_sysvar,
       decimals,
       amount,
     } = self;
     log!("Token2022MintToken process()");
-    rent_exempt_mint22(mint, sysvar_rent111)?;
+    rent_exempt_mint22(mint, rent_sysvar)?;
     writable(mint)?;
     check_mint22b(mint, mint_authority, token_program, decimals)?;
 
@@ -60,7 +60,7 @@ impl<'a> Token2022MintToken<'a> {
     }
     log!("Token2022MintToken 7");
     writable(ata)?;
-    rent_exempt_tokacct22(ata, sysvar_rent111)?;
+    rent_exempt_tokacct22(ata, rent_sysvar)?;
     log!("Token Account found/verified");
 
     log!("Mint Tokens");
@@ -84,7 +84,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Token2022MintToken<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [mint_authority, to_wallet, mint, ata, token_program, system_program, atoken_program, sysvar_rent111] =
+    let [mint_authority, to_wallet, mint, ata, token_program, system_program, atoken_program, rent_sysvar] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -108,7 +108,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Token2022MintToken<'a> {
       token_program,
       system_program,
       atoken_program,
-      sysvar_rent111,
+      rent_sysvar,
       decimals,
       amount,
     })

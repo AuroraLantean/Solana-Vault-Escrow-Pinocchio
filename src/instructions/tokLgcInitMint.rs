@@ -7,7 +7,7 @@ use crate::{
   check_decimals_max, check_sysprog, data_len, executable, initialized, instructions::check_signer,
   not_initialized, writable,
 };
-use pinocchio_token::{instructions::InitializeMint2, state::Mint};
+use pinocchio_token::{instructions::InitializeMint, state::Mint};
 
 //TokenLgc Init Mint Account
 pub struct TokenLgcInitMint<'a> {
@@ -15,7 +15,7 @@ pub struct TokenLgcInitMint<'a> {
   pub mint: &'a AccountView,
   pub mint_authority: &'a AccountView,
   pub token_program: &'a AccountView,
-  pub sysvar_rent111: &'a AccountView,
+  pub rent_sysvar: &'a AccountView,
   pub freeze_authority_opt: Option<&'a Address>, // or Pubkey
   pub decimals: u8,
 }
@@ -28,13 +28,13 @@ impl<'a> TokenLgcInitMint<'a> {
       mint_authority,
       mint,
       token_program,
-      sysvar_rent111,
+      rent_sysvar,
       freeze_authority_opt,
       decimals,
     } = self;
     log!("TokenLgcInitMint process()");
 
-    let rent = Rent::from_account_view(sysvar_rent111)?;
+    let rent = Rent::from_account_view(rent_sysvar)?;
     let lamports = rent.try_minimum_balance(Mint::LEN)?;
 
     log!("TokenLgcInitMint 6");
@@ -55,8 +55,9 @@ impl<'a> TokenLgcInitMint<'a> {
     writable(mint)?;
 
     log!("Init Mint");
-    InitializeMint2 {
+    InitializeMint {
       mint, //Keypair
+      rent_sysvar,
       decimals,
       mint_authority: mint_authority.address(),
       freeze_authority: freeze_authority_opt,
@@ -79,7 +80,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitMint<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [payer, mint, mint_authority, token_program, freeze_authority_opt1, system_program, sysvar_rent111] =
+    let [payer, mint, mint_authority, token_program, freeze_authority_opt1, system_program, rent_sysvar] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -108,7 +109,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitMint<'a> {
       mint,
       mint_authority, //.try_into()
       token_program,
-      sysvar_rent111,
+      rent_sysvar,
       freeze_authority_opt,
       decimals,
     })

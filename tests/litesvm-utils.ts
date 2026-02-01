@@ -337,6 +337,33 @@ export const lgcInitMint = (
 	});
 	sendTxns(svm, blockhash, [ix], [signer, mintKp]);
 };
+export const tok22InitMint = (
+	signer: Keypair,
+	mintKp: Keypair,
+	mintAuthority: PublicKey,
+	freezeAuthorityOpt: PublicKey,
+	decimals: number,
+	//argData: Uint8Array<ArrayBufferLike>,
+	tokenProg = TOKEN_PROGRAM_ID,
+) => {
+	const disc = 2;
+	checkDecimals(decimals);
+	const blockhash = svm.latestBlockhash();
+	const ix = new TransactionInstruction({
+		keys: [
+			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: mintKp.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: mintAuthority, isSigner: false, isWritable: false },
+			{ pubkey: tokenProg, isSigner: false, isWritable: false },
+			{ pubkey: freezeAuthorityOpt, isSigner: false, isWritable: false },
+			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
+			{ pubkey: Sysvar_Rent111, isSigner: false, isWritable: false },
+		],
+		programId: vaultProgAddr,
+		data: Buffer.from([disc, decimals]),
+	});
+	sendTxns(svm, blockhash, [ix], [signer, mintKp]);
+};
 export const lgcInitAta = (
 	signer: Keypair,
 	toWallet: PublicKey,

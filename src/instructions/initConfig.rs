@@ -20,7 +20,7 @@ pub struct InitConfig<'a> {
   pub mints: [&'a Address; 4],
   pub vault: &'a Address,
   pub system_program: &'a AccountView,
-  pub sysvar_rent111: &'a AccountView,
+  pub rent_sysvar: &'a AccountView,
   pub fee: u64,
   pub is_authorized: bool,
   pub status: u8,
@@ -39,7 +39,7 @@ impl<'a> InitConfig<'a> {
       mints,
       vault,
       system_program: _,
-      sysvar_rent111,
+      rent_sysvar,
       fee,
       is_authorized,
       status,
@@ -47,7 +47,7 @@ impl<'a> InitConfig<'a> {
       str_u8array,
     } = self;
     log!("InitConfig process()");
-    let rent = Rent::from_account_view(sysvar_rent111)?;
+    let rent = Rent::from_account_view(rent_sysvar)?;
     log!("InitConfig 01");
     let min_lam = rent.try_minimum_balance(Config::LEN)?;
     log!("min_lam: {}", min_lam);
@@ -106,7 +106,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [signer, config_pda, mint0, mint1, mint2, mint3, vault, prog_owner, prog_admin, system_program, sysvar_rent111] =
+    let [signer, config_pda, mint0, mint1, mint2, mint3, vault, prog_owner, prog_admin, system_program, rent_sysvar] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -117,10 +117,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
     //writable(config_pda)?;
     not_initialized(config_pda)?;
     log!("initConfig try 2");
-    rent_exempt_mint22(mint0, sysvar_rent111)?;
-    rent_exempt_mint22(mint1, sysvar_rent111)?;
-    rent_exempt_mint22(mint2, sysvar_rent111)?;
-    rent_exempt_mint22(mint3, sysvar_rent111)?;
+    rent_exempt_mint22(mint0, rent_sysvar)?;
+    rent_exempt_mint22(mint1, rent_sysvar)?;
+    rent_exempt_mint22(mint2, rent_sysvar)?;
+    rent_exempt_mint22(mint3, rent_sysvar)?;
 
     log!("initConfig try 3");
     let (vault_expected, vault_bump) = derive_pda1(prog_owner.address(), VAULT_SEED)?;
@@ -151,7 +151,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
       ],
       vault: vault.address(),
       system_program,
-      sysvar_rent111,
+      rent_sysvar,
       fee,
       is_authorized,
       status,
