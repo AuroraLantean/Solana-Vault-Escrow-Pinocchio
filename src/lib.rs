@@ -20,6 +20,10 @@ mod litesvm_helpers;
 
 declare_id!("7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e"); //crate::ID
 pub const PROG_ADDR: Address = Address::new_from_array(ID);
+pub const TOKEN_LGC_ADDR: Address =
+  Address::from_str_const("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+pub const TOKEN_2022_ADDR: Address =
+  Address::from_str_const("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 
 fn process_instruction(
   program_id: &Address,

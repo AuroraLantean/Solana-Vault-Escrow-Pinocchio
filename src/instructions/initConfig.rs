@@ -1,6 +1,7 @@
 use crate::{
-  check_sysprog, data_len, derive_pda1, get_time, instructions::check_signer, not_initialized,
-  parse_u64, rent_exempt_mint22, to32bytes, u8_to_bool, Config, Ee, PROG_ADDR, VAULT_SEED,
+  check_data_len, check_sysprog, derive_pda1, get_time, instructions::check_signer,
+  not_initialized, parse_u64, rent_exempt_mint22, to32bytes, u8_to_bool, Config, Ee, PROG_ADDR,
+  VAULT_SEED,
 };
 use core::convert::TryFrom;
 use pinocchio::{
@@ -49,10 +50,10 @@ impl<'a> InitConfig<'a> {
     log!("InitConfig process()");
     let rent = Rent::from_account_view(rent_sysvar)?;
     log!("InitConfig 01");
-    let min_lam = rent.try_minimum_balance(Config::LEN)?;
+    let min_lam = rent.try_minimum_balance(Config::INIT_LEN)?;
     log!("min_lam: {}", min_lam);
 
-    let space = Config::LEN as u64;
+    let space = Config::INIT_LEN as u64;
     log!("InitConfig 4. space: {}", space);
     let (expected_config_pda, bump) = derive_pda1(prog_owner, Config::SEED)?;
 
@@ -130,7 +131,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
 
     log!("initConfig try 4");
     let data_size1 = 42; //1+1+8+32
-    data_len(data, data_size1)?;
+    check_data_len(data, data_size1)?;
 
     let is_authorized = u8_to_bool(data[0])?;
     let status = data[1];

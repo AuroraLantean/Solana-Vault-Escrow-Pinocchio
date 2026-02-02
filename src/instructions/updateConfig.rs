@@ -3,7 +3,7 @@ use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
-  check_pda, data_len, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
+  check_data_len, check_pda, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
   u8_to_bool, u8_to_status, writable, Config, Ee,
 };
 
@@ -105,7 +105,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for UpdateConfig<'a> {
       return Ee::InputDataLen.e();
     }*/
     let min_data_size1 = 88;
-    data_len(data, min_data_size1)?; //56+32
+    check_data_len(data, min_data_size1)?; //56+32
 
     log!("parse booleans");
     let b0 = u8_to_bool(data[0])?;

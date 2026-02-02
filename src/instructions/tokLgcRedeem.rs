@@ -7,7 +7,7 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::{
-  ata_balc, check_ata, check_decimals, check_mint0a, check_sysprog, check_vault, data_len,
+  ata_balc, check_ata, check_data_len, check_decimals, check_mint0a, check_sysprog, check_vault,
   executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt_mint,
   rent_exempt_tokacct, writable, Config, Ee, VAULT_SEED,
 };
@@ -111,7 +111,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcRedeem<'a> {
     check_ata(from_ata, vault, mint)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
-    data_len(data, 9)?;
+    check_data_len(data, 9)?;
     let decimals = data[0];
     let amount = parse_u64(&data[1..])?;
     log!("decimals: {}, amount: {}", decimals, amount);

@@ -228,7 +228,6 @@ export const updateConfig = (
 export const configResize = (
 	signer: Keypair,
 	configPDA: PublicKey,
-	firstProgOwner: PublicKey,
 	newSize: bigint,
 ) => {
 	const disc = 19;
@@ -240,8 +239,8 @@ export const configResize = (
 		keys: [
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
-			{ pubkey: firstProgOwner, isSigner: false, isWritable: false },
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
+			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),

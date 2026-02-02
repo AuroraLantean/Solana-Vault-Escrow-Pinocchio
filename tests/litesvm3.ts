@@ -29,6 +29,7 @@ import {
 } from "./utils";
 import {
 	admin,
+	adminKp,
 	owner,
 	ownerKp,
 	pyusdMint,
@@ -50,12 +51,12 @@ let _authority: PublicKey;
 let mints: PublicKey[];
 let _vault: PublicKey;
 let progOwner: PublicKey;
-let firstProgOwner: PublicKey;
+let _firstProgOwner: PublicKey;
 let progAdmin: PublicKey;
 let dest: PublicKey;
 let tokenAmount: bigint;
 let fee: bigint;
-let newSize: bigint;
+let newLen: bigint;
 let isAuthorized = false;
 let status: Status;
 let str: string;
@@ -190,16 +191,16 @@ test("updateConfig + time travel", () => {
 test("extend configPDA", () => {
 	ll("\n------== Extend configPDA");
 	let rawAccount = svm.getAccount(configPDA);
-	const prevSize = rawAccount?.data.byteLength;
-	ll("prevSize:", prevSize);
+	const prevLen = rawAccount?.data.byteLength;
+	ll("prevLen:", prevLen);
 
-	signerKp = user1Kp;
-	firstProgOwner = owner;
-	newSize = 1000000n;
-	configResize(signerKp, configPDA, firstProgOwner, newSize);
+	signerKp = adminKp;
+	newLen = BigInt(prevLen!) + 10240n;
+	configResize(signerKp, configPDA, newLen);
 	rawAccount = svm.getAccount(configPDA);
-	const newSize1 = rawAccount?.data.byteLength;
-	ll("newSize1:", newSize1);
+	const newLen1 = rawAccount?.data.byteLength;
+	ll("newLen1:", newLen1);
+	expect(newLen).toEqual(BigInt(newLen1!));
 });
 
 test("close configPDA", () => {

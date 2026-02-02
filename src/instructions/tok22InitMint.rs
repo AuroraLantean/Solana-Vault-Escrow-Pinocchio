@@ -4,8 +4,8 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
-  check_decimals_max, check_sysprog, data_len, executable, initialized, instructions::check_signer,
-  not_initialized, to10bytes, to32bytes, to6bytes, writable,
+  check_data_len, check_decimals_max, check_sysprog, executable, initialized,
+  instructions::check_signer, not_initialized, to10bytes, to32bytes, to6bytes, writable,
 };
 use pinocchio_token_2022::{instructions::InitializeMint, state::Mint};
 
@@ -63,8 +63,8 @@ impl<'a> Token2022InitMint<'a> {
     log!("Make Mint Account"); //payer and mint are both keypairs!
     CreateAccount {
       from: payer, //Keypair
-      to: mint,
-      owner: token_program.address(), //address("TokenXYZ");
+      to: mint,    //Keypair
+      owner: token_program.address(),
       lamports,
       space,
     }
@@ -79,39 +79,34 @@ impl<'a> Token2022InitMint<'a> {
       decimals,
       mint_authority: mint_authority.address(),
       freeze_authority: freeze_authority_opt,
-      token_program: &Address::from_str_const("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+      token_program: &token_program.address(),
     }
     .invoke()?;
 
-    //TODO: search "InitializeMetadataPointer solana token 2022" to add metadata: https://solana.com/docs/tokens/extensions/metadata
-    // Initialize MetadataPointer extension pointing to the Mint account
-    /*InitializeMetadataPointer {
+    /*TODO: add metadata:
+    https://solana.stackexchange.com/questions/16831/how-to-add-metadata-for-token-program
+    https://github.com/solana-foundation/anchor/blob/b6724d2bcbfb5531224057c49afaa4e8c50c5137/tests/spl/token-extensions/programs/token-extensions/src/instructions.rs#L31
+
+    https://solana.com/docs/tokens/extensions/metadata
+    Initialize MetadataPointer extension pointing to the Mint account
+    InitializeMetadataPointer {
       mint: mint_account,
       authority: Some(*payer.address()),
       metadata_address: Some(*mint_account.address()),
     }.invoke()?;
 
-        // Now initialize that account as a Token2022 Mint
-    InitializeMint2 {
-        mint: mint_account,
-        decimals: args.decimals,
-        mint_authority: mint_authority.address(),
-        freeze_authority: None,
-    }
-    .invoke(TokenProgramVariant::Token2022)?;
-
      //https://www.helius.dev/blog/pinocchio#how-is-pinocchio-more-performant-than-solana-program
 
      // Set the metadata within the Mint account
-     InitializeTokenMetadata {
-         metadata: mint,
-         update_authority: payer,
-         mint: mint,
-         mint_authority: payer,
-         name: &name,
-         symbol: &symbol,
-         uri: &uri,
-     }.invoke()?;*/
+    InitializeTokenMetadata {
+        metadata: mint,
+        update_authority: payer,
+        mint: mint,
+        mint_authority: payer,
+        name: &name,
+        symbol: &symbol,
+        uri: &uri,
+    }.invoke()?;*/
     Ok(())
   }
   pub fn init_if_needed(self) -> ProgramResult {
@@ -149,7 +144,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Token2022InitMint<'a> {
       None
     };
 
-    data_len(data, 49)?; //1+16+32=49
+    check_data_len(data, 49)?; //1+16+32=49
     let decimals = data[0];
     log!("decimals: {}", decimals);
     check_decimals_max(decimals, 18)?;

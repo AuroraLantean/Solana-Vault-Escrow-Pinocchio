@@ -3,8 +3,9 @@ use pinocchio::{error::ProgramError, AccountView, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
-  check_ata22, check_mint22b, check_sysprog, data_len, executable, instructions::check_signer,
-  none_zero_u64, parse_u64, rent_exempt_mint22, rent_exempt_tokacct22, writable,
+  check_ata22, check_data_len, check_mint22b, check_sysprog, executable,
+  instructions::check_signer, none_zero_u64, parse_u64, rent_exempt_mint22, rent_exempt_tokacct22,
+  writable,
 };
 
 /// Token2022 Mint Tokens
@@ -95,7 +96,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Token2022MintToken<'a> {
     //check_pda(config_pda)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
-    data_len(data, 9)?;
+    check_data_len(data, 9)?;
     let decimals = data[0];
     let amount = parse_u64(&data[1..])?;
     log!("decimals: {}, amount: {}", decimals, amount);

@@ -11,7 +11,7 @@ pub const VAULT_SIZE: usize = ACCOUNT_DISCRIMINATOR_SIZE + size_of::<u64>(); //S
 #[derive(Clone, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct Config {
-  mint0: Address,         // 32
+  mint0: Address,         // 32 bytes
   mint1: Address,         // 32
   mint2: Address,         // 32
   mint3: Address,         // 32
@@ -27,10 +27,11 @@ pub struct Config {
   status: u8,             // 1
   vault_bump: u8,         // 1
   bump: u8,               // 1
-} // padding: [u8; 6] since the struct size needs to be aligned to 32 bytes.
+                          //expected_len: [u8; 4],  // 4 for u32
+} // padding: [u8; 6] if the struct size needs to be aligned to 32 bytes.
 
 impl Config {
-  pub const LEN: usize = core::mem::size_of::<Self>();
+  pub const INIT_LEN: usize = core::mem::size_of::<Self>();
   pub const SEED: &[u8] = b"config";
   //Getters or Accessors: Safe Direct value copy, no reference created
   pub fn mint0(&self) -> &Address {
@@ -84,6 +85,9 @@ impl Config {
   pub fn updated_at(&self) -> u32 {
     u32::from_le_bytes(self.updated_at)
   }
+  /*pub fn expected_len(&self) -> u32 {
+    u32::from_le_bytes(self.expected_len)
+  }*/
   /* pub fn close_authority(&self) -> Option<&Address> {
       if self.has_close_authority() {
           Some(self.close_authority_unchecked())
@@ -91,23 +95,19 @@ impl Config {
           None
       }
   }*/
-  //----------== read
-  pub fn check(pda: &AccountView) -> ProgramResult {
-    if pda.data_len() != Self::LEN {
+  //----------== Load from AccountView
+  /* check() is replaced by check_pda
+  pub fn check(&self, pda: &AccountView) -> ProgramResult {
+    if pda.data_len() != Self::expected_len(&self) as usize {
       return Ee::ConfigDataLengh.e();
     }
-    unsafe {
-      if pda.owner().ne(&PROG_ADDR) {
-        return Ee::ConfigIsForeign.e();
-      }
-    }
+    //if pda.data_len() != Self::LEN {}
     // CHECK alignment for the most restrictive field (u64 in this case)... Alignment requirement checking can be removed ONLY IF you know all numbers are using u8 arrays
     /*if (pda.borrow_mut_data_unchecked().as_ptr() as usize) % core::mem::align_of::<Self>() != 0 { return Err();  }*/
     Ok(())
-  }
-  //better to use setters below
+  }*/
+  //For Config PDA
   pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
-    Self::check(pda)?;
     unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
     /*Ok(Ref::map(account_info.try_borrow_data()?, |data| unsafe {
         Self::from_bytes_unchecked(data)
@@ -116,7 +116,6 @@ impl Config {
   //Must: there are no mutable borrows of the account data
   #[inline]
   pub unsafe fn from_account_info_unchecked(pda: &AccountView) -> Result<&Self, ProgramError> {
-    Self::check(pda)?;
     Ok(Self::from_bytes_unchecked(pda.borrow_unchecked_mut()))
     //Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self))
   }
@@ -300,6 +299,7 @@ impl Escrow {
     }
     Ok(())
   }
+  //For Escrow PDA
   pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
     Self::check(pda)?;
     unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }

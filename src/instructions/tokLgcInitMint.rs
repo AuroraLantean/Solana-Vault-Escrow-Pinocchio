@@ -4,8 +4,8 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
-  check_decimals_max, check_sysprog, data_len, executable, initialized, instructions::check_signer,
-  not_initialized, writable,
+  check_data_len, check_decimals_max, check_sysprog, executable, initialized,
+  instructions::check_signer, not_initialized, writable,
 };
 use pinocchio_token::{instructions::InitializeMint, state::Mint};
 
@@ -99,7 +99,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitMint<'a> {
       None
     };
 
-    data_len(data, 1)?;
+    check_data_len(data, 1)?;
     let decimals = data[0];
     log!("decimals: {}", decimals);
     check_decimals_max(decimals, 18)?;

@@ -3,8 +3,8 @@ use pinocchio::{error::ProgramError, AccountView, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
-  ata_balc, check_ata, check_atoken_gpvbd, check_decimals, check_mint0a, check_sysprog,
-  check_vault, data_len, executable, instructions::check_signer, none_zero_u64, parse_u64,
+  ata_balc, check_ata, check_atoken_gpvbd, check_data_len, check_decimals, check_mint0a,
+  check_sysprog, check_vault, executable, instructions::check_signer, none_zero_u64, parse_u64,
   rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee,
 };
 
@@ -98,7 +98,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcPay<'a> {
     log!("TokLgcPay try_from 5");
 
     //1+8: u8 takes 1, u64 takes 8 bytes
-    data_len(data, 9)?;
+    check_data_len(data, 9)?;
     let decimals = data[0];
     let amount = parse_u64(&data[1..])?;
     log!("decimals: {}, amount: {}", decimals, amount);

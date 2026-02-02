@@ -95,8 +95,8 @@ pub enum Ee {
   Xyz037,
   #[error("Xyz038")]
   Xyz038,
-  #[error("Xyz039")]
-  Xyz039,
+  #[error("NewAccountSize")]
+  NewAccountSize,
   //Inputs
   #[error("InputDataLen")]
   InputDataLen,
@@ -301,7 +301,7 @@ impl TryFrom<u32> for Ee {
       36 => Ok(Ee::Xyz036),
       37 => Ok(Ee::Xyz037),
       38 => Ok(Ee::Xyz038),
-      39 => Ok(Ee::Xyz039),
+      39 => Ok(Ee::NewAccountSize),
       40 => Ok(Ee::InputDataLen),
       41 => Ok(Ee::InputDataBump),
       42 => Ok(Ee::ByteForBool),
@@ -419,7 +419,7 @@ impl ToStr for Ee {
       Ee::Xyz036 => "Xyz036",
       Ee::Xyz037 => "Xyz037",
       Ee::Xyz038 => "Xyz038",
-      Ee::Xyz039 => "Xyz039",
+      Ee::NewAccountSize => "NewAccountSize",
 
       Ee::InputDataLen => "InputDataLen",
       Ee::InputDataBump => "InputDataBump",
@@ -750,7 +750,6 @@ pub fn get_rent_exempt(
     return Err(ProgramError::UninitializedAccount);
   }
   let rent = Rent::from_account_view(rent_sysvar)?;
-  //let rent = Rent::from_account_view(account)?;
   let min_lam = rent.try_minimum_balance(data_len)?;
   log!("rent_exempt: {}", min_lam);
   Ok(min_lam)
@@ -814,7 +813,7 @@ pub fn empty_data(account: &AccountView) -> ProgramResult {
 }
 
 //----------------== Check Input Values
-pub fn data_len(data: &[u8], expected: usize) -> ProgramResult {
+pub fn check_data_len(data: &[u8], expected: usize) -> ProgramResult {
   if data.len() != expected {
     return Ee::InputDataLen.e();
   }

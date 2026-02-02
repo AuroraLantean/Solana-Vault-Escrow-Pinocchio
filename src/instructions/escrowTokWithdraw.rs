@@ -8,9 +8,9 @@ use pinocchio_log::log;
 use pinocchio_token::state::TokenAccount;
 
 use crate::{
-  check_ata, check_atoken_gpvbd, check_decimals, check_mint0a, check_sysprog, data_len, executable,
-  instructions::check_signer, none_zero_u64, rent_exempt_mint, rent_exempt_tokacct, writable,
-  Config, Ee, Escrow,
+  check_ata, check_atoken_gpvbd, check_data_len, check_decimals, check_mint0a, check_sysprog,
+  executable, instructions::check_signer, none_zero_u64, rent_exempt_mint, rent_exempt_tokacct,
+  writable, Config, Ee, Escrow,
 };
 //TODO: add Token2022 interface
 /// Make Withdraw Escrow Token Y
@@ -215,7 +215,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokWithdraw<'a> {
     log!("EscrowTokWithdraw try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
-    data_len(data, 0)?;
+    check_data_len(data, 0)?;
 
     let [maker, maker_ata_x, maker_ata_y, escrow_ata_x, escrow_ata_y, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program, rent_sysvar] =
       accounts

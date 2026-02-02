@@ -1,66 +1,55 @@
-use core::convert::TryFrom;
-use pinocchio::{
-  cpi::{Seed, Signer},
-  error::ProgramError,
-  AccountView, ProgramResult,
-};
-use pinocchio_log::log;
-use pinocchio_system::instructions::Allocate;
-
 use crate::{
-  check_pda, data_len, instructions::check_signer, none_zero_u64, parse_u64, writable, Config,
+  check_data_len, check_pda, get_rent_exempt, instructions::check_signer, none_zero_u64, parse_u64,
+  writable, Config,
 };
+use core::convert::TryFrom;
+use pinocchio::{error::ProgramError, AccountView, ProgramResult};
+use pinocchio_log::log;
+use pinocchio_system::instructions::Transfer as SystemTransfer;
 
 /// Close PDA
 pub struct ConfigResize<'a> {
   pub authority: &'a AccountView,
   pub config_pda: &'a AccountView,
-  pub first_prog_owner: &'a AccountView,
   pub system_program: &'a AccountView,
-  pub new_size: u64,
-  pub bump: u8,
+  pub rent_sysvar: &'a AccountView,
+  pub new_len: usize,
 }
 impl<'a> ConfigResize<'a> {
   pub const DISCRIMINATOR: &'a u8 = &19;
 
   pub fn process(self) -> ProgramResult {
     let ConfigResize {
-      authority: _,
+      authority,
       config_pda,
-      first_prog_owner,
       system_program: _,
-      new_size,
-      bump,
+      rent_sysvar,
+      new_len,
     } = self;
     log!("ConfigResize process()");
-    let seeds = [
-      Seed::from(Config::SEED),
-      Seed::from(first_prog_owner.address().as_ref()),
-      Seed::from(core::slice::from_ref(&bump)),
-    ];
-    let seed_signer = Signer::from(&seeds);
-    log!("ConfigResize allocate()");
-    Allocate {
-      account: config_pda,
-      space: new_size,
-    }
-    .invoke_signed(&[seed_signer])?;
+    config_pda.resize(new_len)?;
 
-    // AllocateWithSeed {
-    //   account: config_pda,
-    //   base: authority,
-    //   seed: "config",
-    //   space: new_size,
-    //   owner: &PROG_ADDR,
-    // }
-    // .invoke()?;
-    // Realloc {
-    //   account: config_pda,
-    //   space: new_size,
-    //   payer: authority,
-    //   system_program: system_program,
-    // }
-    // .invoke()?;
+    log!("ConfigResize 1");
+    let min_lamport = get_rent_exempt(config_pda, rent_sysvar, new_len)?;
+
+    let prev_lamport = config_pda.lamports();
+    if min_lamport > prev_lamport {
+      log!("deposit lamports");
+      SystemTransfer {
+        from: authority,
+        to: config_pda,
+        lamports: min_lamport - prev_lamport,
+      }
+      .invoke()?;
+    } else if min_lamport < prev_lamport {
+      log!("withdraw lamports");
+      SystemTransfer {
+        from: config_pda,
+        to: authority,
+        lamports: prev_lamport - min_lamport,
+      }
+      .invoke()?;
+    }
     Ok(())
   }
 }
@@ -71,9 +60,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for ConfigResize<'a> {
     log!("ConfigResize try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
-    data_len(data, 8)?;
+    check_data_len(data, 8)?;
 
-    let [authority, config_pda, first_prog_owner, system_program] = accounts else {
+    let [authority, config_pda, system_program, rent_sysvar] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(authority)?;
@@ -82,21 +71,23 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for ConfigResize<'a> {
 
     config_pda.check_borrow_mut()?;
     let config: &mut Config = Config::from_account_view(&config_pda)?;
-    // if config.admin().ne(authority.key()) && config.prog_owner().ne(authority.key()) {
-    //   return Err(ProgramError::IncorrectAuthority);
-    // }
-    let new_size = parse_u64(&data[0..8])?;
-    let bump = config.bump(); //data[9];
-    log!("new_size: {}", new_size);
-    none_zero_u64(new_size)?;
+    if config.admin().ne(authority.address()) && config.prog_owner().ne(authority.address()) {
+      return Err(ProgramError::IncorrectAuthority);
+    }
+    let new_len = parse_u64(&data[0..8])?;
+    //let bump = config.bump(); //data[9];
+    log!("new_len: {}", new_len);
+    none_zero_u64(new_len)?;
+    //if new_len == old_len => returns Ok(())
+    //if new_len < old_len => truncates
+    //if new_len - old_len > MAX_PERMITTED_DATA_INCREASE => InvalidRealloc
 
     Ok(Self {
       authority,
       config_pda,
-      first_prog_owner,
       system_program,
-      new_size,
-      bump,
+      rent_sysvar,
+      new_len: new_len as usize,
     })
   }
 }
