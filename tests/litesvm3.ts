@@ -19,6 +19,7 @@ import {
 	setMint,
 	svm,
 	updateConfig,
+	updateConfig2,
 	vault1,
 	vaultO,
 } from "./litesvm-utils";
@@ -137,7 +138,6 @@ test("InitConfig", () => {
 test("updateConfig + time travel", () => {
 	ll("\n------== updateConfig + time travel");
 	ll(`configPDA: ${configPDA}`);
-	ll("vault1:", vault1.toBase58());
 	signerKp = ownerKp;
 	const acct1 = admin;
 	const acct2 = admin;
@@ -232,6 +232,72 @@ test("Read Config2", () => {
 	expect(decoded.status).toEqual(status);
 	expect(decoded.bump).toEqual(configBump);
 	expect(decoded.newU32).toEqual(0);
+});
+
+test("updateConfig2", () => {
+	ll("\n------== updateConfig2");
+	ll(`configPDA: ${configPDA}`);
+	signerKp = ownerKp;
+	const acct1 = admin;
+	const acct2 = admin;
+	fee = 123000000n;
+	//const fee2 = bytesToBigint(bigintToBytes(fee));	ll("fee2:", fee2);
+	isAuthorized = true;
+	status = Status.Paused;
+	str = "MoonDog to the Jupiter!";
+	funcSelector = 3; //0 status, 1 fee, 2 admin, 3 newU32
+
+	bytes4bools = [0, 0, 0, 0];
+	bytes4u8s = [funcSelector, statusToByte(status), 0, 0];
+	tokenAmount = as9zBn(274);
+	const newU32 = 432901;
+	bytes4u32s = [
+		...bigintToBytes(newU32, 32),
+		...u32Bytes,
+		...u32Bytes,
+		...u32Bytes,
+	];
+	bytes4u64s = [
+		...bigintToBytes(fee),
+		...bigintToBytes(tokenAmount),
+		...u64Bytes,
+		...u64Bytes,
+	];
+
+	updateConfig2(
+		bytes4bools,
+		bytes4u8s,
+		bytes4u32s,
+		bytes4u64s,
+		acct1,
+		acct2,
+		str,
+		signerKp,
+	);
+
+	const pdaRaw = svm.getAccount(configPDA);
+	expect(pdaRaw).not.toBeNull();
+	const rawAccountData = pdaRaw?.data;
+	ll("rawAccountData:", rawAccountData);
+	expect(pdaRaw?.owner).toEqual(vaultProgAddr);
+
+	const decoded = solanaKitDecodeConfig2Dev(rawAccountData);
+	expect(decoded.mint0).toEqual(mints[0]!);
+	expect(decoded.mint1).toEqual(mints[1]!);
+	expect(decoded.mint2).toEqual(mints[2]!);
+	expect(decoded.mint3).toEqual(mints[3]!);
+	expect(decoded.vault).toEqual(vaultO);
+	expect(decoded.progOwner).toEqual(progOwner);
+	expect(decoded.admin).toEqual(admin);
+	expect(decoded.str).toEqual(str);
+	expect(decoded.fee).toEqual(fee);
+	expect(decoded.solBalance).toEqual(0n);
+	expect(decoded.tokenBalance).toEqual(0n);
+	expect(decoded.updatedAt).toEqual(time);
+	expect(decoded.isAuthorized).toEqual(isAuthorized);
+	expect(decoded.status).toEqual(status);
+	expect(decoded.bump).toEqual(configBump);
+	expect(decoded.newU32).toEqual(newU32);
 });
 
 test("close configPDA", () => {

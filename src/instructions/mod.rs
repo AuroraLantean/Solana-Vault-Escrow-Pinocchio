@@ -3,7 +3,7 @@
 #[allow(non_snake_case)]
 pub mod closeConfig;
 #[allow(non_snake_case)]
-pub mod config2Write;
+pub mod config2Update;
 #[allow(non_snake_case)]
 pub mod configResize;
 #[allow(non_snake_case)]
@@ -46,7 +46,7 @@ pub mod withdrawSol;
 
 //file names start with a lower case + Camel cases, but struct names start with Upper case + Camel cases!
 pub use closeConfig::*;
-pub use config2Write::*;
+pub use config2Update::*;
 pub use configResize::*;
 pub use depositSol::*;
 pub use escrowTokCancel::*;
@@ -327,10 +327,16 @@ pub enum ProgramIx {
 
   /// 20 Write to Config2 PDA
   #[account(0, signer, writable, name = "authority", desc = "Authority")]
-  #[account(1, writable, name = "config_pda", desc = "PDA")]
-  #[account(2, name = "system_program", desc = "System Program")]
-  #[account(3, name = "rent_sysvar", desc = "RentSysvar")]
-  Config2Write { new_u32: u32 },
+  #[account(1, writable, name = "config_pda", desc = "Config PDA")]
+  #[account(2, name = "account1", desc = "Account1")]
+  #[account(3, name = "account2", desc = "Account2")]
+  Config2Update {
+    bools: [u8; 4],
+    u8s: [u8; 4],
+    u32s: [u32; 4],
+    u64s: [u64; 4],
+    str_u8: [u8; 32],
+  },
   //---------------== Admin PDA
   //---------------== User PDA
   //---------------== Action PDA

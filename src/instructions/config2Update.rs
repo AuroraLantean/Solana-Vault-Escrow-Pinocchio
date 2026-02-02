@@ -1,15 +1,14 @@
+use crate::{
+  check_data_len, check_pda, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
+  u8_to_bool, u8_to_status, writable, Config2, Ee,
+};
 use core::convert::TryFrom;
 use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
 use pinocchio_log::log;
 
-use crate::{
-  check_data_len, check_pda, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
-  u8_to_bool, u8_to_status, writable, Config, Ee,
-};
-
-/// Update Config PDA
-pub struct UpdateConfig<'a> {
-  pub signer: &'a AccountView,
+/// Config2Update
+pub struct Config2Update<'a> {
+  pub authority: &'a AccountView,
   pub config_pda: &'a AccountView,
   pub account1: &'a Address,
   pub account2: &'a Address,
@@ -18,94 +17,89 @@ pub struct UpdateConfig<'a> {
   pub u32s: [u32; 4],
   pub u64s: [u64; 4],
   pub str_u8array: [u8; 32],
-  pub config: &'a mut Config,
+  pub config2: &'a mut Config2,
 }
-impl<'a> UpdateConfig<'a> {
-  pub const DISCRIMINATOR: &'a u8 = &13;
+impl<'a> Config2Update<'a> {
+  pub const DISCRIMINATOR: &'a u8 = &20;
 
   pub fn process(self) -> ProgramResult {
-    log!("UpdateConfig process()");
+    log!("UpdateConfig2 process()");
     match self.u8s[0] {
       0 => self.update_status(),
       1 => self.update_fee(),
       2 => self.update_admin(),
+      3 => self.update_new_u32(),
       _ => Ee::FunctionSelector.e(),
     }
   }
 
   pub fn add_tokens(self) -> ProgramResult {
     log!("UpdateConfig add_tokens()");
-    let mutated_state = (self.config.token_balance())
+    let mutated_state = (self.config2.token_balance())
       .checked_add(self.u64s[1])
       .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
-    self.config.set_token_balance(mutated_state);
+    self.config2.set_token_balance(mutated_state);
     Ok(())
   }
 
   pub fn update_status(self) -> ProgramResult {
     log!("UpdateConfig update_status()");
-    self.config.set_status(self.u8s[1]);
+    self.config2.set_status(self.u8s[1]);
     Ok(())
   }
 
+  pub fn update_new_u32(self) -> ProgramResult {
+    log!("UpdateConfig update_new_u32()");
+    self.config2.set_new_u32(self.u32s[0]);
+    self.config2.set_str_u8array(self.str_u8array);
+    Ok(())
+  }
   pub fn update_fee(self) -> ProgramResult {
     log!("UpdateConfig update_fee()");
     let fee = self.u64s[0];
-    self.config.set_fee(fee)?;
+    self.config2.set_fee(fee)?;
     let time = get_time()?;
-    self.config.set_updated_at(time);
+    self.config2.set_updated_at(time);
 
-    self.config.set_status(self.u8s[1]);
-    self.config.set_str_u8array(self.str_u8array);
+    self.config2.set_status(self.u8s[1]);
 
-    self.config.set_admin(&self.account1);
+    self.config2.set_admin(&self.account1);
     //self.add_tokens()?;
     Ok(())
   }
   pub fn only_owner(&self) -> ProgramResult {
-    if self.config.prog_owner() != self.signer.address() {
+    if self.config2.prog_owner() != self.authority.address() {
       return Ee::OnlyProgOwner.e();
     }
     Ok(())
   }
   pub fn update_admin(self) -> ProgramResult {
     self.only_owner()?;
-    self.config.set_admin(self.account1);
+    self.config2.set_admin(self.account1);
     Ok(())
   }
   pub fn update_prog_owner(self) -> ProgramResult {
     self.only_owner()?;
-    self.config.set_prog_owner(self.account1);
+    self.config2.set_prog_owner(self.account1);
     Ok(())
   }
 }
-impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for UpdateConfig<'a> {
+impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Config2Update<'a> {
   type Error = ProgramError;
 
   fn try_from(value: (&'a [u8], &'a [AccountView])) -> Result<Self, Self::Error> {
-    log!("UpdateConfig try_from");
+    log!("Config2Update try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
     let data_size1 = 88;
     check_data_len(data, data_size1)?; //56+32
 
-    let [signer, config_pda, account1, account2] = accounts else {
+    let [authority, config_pda, account1, account2] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
-    log!("check accounts");
-    check_signer(signer)?;
+    check_signer(authority)?;
     writable(config_pda)?;
     check_pda(config_pda)?;
-
-    /* check minimum data size in try_from!
-    u32size = core::mem::size_of::<u32>();//4
-    u64size = core::mem::size_of::<u64>();//8
-    let expected_size = 8 + u32size * 4 + u64size * 4; // 8 + 4*4+ 8*4 = 56
-    let expected_size: usize = 56;
-    log!("expected_size: {}", expected_size);
-    if data.len() != expected_size {
-      return Ee::InputDataLen.e();
-    }*/
 
     log!("parse booleans");
     let b0 = u8_to_bool(data[0])?;
@@ -139,18 +133,20 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for UpdateConfig<'a> {
     let str_u8array = *to32bytes(&data[56..data_size1])?;
     log!("str_u8array: {}", &str_u8array);
 
+    //let bump = config2.bump(); //data[9];
+
     //check Status input range
     let _status = u8_to_status(u8s[1])?;
 
     config_pda.check_borrow_mut()?;
-    let config: &mut Config = Config::from_account_view(&config_pda)?;
+    let config2: &mut Config2 = Config2::from_account_view(&config_pda)?;
 
-    if config.admin().ne(signer.address()) && config.prog_owner().ne(signer.address()) {
+    if config2.admin().ne(authority.address()) && config2.prog_owner().ne(authority.address()) {
       return Err(ProgramError::IncorrectAuthority);
     }
-    // cannot use self in "0 => Self.process(),
+
     Ok(Self {
-      signer,
+      authority,
       config_pda,
       account1: account1.address(),
       account2: account2.address(),
@@ -159,13 +155,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for UpdateConfig<'a> {
       u32s,
       u64s,
       str_u8array,
-      config,
+      config2,
     })
   }
 }
-/*match self.datalen as usize {
-  len if len == size_of::<UpdateConfigStatus>() => self.update_status()?,
-  len if len == size_of::<UpdateConfigFee>() => self.update_fee()?,
-  len if len == size_of::<UpdateConfigAdmin>() => self.update_admin()?,
-  _ => return Err(..),
-} */
