@@ -3,6 +3,8 @@
 #[allow(non_snake_case)]
 pub mod closeConfig;
 #[allow(non_snake_case)]
+pub mod config2Write;
+#[allow(non_snake_case)]
 pub mod configResize;
 #[allow(non_snake_case)]
 pub mod depositSol;
@@ -44,6 +46,7 @@ pub mod withdrawSol;
 
 //file names start with a lower case + Camel cases, but struct names start with Upper case + Camel cases!
 pub use closeConfig::*;
+pub use config2Write::*;
 pub use configResize::*;
 pub use depositSol::*;
 pub use escrowTokCancel::*;
