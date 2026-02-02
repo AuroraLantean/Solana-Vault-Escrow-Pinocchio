@@ -103,7 +103,7 @@ export const solanaKitDecodeConfig = (
 	return decoded;
 };
 // This below is only used for testing as it is outputing PublicKey, not Address
-export const solanaKitDecodeDev = (
+export const solanaKitDecodeConfigDev = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
 ) => {
 	if (!bytes) throw new Error("bytes invalid");
@@ -143,6 +143,118 @@ export type ConfigAcctDev = {
 	isAuthorized: boolean;
 	status: Status;
 	bump: number;
+};
+//---------------== Config2PDA
+export type Config2Acct = {
+	mint0: Address;
+	mint1: Address;
+	mint2: Address;
+	mint3: Address;
+	vault: Address;
+	progOwner: Address;
+	admin: Address;
+	str: string;
+	fee: bigint;
+	solBalance: bigint;
+	tokenBalance: bigint;
+	updatedAt: number;
+	isAuthorized: boolean;
+	status: Status;
+	vaultBump: number;
+	bump: number;
+	newU32: number;
+};
+export const config2AcctDecoder: FixedSizeDecoder<Config2Acct> =
+	getStructDecoder([
+		//["discriminator", fixDecoderSize(getBytesDecoder(), 4)],//only for accounts made by Anchor
+		["mint0", getAddressDecoder()],
+		["mint1", getAddressDecoder()],
+		["mint2", getAddressDecoder()],
+		["mint3", getAddressDecoder()],
+		["vault", getAddressDecoder()],
+		["progOwner", getAddressDecoder()],
+		["admin", getAddressDecoder()],
+		["str", fixDecoderSize(getUtf8Decoder(), 32)],
+		["fee", getU64Decoder()],
+		["solBalance", getU64Decoder()],
+		["tokenBalance", getU64Decoder()],
+		["updatedAt", getU32Decoder()],
+		["isAuthorized", getBooleanDecoder()],
+		["status", getEnumDecoder(Status)],
+		//https://github.com/anza-xyz/kit/tree/main/packages/codecs-data-structures#enum-codec
+		["vaultBump", getU8Decoder()],
+		["bump", getU8Decoder()],
+		["newU32", getU32Decoder()],
+		//["padding", getArrayDecoder(getU64Decoder(), { size: 3 })],
+	]);
+export const solanaKitDecodeConfig2 = (
+	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike>,
+	isVerbose = false,
+) => {
+	const decoded = config2AcctDecoder.decode(bytes);
+	if (isVerbose) {
+		ll("mint0:", decoded.mint0);
+		ll("mint1:", decoded.mint1);
+		ll("mint2:", decoded.mint2);
+		ll("mint3:", decoded.mint3);
+		ll("vault:", decoded.vault);
+		ll("progOwner:", decoded.progOwner);
+		ll("admin:", decoded.admin);
+		ll("str:", decoded.str);
+		ll("fee:", decoded.fee);
+		ll("solBalance:", decoded.solBalance);
+		ll("tokenBalance:", decoded.tokenBalance);
+		ll("updatedAt:", decoded.updatedAt);
+		ll("isAuthorized:", decoded.isAuthorized);
+		ll("status:", decoded.status);
+		ll("bump:", decoded.bump);
+		ll("newU32:", decoded.newU32);
+	}
+	return decoded;
+};
+// This below is only used for testing as it is outputing PublicKey, not Address
+export const solanaKitDecodeConfig2Dev = (
+	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
+) => {
+	if (!bytes) throw new Error("bytes invalid");
+	const decoded = solanaKitDecodeConfig2(bytes, true);
+	const decodedV1: Config2AcctDev = {
+		mint0: new PublicKey(decoded.mint0.toString()),
+		mint1: new PublicKey(decoded.mint1.toString()),
+		mint2: new PublicKey(decoded.mint2.toString()),
+		mint3: new PublicKey(decoded.mint3.toString()),
+		vault: new PublicKey(decoded.vault.toString()),
+		progOwner: new PublicKey(decoded.progOwner.toString()),
+		admin: new PublicKey(decoded.admin.toString()),
+		str: decoded.str,
+		fee: decoded.fee,
+		solBalance: decoded.solBalance,
+		tokenBalance: decoded.tokenBalance,
+		updatedAt: decoded.updatedAt,
+		isAuthorized: decoded.isAuthorized,
+		status: decoded.status,
+		bump: decoded.bump,
+		newU32: decoded.newU32,
+	};
+	return decodedV1;
+};
+export type Config2AcctDev = {
+	mint0: PublicKey;
+	mint1: PublicKey;
+	mint2: PublicKey;
+	mint3: PublicKey;
+	vault: PublicKey;
+	progOwner: PublicKey;
+	admin: PublicKey;
+	str: string;
+	fee: bigint;
+	solBalance: bigint;
+	tokenBalance: bigint;
+	updatedAt: number;
+	isAuthorized: boolean;
+	status: Status;
+	bump: number;
+	newU32: number;
 };
 //---------------== EscrowPDA
 //converted from Rust code. XyzAcct, xyzAcctDecoder, DecodedXyzAcct should all match in field order and types!

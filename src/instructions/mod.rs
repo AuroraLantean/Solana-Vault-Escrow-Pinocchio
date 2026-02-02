@@ -317,12 +317,20 @@ pub enum ProgramIx {
   #[account(12, name = "rent_sysvar", desc = "RentSysvar")]
   EscrowTokCancel {},
 
+  //---------------== Config PDA
   /// 19 Resize Config PDA
   #[account(0, signer, writable, name = "authority", desc = "Authority")]
   #[account(1, writable, name = "config_pda", desc = "PDA")]
   #[account(2, name = "system_program", desc = "System Program")]
   #[account(3, name = "rent_sysvar", desc = "RentSysvar")]
   ConfigResize { new_size: u64 },
+
+  /// 20 Write to Config2 PDA
+  #[account(0, signer, writable, name = "authority", desc = "Authority")]
+  #[account(1, writable, name = "config_pda", desc = "PDA")]
+  #[account(2, name = "system_program", desc = "System Program")]
+  #[account(3, name = "rent_sysvar", desc = "RentSysvar")]
+  Config2Write { new_u32: u32 },
   //---------------== Admin PDA
   //---------------== User PDA
   //---------------== Action PDA
