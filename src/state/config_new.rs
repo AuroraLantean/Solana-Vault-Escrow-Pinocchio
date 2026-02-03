@@ -88,6 +88,9 @@ impl Config2 {
   pub fn new_u64(&self) -> u64 {
     u64::from_le_bytes(self.new_u64)
   }
+  pub fn new_account1(&self) -> &Address {
+    &self.new_account1
+  }
   //----------== Load from AccountView
   //For Config2 PDA
   pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
@@ -97,17 +100,17 @@ impl Config2 {
     })) */
   }
   //----------== Setters
-  pub fn set_mint0(&mut self, pkey: &Address) {
-    self.mint0 = pkey.clone();
+  pub fn set_mint0(&mut self, addr: &Address) {
+    self.mint0 = addr.clone();
   }
-  pub fn set_mint1(&mut self, pkey: &Address) {
-    self.mint1 = pkey.clone();
+  pub fn set_mint1(&mut self, addr: &Address) {
+    self.mint1 = addr.clone();
   }
-  pub fn set_mint2(&mut self, pkey: &Address) {
-    self.mint2 = pkey.clone();
+  pub fn set_mint2(&mut self, addr: &Address) {
+    self.mint2 = addr.clone();
   }
-  pub fn set_mint3(&mut self, pkey: &Address) {
-    self.mint3 = pkey.clone();
+  pub fn set_mint3(&mut self, addr: &Address) {
+    self.mint3 = addr.clone();
   }
   pub fn set_mints(&mut self, mints: [&Address; 4]) {
     self.mint0 = mints[0].clone();
@@ -115,14 +118,14 @@ impl Config2 {
     self.mint2 = mints[2].clone();
     self.mint3 = mints[3].clone();
   }
-  pub fn set_vault(&mut self, pkey: &Address) {
-    self.vault = pkey.clone();
+  pub fn set_vault(&mut self, addr: &Address) {
+    self.vault = addr.clone();
   }
-  pub fn set_prog_owner(&mut self, pkey: &Address) {
-    self.prog_owner = pkey.clone();
+  pub fn set_prog_owner(&mut self, addr: &Address) {
+    self.prog_owner = addr.clone();
   }
-  pub fn set_admin(&mut self, pkey: &Address) {
-    self.admin = pkey.clone();
+  pub fn set_admin(&mut self, addr: &Address) {
+    self.admin = addr.clone();
   }
   pub fn set_str_u8array(&mut self, str_u8array: [u8; 32]) {
     self.str_u8array = str_u8array;
@@ -158,5 +161,8 @@ impl Config2 {
   }
   pub fn set_new_u64(&mut self, amt: u64) {
     self.new_u64 = amt.to_le_bytes();
+  }
+  pub fn set_new_account1(&mut self, addr: &Address) {
+    self.new_account1 = addr.clone();
   }
 }

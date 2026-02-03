@@ -38,11 +38,13 @@ import {
 	owner,
 	ownerKp,
 	pyusdMint,
+	SYSTEM_PROGRAM,
 	usdcMint,
 	usdgMint,
 	usdtMint,
 	user1,
 	user1Kp,
+	user2,
 	vaultProgAddr,
 } from "./web3jsSetup";
 
@@ -232,14 +234,17 @@ test("Read Config2", () => {
 	expect(decoded.status).toEqual(status);
 	expect(decoded.bump).toEqual(configBump);
 	expect(decoded.newU32).toEqual(0);
+	expect(decoded.newU64).toEqual(0n);
+	expect(decoded.newAccount1).toEqual(SYSTEM_PROGRAM);
 });
 
 test("updateConfig2", () => {
 	ll("\n------== updateConfig2");
 	ll(`configPDA: ${configPDA}`);
 	signerKp = ownerKp;
-	const acct1 = admin;
-	const acct2 = admin;
+	//signerKp = user1Kp;
+	const acct1 = user1;
+	const acct2 = user2;
 	isAuthorized = true;
 	status = Status.Paused;
 	str = "MoonDog to the Jupiter!";
@@ -298,6 +303,7 @@ test("updateConfig2", () => {
 	expect(decoded.bump).toEqual(configBump);
 	expect(decoded.newU32).toEqual(newU32);
 	expect(decoded.newU64).toEqual(newU64);
+	expect(decoded.newAccount1).toEqual(acct1);
 });
 
 test("close configPDA", () => {

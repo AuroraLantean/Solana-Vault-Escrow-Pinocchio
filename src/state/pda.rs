@@ -127,17 +127,17 @@ impl Config {
     &*(bytes.as_ptr() as *const &Config)
   }
   //----------== Setters
-  pub fn set_mint0(&mut self, pkey: &Address) {
-    self.mint0 = pkey.clone();
+  pub fn set_mint0(&mut self, addr: &Address) {
+    self.mint0 = addr.clone();
   }
-  pub fn set_mint1(&mut self, pkey: &Address) {
-    self.mint1 = pkey.clone();
+  pub fn set_mint1(&mut self, addr: &Address) {
+    self.mint1 = addr.clone();
   }
-  pub fn set_mint2(&mut self, pkey: &Address) {
-    self.mint2 = pkey.clone();
+  pub fn set_mint2(&mut self, addr: &Address) {
+    self.mint2 = addr.clone();
   }
-  pub fn set_mint3(&mut self, pkey: &Address) {
-    self.mint3 = pkey.clone();
+  pub fn set_mint3(&mut self, addr: &Address) {
+    self.mint3 = addr.clone();
   }
   pub fn set_mints(&mut self, mints: [&Address; 4]) {
     self.mint0 = mints[0].clone();
@@ -145,14 +145,14 @@ impl Config {
     self.mint2 = mints[2].clone();
     self.mint3 = mints[3].clone();
   }
-  pub fn set_vault(&mut self, pkey: &Address) {
-    self.vault = pkey.clone();
+  pub fn set_vault(&mut self, addr: &Address) {
+    self.vault = addr.clone();
   }
-  pub fn set_prog_owner(&mut self, pkey: &Address) {
-    self.prog_owner = pkey.clone();
+  pub fn set_prog_owner(&mut self, addr: &Address) {
+    self.prog_owner = addr.clone();
   }
-  pub fn set_admin(&mut self, pkey: &Address) {
-    self.admin = pkey.clone();
+  pub fn set_admin(&mut self, addr: &Address) {
+    self.admin = addr.clone();
   }
   pub fn set_str_u8array(&mut self, str_u8array: [u8; 32]) {
     self.str_u8array = str_u8array;
@@ -256,14 +256,14 @@ impl Escrow {
   pub fn bump(&self) -> u8 {
     self.bump
   }
-  pub fn set_maker(&mut self, pkey: &Address) {
-    self.maker = pkey.clone();
+  pub fn set_maker(&mut self, addr: &Address) {
+    self.maker = addr.clone();
   }
-  pub fn set_mint_x(&mut self, pkey: &Address) {
-    self.mint_x = pkey.clone();
+  pub fn set_mint_x(&mut self, addr: &Address) {
+    self.mint_x = addr.clone();
   }
-  pub fn set_mint_y(&mut self, pkey: &Address) {
-    self.mint_y = pkey.clone();
+  pub fn set_mint_y(&mut self, addr: &Address) {
+    self.mint_y = addr.clone();
   }
   pub fn set_id(&mut self, amt: u64) -> ProgramResult {
     self.id = amt.to_le_bytes();

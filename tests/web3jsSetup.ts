@@ -24,7 +24,7 @@ export const vaultProgAddr = new PublicKey(
 );
 ll("vaultProgAddr:", vaultProgAddr.toBase58());
 
-export const SYSTEM_PROGRAM = new PublicKey("11111111111111111111111111111111");
+export const SYSTEM_PROGRAM = new PublicKey("11111111111111111111111111111111"); //default
 export const RentSysvar = new PublicKey(
 	"SysvarRent111111111111111111111111111111111",
 ); //RENT_ID

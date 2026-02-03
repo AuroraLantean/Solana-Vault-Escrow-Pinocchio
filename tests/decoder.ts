@@ -164,6 +164,7 @@ export type Config2Acct = {
 	bump: number;
 	newU32: number;
 	newU64: bigint;
+	newAccount1: Address;
 };
 export const config2AcctDecoder: FixedSizeDecoder<Config2Acct> =
 	getStructDecoder([
@@ -187,6 +188,7 @@ export const config2AcctDecoder: FixedSizeDecoder<Config2Acct> =
 		["bump", getU8Decoder()],
 		["newU32", getU32Decoder()],
 		["newU64", getU64Decoder()],
+		["newAccount1", getAddressDecoder()],
 		//["padding", getArrayDecoder(getU64Decoder(), { size: 3 })],
 	]);
 export const solanaKitDecodeConfig2 = (
@@ -212,6 +214,7 @@ export const solanaKitDecodeConfig2 = (
 		ll("bump:", decoded.bump);
 		ll("newU32:", decoded.newU32);
 		ll("newU64:", decoded.newU64);
+		ll("newAccount1:", decoded.newAccount1);
 	}
 	return decoded;
 };
@@ -239,6 +242,7 @@ export const solanaKitDecodeConfig2Dev = (
 		bump: decoded.bump,
 		newU32: decoded.newU32,
 		newU64: decoded.newU64,
+		newAccount1: new PublicKey(decoded.newAccount1.toString()),
 	};
 	return decodedV1;
 };
@@ -260,6 +264,7 @@ export type Config2AcctDev = {
 	bump: number;
 	newU32: number;
 	newU64: bigint;
+	newAccount1: PublicKey;
 };
 //---------------== EscrowPDA
 //converted from Rust code. XyzAcct, xyzAcctDecoder, DecodedXyzAcct should all match in field order and types!

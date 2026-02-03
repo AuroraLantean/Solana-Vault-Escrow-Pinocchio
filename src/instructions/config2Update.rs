@@ -10,10 +10,10 @@ use pinocchio_log::log;
 pub struct Config2Update<'a> {
   pub authority: &'a AccountView,
   pub config_pda: &'a AccountView,
-  pub account1: &'a Address,
   pub func_selector: u8,
   pub new_u32: u32,
   pub new_u64: u64,
+  pub account1: &'a Address,
   //pub account2: &'a Address,
   //pub bools: [bool; 4],
   //pub u8s: [u8; 4],
@@ -38,7 +38,7 @@ impl<'a> Config2Update<'a> {
     log!("UpdateConfig update1()");
     self.config2.set_new_u32(self.new_u32);
     self.config2.set_new_u64(self.new_u64);
-    self.config2.set_admin(self.account1);
+    self.config2.set_new_account1(self.account1);
     //self.config2.set_str_u8array(self.str_u8array);
     Ok(())
   }
@@ -70,7 +70,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Config2Update<'a> {
     let data_size1 = 88;
     check_data_len(data, data_size1)?; //56+32
 
-    let [authority, config_pda, account1, account2] = accounts else {
+    let [authority, config_pda, account1, _account2] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(authority)?;
@@ -114,12 +114,12 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Config2Update<'a> {
     Ok(Self {
       authority,
       config_pda,
-      account1: account1.address(),
       func_selector,
       new_u32,
       new_u64,
-      //account2: account2.address(),
       //u8s, bools, u32s, u64s, str_u8array,
+      account1: account1.address(),
+      //account2: account2.address(),
       config2,
     })
   }
