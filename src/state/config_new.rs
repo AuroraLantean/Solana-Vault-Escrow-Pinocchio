@@ -23,6 +23,8 @@ pub struct Config2 {
   vault_bump: u8,         // 1
   bump: u8,               // 1
   new_u32: [u8; 4],       // 4 for u32
+  new_u64: [u8; 8],       // 8 for u64
+  new_account1: Address,  // 32
 } // padding: [u8; 6] if the struct size needs to be aligned to 32 bytes.
 
 impl Config2 {
@@ -82,6 +84,9 @@ impl Config2 {
   }
   pub fn new_u32(&self) -> u32 {
     u32::from_le_bytes(self.new_u32)
+  }
+  pub fn new_u64(&self) -> u64 {
+    u64::from_le_bytes(self.new_u64)
   }
   //----------== Load from AccountView
   //For Config2 PDA
@@ -150,5 +155,8 @@ impl Config2 {
   }
   pub fn set_new_u32(&mut self, amt: u32) {
     self.new_u32 = amt.to_le_bytes();
+  }
+  pub fn set_new_u64(&mut self, amt: u64) {
+    self.new_u64 = amt.to_le_bytes();
   }
 }

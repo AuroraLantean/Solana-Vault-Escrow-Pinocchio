@@ -142,7 +142,6 @@ bun test ./tests/test1.ts
 
 ### TODO
 
-- Update Dependencies: <https://github.com/anza-xyz/pinocchio/releases>
 - Codama can generate TS and Rust client: <https://solana.com/docs/programs/codama/clients>, but not yet Go client: <https://github.com/codama-idl/codama/issues/973>
 - Mint2022 layout: <https://rareskills.io/post/token-2022>
 - StackExchange: <https://solana.stackexchange.com/questions/23991/how-to-generate-a-go-client-from-pinocchio-rust>
@@ -153,6 +152,8 @@ bun test ./tests/test1.ts
 - Rust(2 years old): <https://github.com/cenwadike/solana-program-client>
 
 - Solana Kite to replace some SolanaKit: <https://github.com/solanakite/kite>; AND <https://solanakite.org/docs>
+
+- Test code in Rust: <https://rareskills.io/post/litesvm>, <https://github.com/quiknode-labs/you-will-build-a-solana-program>
 
 ### References
 

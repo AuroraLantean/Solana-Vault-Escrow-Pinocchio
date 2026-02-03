@@ -240,8 +240,6 @@ test("updateConfig2", () => {
 	signerKp = ownerKp;
 	const acct1 = admin;
 	const acct2 = admin;
-	fee = 123000000n;
-	//const fee2 = bytesToBigint(bigintToBytes(fee));	ll("fee2:", fee2);
 	isAuthorized = true;
 	status = Status.Paused;
 	str = "MoonDog to the Jupiter!";
@@ -251,6 +249,7 @@ test("updateConfig2", () => {
 	bytes4u8s = [funcSelector, statusToByte(status), 0, 0];
 	tokenAmount = as9zBn(274);
 	const newU32 = 432901;
+	const newU64 = 137000000n;
 	bytes4u32s = [
 		...bigintToBytes(newU32, 32),
 		...u32Bytes,
@@ -258,7 +257,7 @@ test("updateConfig2", () => {
 		...u32Bytes,
 	];
 	bytes4u64s = [
-		...bigintToBytes(fee),
+		...bigintToBytes(newU64),
 		...bigintToBytes(tokenAmount),
 		...u64Bytes,
 		...u64Bytes,
@@ -289,7 +288,7 @@ test("updateConfig2", () => {
 	expect(decoded.vault).toEqual(vaultO);
 	expect(decoded.progOwner).toEqual(progOwner);
 	expect(decoded.admin).toEqual(admin);
-	expect(decoded.str).toEqual(str);
+	//expect(decoded.str).toEqual(str);
 	expect(decoded.fee).toEqual(fee);
 	expect(decoded.solBalance).toEqual(0n);
 	expect(decoded.tokenBalance).toEqual(0n);
@@ -298,6 +297,7 @@ test("updateConfig2", () => {
 	expect(decoded.status).toEqual(status);
 	expect(decoded.bump).toEqual(configBump);
 	expect(decoded.newU32).toEqual(newU32);
+	expect(decoded.newU64).toEqual(newU64);
 });
 
 test("close configPDA", () => {

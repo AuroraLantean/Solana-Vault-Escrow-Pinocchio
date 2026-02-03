@@ -1,6 +1,6 @@
 use crate::{
-  check_data_len, check_pda, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
-  u8_to_bool, u8_to_status, writable, Config2, Ee,
+  check_data_len, check_pda, instructions::check_signer, parse_u32, parse_u64, writable, Config2,
+  Ee,
 };
 use core::convert::TryFrom;
 use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
@@ -11,12 +11,15 @@ pub struct Config2Update<'a> {
   pub authority: &'a AccountView,
   pub config_pda: &'a AccountView,
   pub account1: &'a Address,
-  pub account2: &'a Address,
-  pub bools: [bool; 4],
-  pub u8s: [u8; 4],
-  pub u32s: [u32; 4],
-  pub u64s: [u64; 4],
-  pub str_u8array: [u8; 32],
+  pub func_selector: u8,
+  pub new_u32: u32,
+  pub new_u64: u64,
+  //pub account2: &'a Address,
+  //pub bools: [bool; 4],
+  //pub u8s: [u8; 4],
+  //pub u32s: [u32; 4],
+  //pub u64s: [u64; 4],
+  //pub str_u8array: [u8; 32],
   pub config2: &'a mut Config2,
 }
 impl<'a> Config2Update<'a> {
@@ -24,49 +27,22 @@ impl<'a> Config2Update<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("UpdateConfig2 process()");
-    match self.u8s[0] {
-      0 => self.update_status(),
-      1 => self.update_fee(),
+    match self.func_selector {
       2 => self.update_admin(),
-      3 => self.update_new_u32(),
+      3 => self.update1(),
       _ => Ee::FunctionSelector.e(),
     }
   }
 
-  pub fn add_tokens(self) -> ProgramResult {
-    log!("UpdateConfig add_tokens()");
-    let mutated_state = (self.config2.token_balance())
-      .checked_add(self.u64s[1])
-      .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
-    self.config2.set_token_balance(mutated_state);
+  pub fn update1(self) -> ProgramResult {
+    log!("UpdateConfig update1()");
+    self.config2.set_new_u32(self.new_u32);
+    self.config2.set_new_u64(self.new_u64);
+    self.config2.set_admin(self.account1);
+    //self.config2.set_str_u8array(self.str_u8array);
     Ok(())
   }
 
-  pub fn update_status(self) -> ProgramResult {
-    log!("UpdateConfig update_status()");
-    self.config2.set_status(self.u8s[1]);
-    Ok(())
-  }
-
-  pub fn update_new_u32(self) -> ProgramResult {
-    log!("UpdateConfig update_new_u32()");
-    self.config2.set_new_u32(self.u32s[0]);
-    self.config2.set_str_u8array(self.str_u8array);
-    Ok(())
-  }
-  pub fn update_fee(self) -> ProgramResult {
-    log!("UpdateConfig update_fee()");
-    let fee = self.u64s[0];
-    self.config2.set_fee(fee)?;
-    let time = get_time()?;
-    self.config2.set_updated_at(time);
-
-    self.config2.set_status(self.u8s[1]);
-
-    self.config2.set_admin(&self.account1);
-    //self.add_tokens()?;
-    Ok(())
-  }
   pub fn only_owner(&self) -> ProgramResult {
     if self.config2.prog_owner() != self.authority.address() {
       return Ee::OnlyProgOwner.e();
@@ -101,42 +77,32 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Config2Update<'a> {
     writable(config_pda)?;
     check_pda(config_pda)?;
 
-    log!("parse booleans");
+    /*log!("parse booleans");
     let b0 = u8_to_bool(data[0])?;
     let b1 = u8_to_bool(data[1])?;
     let b2 = u8_to_bool(data[2])?;
     let b3 = u8_to_bool(data[3])?;
-    let bools = [b0, b1, b2, b3];
+    let bools = [b0, b1, b2, b3];*/
 
     log!("parse u8 array");
-    let u8s = [data[4], data[5], data[6], data[7]];
-    log!("u8a: {}, u8b: {}", data[4], data[5]);
+    let func_selector = data[4];
+    //let u8s = [data[4], data[5], data[6], data[7]];
+    log!("func_selector: {}", func_selector);
     log!("parse u32 array");
-    let u32a = parse_u32(&data[8..12])?;
-    let u32b = parse_u32(&data[12..16])?;
+    let new_u32 = parse_u32(&data[8..12])?;
+    /*let u32b = parse_u32(&data[12..16])?;
     let u32c = parse_u32(&data[16..20])?;
     let u32d = parse_u32(&data[20..24])?;
-    let u32s = [u32a, u32b, u32c, u32d];
-    log!("u32a: {}", u32a);
+    let u32s = [u32a, u32b, u32c, u32d];*/
+    log!("new_u32: {}", new_u32);
 
     log!("parse u64 array");
-    let u64a = parse_u64(&data[24..32])?;
-    let u64b = parse_u64(&data[32..40])?;
+    let new_u64 = parse_u64(&data[24..32])?;
+    /*let u64b = parse_u64(&data[32..40])?;
     let u64c = parse_u64(&data[40..48])?;
     let u64d = parse_u64(&data[48..56])?;
-    let u64s = [u64a, u64b, u64c, u64d];
-    log!("u64a: {}", u64a);
-    //log!("u8s: {}", &u8s);
-    //log!("u32s: {}", &u32s);
-    //log!("u64s: {}", &u64s);
-
-    let str_u8array = *to32bytes(&data[56..data_size1])?;
-    log!("str_u8array: {}", &str_u8array);
-
-    //let bump = config2.bump(); //data[9];
-
-    //check Status input range
-    let _status = u8_to_status(u8s[1])?;
+    let u64s = [u64a, u64b, u64c, u64d];*/
+    log!("new_u64: {}", new_u64);
 
     config_pda.check_borrow_mut()?;
     let config2: &mut Config2 = Config2::from_account_view(&config_pda)?;
@@ -149,12 +115,11 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Config2Update<'a> {
       authority,
       config_pda,
       account1: account1.address(),
-      account2: account2.address(),
-      u8s,
-      bools,
-      u32s,
-      u64s,
-      str_u8array,
+      func_selector,
+      new_u32,
+      new_u64,
+      //account2: account2.address(),
+      //u8s, bools, u32s, u64s, str_u8array,
       config2,
     })
   }
