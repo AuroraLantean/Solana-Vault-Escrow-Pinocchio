@@ -19,7 +19,7 @@ impl<'a> OraclesRead<'a> {
   pub const DISCRIMINATOR: &'a u8 = &21;
 
   pub fn process(self) -> ProgramResult {
-    log!("UpdateConfig2 process()");
+    log!("OraclesRead process()");
     match self.func_selector {
       0 => self.pyth(),
       _ => Ee::FunctionSelector.e(),

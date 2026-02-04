@@ -25,10 +25,10 @@ import {
 } from "litesvm";
 import type { Status } from "./decoder";
 import {
-	bigintToBytes,
 	boolToByte,
 	checkBigint,
 	checkDecimals,
+	numToBytes,
 	statusToByte,
 	strToU8Fixed,
 	zero,
@@ -105,7 +105,7 @@ export const findEscrow = (
 		[
 			Buffer.from("escrow"),
 			maker.toBuffer(),
-			Buffer.copyBytesFrom(bigintToBytes(id)),
+			Buffer.copyBytesFrom(numToBytes(id)),
 		],
 		progAddr,
 	);
@@ -158,7 +158,7 @@ export const initConfig = (
 	const argData = [
 		boolToByte(isAuthorized),
 		statusToByte(status),
-		...bigintToBytes(fee),
+		...numToBytes(fee),
 		...strToU8Fixed(str),
 	];
 	if (mints.length < 4) throw new Error("mints length should be >= 4");
@@ -233,7 +233,7 @@ export const configResize = (
 	const disc = 19;
 	ll("configPDA:", configPDA.toBase58());
 	ll("newSize:", newSize);
-	const argData = [...bigintToBytes(newSize, 64)];
+	const argData = [...numToBytes(newSize, 64)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -309,7 +309,7 @@ export const depositSol = (
 	signer: Keypair,
 ) => {
 	const disc = 0;
-	const argData = bigintToBytes(amount);
+	const argData = numToBytes(amount);
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -330,7 +330,7 @@ export const withdrawSol = (
 	expectedError = "",
 ) => {
 	const disc = 1;
-	const argData = bigintToBytes(amount);
+	const argData = numToBytes(amount);
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -436,7 +436,7 @@ export const lgcMintToken = (
 	const disc = 4;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
-	const argData = [decimals, ...bigintToBytes(amount)];
+	const argData = [decimals, ...numToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -470,7 +470,7 @@ export const lgcDeposit = (
 	const disc = 5;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
-	const argData = [decimals, ...bigintToBytes(amount)];
+	const argData = [decimals, ...numToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -504,7 +504,7 @@ export const lgcWithdraw = (
 	const disc = 6;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
-	const argData = [decimals, ...bigintToBytes(amount)];
+	const argData = [decimals, ...numToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -538,7 +538,7 @@ export const lgcPay = (
 	const disc = 7;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
-	const argData = [decimals, ...bigintToBytes(amount)];
+	const argData = [decimals, ...numToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -573,7 +573,7 @@ export const lgcRedeem = (
 	const disc = 8;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
-	const argData = [decimals, ...bigintToBytes(amount)];
+	const argData = [decimals, ...numToBytes(amount)];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -617,10 +617,10 @@ export const makeTokEscrow = (
 	checkBigint(id, "id");
 	const argData = [
 		decimalX,
-		...bigintToBytes(amountX),
+		...numToBytes(amountX),
 		decimalY,
-		...bigintToBytes(amountY),
-		...bigintToBytes(id),
+		...numToBytes(amountY),
+		...numToBytes(id),
 	];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -668,10 +668,10 @@ export const takeTokEscrow = (
 	checkBigint(id, "id");
 	const argData = [
 		decimalX,
-		...bigintToBytes(amountX),
+		...numToBytes(amountX),
 		decimalY,
-		...bigintToBytes(amountY),
-		...bigintToBytes(id),
+		...numToBytes(amountY),
+		...numToBytes(id),
 	];
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -768,6 +768,43 @@ export const cancelTokEscrow = (
 	sendTxns(svm, blockhash, [ix], [makerSigner]);
 };
 
+export const oraclesRead = (
+	configPDA: PublicKey,
+	oracleProgram: PublicKey,
+	tokenMint: PublicKey,
+	tokenProg: PublicKey,
+	oracleVendor: number,
+	num_u32: number,
+	num_u64: bigint,
+	signer: Keypair,
+) => {
+	const disc = 21;
+	if (oracleVendor > 255) throw new Error("oracleVendor > 255");
+	const argData = [
+		oracleVendor,
+		0,
+		0,
+		0,
+		...numToBytes(num_u32, 32),
+		...numToBytes(num_u64, 64),
+	];
+	ll("configPDA:", configPDA.toBase58());
+	ll("oracleProgram:", oracleProgram.toBase58());
+
+	const blockhash = svm.latestBlockhash();
+	const ix = new TransactionInstruction({
+		keys: [
+			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: configPDA, isSigner: false, isWritable: true },
+			{ pubkey: oracleProgram, isSigner: false, isWritable: false },
+			{ pubkey: tokenMint, isSigner: false, isWritable: false },
+			{ pubkey: tokenProg, isSigner: false, isWritable: false },
+		],
+		programId: vaultProgAddr,
+		data: Buffer.from([disc, ...argData]),
+	});
+	sendTxns(svm, blockhash, [ix], [signer]);
+};
 //-------------==
 //When you want to make Mint without the Mint Keypair. E.g. UsdtMintKp;
 //https://solana.com/docs/tokens/basics/create-mint

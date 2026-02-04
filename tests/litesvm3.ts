@@ -25,9 +25,9 @@ import {
 } from "./litesvm-utils";
 import {
 	as9zBn,
-	bigintToBytes,
 	getTime,
 	ll,
+	numToBytes,
 	statusToByte,
 	u32Bytes,
 	u64Bytes,
@@ -144,7 +144,7 @@ test("updateConfig + time travel", () => {
 	const acct1 = admin;
 	const acct2 = admin;
 	fee = 123000000n;
-	//const fee2 = bytesToBigint(bigintToBytes(fee));	ll("fee2:", fee2);
+	//const fee2 = bytesToBigint(numToBytes(fee));	ll("fee2:", fee2);
 	isAuthorized = true;
 	status = Status.Paused;
 	str = "MoonDog to the Marzzz!";
@@ -154,15 +154,10 @@ test("updateConfig + time travel", () => {
 	bytes4u8s = [funcSelector, statusToByte(status), 0, 0];
 	tokenAmount = as9zBn(274);
 	time = getTime();
-	bytes4u32s = [
-		...bigintToBytes(time, 32),
-		...u32Bytes,
-		...u32Bytes,
-		...u32Bytes,
-	];
+	bytes4u32s = [...numToBytes(time, 32), ...u32Bytes, ...u32Bytes, ...u32Bytes];
 	bytes4u64s = [
-		...bigintToBytes(fee),
-		...bigintToBytes(tokenAmount),
+		...numToBytes(fee),
+		...numToBytes(tokenAmount),
 		...u64Bytes,
 		...u64Bytes,
 	];
@@ -256,14 +251,14 @@ test("updateConfig2", () => {
 	const newU32 = 432901;
 	const newU64 = 137000000n;
 	bytes4u32s = [
-		...bigintToBytes(newU32, 32),
+		...numToBytes(newU32, 32),
 		...u32Bytes,
 		...u32Bytes,
 		...u32Bytes,
 	];
 	bytes4u64s = [
-		...bigintToBytes(newU64),
-		...bigintToBytes(tokenAmount),
+		...numToBytes(newU64),
+		...numToBytes(tokenAmount),
 		...u64Bytes,
 		...u64Bytes,
 	];

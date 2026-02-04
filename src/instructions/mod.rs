@@ -340,6 +340,18 @@ pub enum ProgramIx {
     u64s: [u64; 4],
     str_u8: [u8; 32],
   },
+  //---------------== Oracles
+  /// 21 OraclesRead
+  #[account(0, signer, writable, name = "signer", desc = "signer")]
+  #[account(1, writable, name = "config_pda", desc = "Config PDA")]
+  #[account(2, name = "oracle_program", desc = "Oracle Program")]
+  #[account(3, name = "token_mint", desc = "Token Mint")]
+  #[account(4, name = "token_program", desc = "Token Program")]
+  OraclesRead {
+    oracle_vendor: u8,
+    num_u32: u32,
+    num_u64: u64,
+  },
   //---------------== Admin PDA
   //---------------== User PDA
   //---------------== Action PDA

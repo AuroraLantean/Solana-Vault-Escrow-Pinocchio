@@ -112,11 +112,13 @@ export const u64x4Bytes = [...u64Bytes, ...u64Bytes, ...u64Bytes, ...u64Bytes];
 export const u32Max = 4294967295n;
 export const u8Max = 255n;
 
-export const bigintToBytes = (input: bigint | number, bit = 64) => {
+export const numToBytes = (input: bigint | number, bit = 64) => {
 	let amtBigint = 0n;
 	if (typeof input === "number") {
+		if (input < 0) throw new Error("input < 0");
 		amtBigint = BigInt(input);
 	} else {
+		if (input < 0n) throw new Error("input < 0");
 		amtBigint = input;
 	}
 	const amtLam = lamports(amtBigint);
@@ -139,15 +141,15 @@ export const bigintToBytes = (input: bigint | number, bit = 64) => {
 export const testByteConversion = () => {
 	ll("\n------== inputNum to/from Bytes");
 	const amountNum = as9zBn(1.23);
-	const argData64 = bigintToBytes(amountNum);
+	const argData64 = numToBytes(amountNum);
 	const _amtOut64 = bytesToBigint(argData64);
 
 	const time1 = 1766946349;
-	const argData32 = bigintToBytes(time1, 32);
+	const argData32 = numToBytes(time1, 32);
 	const _amtOut32 = bytesToBigint(argData32);
 
 	const u8Num = 37;
-	const argDataU8 = bigintToBytes(u8Num, 8);
+	const argDataU8 = numToBytes(u8Num, 8);
 	const _amtOut8 = bytesToBigint(argDataU8);
 };
 export const bytesToBigint = (bytes: Uint8Array) => {
