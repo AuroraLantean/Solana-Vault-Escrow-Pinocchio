@@ -198,13 +198,13 @@ pub enum Ee {
   AtaHasNoData,
   #[error("Xyz087")]
   Xyz087,
-  #[error("Xyz088")]
-  Xyz088,
-  #[error("Xyz089")]
-  Xyz089,
+  #[error("NoRentExemptMintX")]
+  NoRentExemptMintX,
+  #[error("NoRentExemptMintY")]
+  NoRentExemptMintY,
   //Token 2022
-  #[error("NoRentExemptMint")]
-  NoRentExemptMint,
+  #[error("Xyz90")]
+  Xyz90,
   #[error("NoRentExemptTokAcct")]
   NoRentExemptTokAcct,
   #[error("NoRentExemptMint22")]
@@ -350,9 +350,9 @@ impl TryFrom<u32> for Ee {
       85 => Ok(Ee::ForeignAta),
       86 => Ok(Ee::AtaHasNoData),
       87 => Ok(Ee::Xyz087),
-      88 => Ok(Ee::Xyz088),
-      89 => Ok(Ee::Xyz089),
-      90 => Ok(Ee::NoRentExemptMint),
+      88 => Ok(Ee::NoRentExemptMintX),
+      89 => Ok(Ee::NoRentExemptMintY),
+      90 => Ok(Ee::Xyz90),
       91 => Ok(Ee::NoRentExemptTokAcct),
       92 => Ok(Ee::NoRentExemptMint22),
       93 => Ok(Ee::NoRentExemptTokAcct22),
@@ -473,10 +473,10 @@ impl ToStr for Ee {
       Ee::ForeignAta => "ForeignAta",
       Ee::AtaHasNoData => "AtaHasNoData",
       Ee::Xyz087 => "Xyz087",
-      Ee::Xyz088 => "Xyz088",
-      Ee::Xyz089 => "Xyz089",
+      Ee::NoRentExemptMintX => "NoRentExemptMintX",
+      Ee::NoRentExemptMintY => "NoRentExemptMintY",
 
-      Ee::NoRentExemptMint => "NoRentExemptMint",
+      Ee::Xyz90 => "Xyz90",
       Ee::NoRentExemptTokAcct => "NoRentExemptTokAcct",
       Ee::NoRentExemptMint22 => "NoRentExemptMint22",
       Ee::NoRentExemptTokAcct22 => "NoRentExemptTokAcct22",
@@ -770,10 +770,17 @@ pub fn rent_exempt_mint22(account: &AccountView, rent_sysvar: &AccountView) -> P
 }
 //TODO: Mint and ATA from TokenLgc works. For mint and ATA from Token2022?
 /// acc_type: 0 Mint, 1 TokenAccount
-pub fn rent_exempt_mint(account: &AccountView, rent_sysvar: &AccountView) -> ProgramResult {
+pub fn rent_exempt_mint(
+  account: &AccountView,
+  rent_sysvar: &AccountView,
+  which_mint: u8,
+) -> ProgramResult {
   let rent = Rent::from_account_view(rent_sysvar)?;
   if !rent.is_exempt(account.lamports(), Mint::LEN) {
-    return Ee::NoRentExemptMint.e();
+    if which_mint == 0 {
+      return Ee::NoRentExemptMintX.e();
+    }
+    return Ee::NoRentExemptMintY.e();
   }
   Ok(())
 }

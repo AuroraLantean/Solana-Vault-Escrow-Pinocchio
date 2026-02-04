@@ -53,6 +53,7 @@ impl<'a> TokLgcDeposit<'a> {
       if to_wallet.address() != &expected_vault_pda {
         return Ee::VaultPDA.e();
       }
+      log!("TokLgcDeposit 6a");
       let signer_seeds = [
         Seed::from(VAULT_SEED),
         Seed::from(user.address().as_ref()),
@@ -60,9 +61,12 @@ impl<'a> TokLgcDeposit<'a> {
       ];
       let seed_signer = Signer::from(&signer_seeds);
 
-      let rent = Rent::from_account_view(to_wallet)?;
+      log!("TokLgcDeposit 6c");
+      let rent = Rent::from_account_view(rent_sysvar)?;
+      log!("TokLgcDeposit 6d");
       let needed_lamports = rent.try_minimum_balance(VAULT_SIZE)?;
 
+      log!("TokLgcDeposit 6e. needed_lamports:{}", needed_lamports); //1002240
       CreateAccount {
         from: user,
         to: to_wallet,
@@ -71,7 +75,7 @@ impl<'a> TokLgcDeposit<'a> {
         owner: &PROG_ADDR,
       }
       .invoke_signed(&[seed_signer])?;
-      log!("TokLgcDeposit 6b");
+      log!("TokLgcDeposit 6f");
     }
     check_pda(to_wallet)?;
     log!("TokLgcDeposit 7: to_wallet is verified");
@@ -146,7 +150,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
       return Err(Ee::MintNotAccepted.into());
     }
     log!("TokLgcDeposit try_from 10");
-    rent_exempt_mint(mint, rent_sysvar)?;
+    rent_exempt_mint(mint, rent_sysvar, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 

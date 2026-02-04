@@ -134,7 +134,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcRedeem<'a> {
     }*/
 
     log!("TokLgcRedeem try_from 12");
-    rent_exempt_mint(mint, rent_sysvar)?;
+    rent_exempt_mint(mint, rent_sysvar, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 

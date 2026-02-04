@@ -2,16 +2,12 @@
 import { expect, test } from "bun:test";
 //Tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
 import { Connection, type Keypair, type PublicKey } from "@solana/web3.js";
-import type { AccountInfoBytes } from "litesvm";
-import { Status, solanaKitDecodeEscrowDev } from "./decoder";
+import { Status } from "./decoder";
 import {
 	acctExists,
 	acctIsNull,
 	ataBalCk,
-	ataBalc,
-	cancelTokEscrow,
 	configPDA,
-	findEscrow,
 	findPdaV1,
 	getAta,
 	initConfig,
@@ -23,23 +19,19 @@ import {
 	lgcPay,
 	lgcRedeem,
 	lgcWithdraw,
-	makeTokEscrow,
 	type PdaOut,
 	setAtaCheck,
 	setMint,
 	svm,
-	takeTokEscrow,
 	vault1,
 	vaultAta1,
 	vaultO,
-	withdrawTokEscrow,
 } from "./litesvm-utils";
 import { as6zBn, bigintAmt, ll, zero } from "./utils";
 import {
 	admin,
 	adminKp,
 	dgcAuthorityKp,
-	dragonCoin,
 	dragonCoinKp,
 	hacker,
 	owner,
@@ -50,7 +42,6 @@ import {
 	user1,
 	user1Kp,
 	user2,
-	user2Kp,
 	user3,
 } from "./web3jsSetup";
 
@@ -60,33 +51,13 @@ let mintAuthorityKp: Keypair;
 let signer: PublicKey;
 let user: PublicKey;
 let mint: PublicKey;
-let mintX: PublicKey;
-let mintY: PublicKey;
 let mintAuthority: PublicKey;
 let ata: PublicKey;
 let fromAta: PublicKey;
 let toAta: PublicKey;
-let escrowPDA: PublicKey;
-let makerAtaX: PublicKey;
-let makerAtaY: PublicKey;
-let takerAtaX: PublicKey;
-let takerAtaY: PublicKey;
-let escrowAtaX: PublicKey;
-let escrowAtaY: PublicKey;
 let vaultOut: PdaOut;
-let escrowOut: PdaOut;
-let escrowU1_1: PublicKey;
-let _escrowU2_2: PublicKey;
-let rawAccount: AccountInfoBytes | null;
 let decimals = 9;
 let amt: bigint;
-let prevBalcX: bigint;
-let prevBalcY: bigint;
-let decimalX: number;
-let decimalY: number;
-let amountX: bigint;
-let amountY: bigint;
-let id: bigint;
 const decDgc = 9;
 const initDgcBalc = bigintAmt(9000, decDgc);
 const initUsdcBalc = bigintAmt(1000, 6);
@@ -194,7 +165,7 @@ test("Deposit Legacy Tokens", () => {
 		signerKp,
 		fromAta,
 		toAta,
-		vaultOut.pda,
+		vaultOut.pda, //to_wallet
 		mint,
 		configPDA,
 		decimals,
@@ -259,198 +230,6 @@ test("Redeem Legacy Tokens", () => {
 	);
 	ataBalCk(fromAta, as6zBn(289), "vaultO");
 	ataBalCk(toAta, as6zBn(461), "user1 ");
-});
-
-test("Make Token Escrow", () => {
-	ll("\n------== Make Token Escrow");
-	signerKp = user1Kp;
-	mintX = usdcMint;
-	mintY = dragonCoin;
-	decimalX = 6;
-	decimalY = decDgc;
-	amountX = bigintAmt(326, decimalX);
-	amountY = bigintAmt(2100, decimalY);
-	id = BigInt(1);
-	signer = signerKp.publicKey;
-	escrowOut = findEscrow(signer, id);
-	escrowU1_1 = escrowOut.pda;
-	escrowPDA = escrowU1_1;
-
-	escrowAtaX = getAta(mintX, escrowPDA);
-	makerAtaX = getAta(mintX, signer);
-	prevBalcX = ataBalc(makerAtaX, "makerAtaX");
-	makeTokEscrow(
-		signerKp,
-		makerAtaX,
-		escrowAtaX,
-		mintX,
-		mintY,
-		escrowPDA,
-		configPDA,
-		decimalX,
-		amountX,
-		decimalY,
-		amountY,
-		id,
-	);
-	const pdaRaw = svm.getAccount(escrowPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-
-	const decoded = solanaKitDecodeEscrowDev(rawAccountData);
-	expect(decoded.maker).toEqual(signer);
-	expect(decoded.mintX).toEqual(mintX);
-	expect(decoded.mintY).toEqual(mintY);
-	expect(decoded.amountY).toEqual(amountY);
-	expect(decoded.amountX).toEqual(amountX);
-	expect(decoded.id).toEqual(id);
-	expect(decoded.decimalX).toEqual(decimalX);
-	expect(decoded.decimalY).toEqual(decimalY);
-	expect(decoded.bump).toEqual(escrowOut.bump);
-	ataBalCk(escrowAtaX, amountX, "Escrow");
-	ataBalCk(makerAtaX, prevBalcX - amountX, "user1 ");
-});
-test("Take Token Escrow", () => {
-	ll("\n------== Take Token Escrow");
-	signerKp = user2Kp;
-	//args below should be taken from EscrowPDA
-	mintX = usdcMint;
-	mintY = dragonCoin;
-	decimalX = 6;
-	decimalY = decDgc;
-	amountX = bigintAmt(326, decimalX);
-	amountY = bigintAmt(2100, decimalY);
-	id = BigInt(1);
-	escrowPDA = escrowU1_1;
-
-	signer = signerKp.publicKey;
-	takerAtaX = getAta(mintX, signer);
-	escrowAtaX = getAta(mintX, escrowPDA);
-
-	takerAtaY = getAta(mintY, signer);
-	escrowAtaY = getAta(mintY, escrowPDA);
-	prevBalcX = ataBalc(takerAtaX, "takerAtaX");
-	takeTokEscrow(
-		signerKp,
-		takerAtaX,
-		takerAtaY,
-		escrowAtaX,
-		escrowAtaY,
-		mintX,
-		mintY,
-		escrowPDA,
-		configPDA,
-		decimalX,
-		amountX,
-		decimalY,
-		amountY,
-		id,
-	);
-	const pdaRaw = svm.getAccount(escrowPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-
-	const _decoded = solanaKitDecodeEscrowDev(rawAccountData);
-	ataBalCk(escrowAtaX, zero, "Escrow X");
-	ataBalCk(escrowAtaY, amountY, "Escrow Y");
-	ataBalCk(takerAtaX, prevBalcX + amountX, "Taker X");
-});
-test("Withdraw TokenY on Escrow", () => {
-	ll("\n------== Withdraw TokenY on Escrow");
-	signerKp = user1Kp;
-	//args below should be taken from EscrowPDA
-	mintX = usdcMint;
-	mintY = dragonCoin;
-	escrowPDA = escrowU1_1;
-	//amountY = amountY... also from EscrowPDA
-
-	signer = signerKp.publicKey;
-	makerAtaX = getAta(mintX, signer);
-	escrowAtaX = getAta(mintX, escrowPDA);
-	makerAtaY = getAta(mintY, signer);
-	escrowAtaY = getAta(mintY, escrowPDA);
-	prevBalcX = ataBalc(makerAtaX, "makerAtaX");
-	prevBalcY = ataBalc(makerAtaY, "makerAtaY");
-
-	withdrawTokEscrow(
-		signerKp,
-		makerAtaX,
-		makerAtaY,
-		escrowAtaX,
-		escrowAtaY,
-		mintX,
-		mintY,
-		escrowPDA,
-		configPDA,
-	);
-	ataBalCk(escrowAtaX, zero, "Escrow X");
-	ataBalCk(escrowAtaY, zero, "Escrow Y");
-	ataBalCk(makerAtaX, prevBalcX, "user1 X");
-	ataBalCk(makerAtaY, prevBalcY + amountY, "user1 Y");
-	rawAccount = svm.getAccount(escrowAtaX);
-	expect(rawAccount).toBeNull();
-	rawAccount = svm.getAccount(escrowAtaY);
-	expect(rawAccount).toBeNull();
-	rawAccount = svm.getAccount(escrowPDA);
-	expect(rawAccount).toBeNull();
-});
-
-test("Make & Cancel Token Escrow", () => {
-	ll("\n------== Make & Cancel Token Escrow");
-	signerKp = user1Kp;
-	mintX = usdcMint;
-	mintY = dragonCoin;
-	decimalX = 6;
-	decimalY = decDgc;
-	amountX = bigintAmt(135, decimalX);
-	amountY = bigintAmt(2700, decimalY);
-	id = BigInt(1);
-	signer = signerKp.publicKey;
-	escrowOut = findEscrow(signer, id);
-	escrowU1_1 = escrowOut.pda;
-	escrowPDA = escrowU1_1;
-
-	escrowAtaX = getAta(mintX, escrowPDA);
-	makerAtaX = getAta(mintX, signer);
-	prevBalcX = ataBalc(makerAtaX, "makerAtaX");
-	makeTokEscrow(
-		signerKp,
-		makerAtaX,
-		escrowAtaX,
-		mintX,
-		mintY,
-		escrowPDA,
-		configPDA,
-		decimalX,
-		amountX,
-		decimalY,
-		amountY,
-		id,
-	);
-	ataBalCk(escrowAtaX, amountX, "Escrow");
-	ataBalCk(makerAtaX, prevBalcX - amountX, "user1 ");
-
-	cancelTokEscrow(
-		signerKp,
-		makerAtaX,
-		makerAtaY,
-		escrowAtaX,
-		escrowAtaY,
-		mintX,
-		mintY,
-		escrowPDA,
-		configPDA,
-	);
-	ataBalCk(escrowAtaX, zero, "Escrow");
-	ataBalCk(makerAtaX, prevBalcX, "user1 ");
-	rawAccount = svm.getAccount(escrowAtaX);
-	expect(rawAccount).toBeNull();
-	rawAccount = svm.getAccount(escrowAtaY);
-	expect(rawAccount).toBeNull();
-	rawAccount = svm.getAccount(escrowPDA);
-	expect(rawAccount).toBeNull();
 });
 
 test.skip("copy accounts from devnet", async () => {

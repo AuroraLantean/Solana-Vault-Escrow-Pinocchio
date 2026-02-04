@@ -116,7 +116,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcPay<'a> {
     check_vault(vault, config.vault())?;
 
     log!("LgcPay try_from 10");
-    rent_exempt_mint(mint, rent_sysvar)?;
+    rent_exempt_mint(mint, rent_sysvar, 0)?;
     check_decimals(mint, decimals)?;
     check_mint0a(mint, token_program)?;
 

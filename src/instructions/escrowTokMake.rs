@@ -154,6 +154,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokMake<'a> {
     log!("EscrowTokMake try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
+    let data_len = 26;
+    //2x u8 takes 2 + 2x u64 takes 16 bytes
+    check_data_len(data, data_len)?;
 
     let [maker, maker_ata_x, escrow_ata_x, mint_x, mint_y, escrow_pda, config_pda, token_program, system_program, atoken_program, rent_sysvar] =
       accounts
@@ -172,8 +175,6 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokMake<'a> {
     writable(config_pda)?;
     log!("EscrowTokMake try_from 4");
 
-    //2x u8 takes 2 + 2x u64 takes 16 bytes
-    check_data_len(data, 26)?;
     let decimal_x = data[0];
     let amount_x = parse_u64(&data[1..9])?;
     log!("decimal_x: {}, amount_x: {}", decimal_x, amount_x);
@@ -185,13 +186,13 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokMake<'a> {
     log!("decimal_y: {}, amount_y: {}", decimal_y, amount_y);
     none_zero_u64(amount_y)?;
 
-    let id = parse_u64(&data[18..26])?;
+    let id = parse_u64(&data[18..data_len])?;
     log!("id: {}", id);
 
     log!("EscrowTokMake try_from 5");
     check_escrow_mints(mint_x, mint_y)?;
-    rent_exempt_mint(mint_x, rent_sysvar)?;
-    rent_exempt_mint(mint_y, rent_sysvar)?;
+    rent_exempt_mint(mint_x, rent_sysvar, 0)?;
+    rent_exempt_mint(mint_y, rent_sysvar, 1)?;
     //TODO: fee is part of exchange amount
 
     log!("EscrowTokMake try_from 6");

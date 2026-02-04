@@ -252,8 +252,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokCancel<'a> {
       return Err(Ee::EscrowDataEmpty.into());
     }
     log!("EscrowTokCancel try_from 5");
-    rent_exempt_mint(mint_x, rent_sysvar)?;
-    rent_exempt_mint(mint_y, rent_sysvar)?;
+    rent_exempt_mint(mint_x, rent_sysvar, 0)?;
+    rent_exempt_mint(mint_y, rent_sysvar, 1)?;
 
     log!("EscrowTokCancel try_from 6");
     check_mint0a(mint_x, token_program)?;

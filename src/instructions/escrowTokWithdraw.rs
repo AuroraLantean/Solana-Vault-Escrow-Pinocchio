@@ -242,8 +242,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokWithdraw<'a> {
       return Err(Ee::EscrowDataEmpty.into());
     }
     log!("EscrowTokWithdraw try_from 5");
-    rent_exempt_mint(mint_x, rent_sysvar)?;
-    rent_exempt_mint(mint_y, rent_sysvar)?;
+    rent_exempt_mint(mint_x, rent_sysvar, 0)?;
+    rent_exempt_mint(mint_y, rent_sysvar, 1)?;
     //TODO: fee is part of exchange amount
 
     log!("EscrowTokWithdraw try_from 6");

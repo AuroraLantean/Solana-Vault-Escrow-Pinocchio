@@ -220,8 +220,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokTake<'a> {
 
     log!("EscrowTokTake try_from 5");
     check_escrow_mints(mint_x, mint_y)?;
-    rent_exempt_mint(mint_x, rent_sysvar)?;
-    rent_exempt_mint(mint_y, rent_sysvar)?;
+    rent_exempt_mint(mint_x, rent_sysvar, 0)?;
+    rent_exempt_mint(mint_y, rent_sysvar, 1)?;
     //TODO: fee is part of exchange amount
 
     log!("EscrowTokTake try_from 6");

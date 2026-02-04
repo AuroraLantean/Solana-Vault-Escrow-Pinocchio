@@ -97,7 +97,7 @@ fn ensure_deposit_accounts(
       Seed::from(user.address().as_ref()),
       Seed::from(core::slice::from_ref(&bump)),
     ];
-    let signer = Signer::from(&signer_seeds);
+    let seed_signer = Signer::from(&signer_seeds);
 
     // Make the account rent-exempt.
     let rent = Rent::from_account_view(rent_sysvar)?;
@@ -112,7 +112,7 @@ fn ensure_deposit_accounts(
       space: VAULT_SIZE as u64,
       owner: &PROG_ADDR,
     }
-    .invoke_signed(&[signer])?;
+    .invoke_signed(&[seed_signer])?;
 
     log!("Vault created");
   } else {

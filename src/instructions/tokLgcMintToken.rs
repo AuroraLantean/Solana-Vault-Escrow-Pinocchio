@@ -37,7 +37,7 @@ impl<'a> TokLgcMintToken<'a> {
       amount,
     } = self;
     log!("TokLgcMintToken process()");
-    rent_exempt_mint(mint, rent_sysvar)?;
+    rent_exempt_mint(mint, rent_sysvar, 0)?;
     writable(mint)?;
     check_mint0b(mint, mint_authority, token_program, decimals)?;
 

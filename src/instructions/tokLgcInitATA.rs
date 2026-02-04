@@ -68,7 +68,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitAta<'a> {
     not_initialized(ata)?;
     initialized(to_wallet)?;
     log!("TokenLgcInitAta try_from 3");
-    rent_exempt_mint(mint, rent_sysvar)?;
+    rent_exempt_mint(mint, rent_sysvar, 0)?;
     log!("TokenLgcInitAta try_from 4");
     check_mint0a(mint, token_program)?;
 
