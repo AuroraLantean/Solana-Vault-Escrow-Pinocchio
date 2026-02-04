@@ -63,8 +63,8 @@ test("InitConfig", async () => {
 	expect(configData.fee).toEqual(fee);
 }, 10000); //Timeouts
 
-test("UpdateConfig", async () => {
-	ll("\n------== UpdateConfig");
+test("ConfigUpdate", async () => {
+	ll("\n------== ConfigUpdate");
 	ll("payer:", adminAddr);
 	const bools = new Uint8Array([0, 1, 0, 1]);
 	const u8s = new Uint8Array([1, 2, 7, 8]);

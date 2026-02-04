@@ -7,6 +7,8 @@ pub mod config2Update;
 #[allow(non_snake_case)]
 pub mod configResize;
 #[allow(non_snake_case)]
+pub mod configUpdate;
+#[allow(non_snake_case)]
 pub mod depositSol;
 #[allow(non_snake_case)]
 pub mod escrowTokCancel;
@@ -40,8 +42,6 @@ pub mod tokLgcPay;
 pub mod tokLgcRedeem;
 #[allow(non_snake_case)]
 pub mod tokLgcWithdraw;
-#[allow(non_snake_case)]
-pub mod updateConfig;
 pub mod utils;
 #[allow(non_snake_case)]
 pub mod withdrawSol;
@@ -50,6 +50,7 @@ pub mod withdrawSol;
 pub use closeConfig::*;
 pub use config2Update::*;
 pub use configResize::*;
+pub use configUpdate::*;
 pub use depositSol::*;
 pub use escrowTokCancel::*;
 pub use escrowTokMake::*;
@@ -67,7 +68,6 @@ pub use tokLgcMintToken::*;
 pub use tokLgcPay::*;
 pub use tokLgcRedeem::*;
 pub use tokLgcWithdraw::*;
-pub use updateConfig::*;
 pub use utils::*;
 pub use withdrawSol::*;
 
@@ -233,7 +233,7 @@ pub enum ProgramIx {
   #[account(1, writable, name = "config_pda", desc = "Config PDA")]
   #[account(2, name = "account1", desc = "Account1")]
   #[account(3, name = "account2", desc = "Account2")]
-  UpdateConfig {
+  ConfigUpdate {
     bools: [u8; 4],
     u8s: [u8; 4],
     u32s: [u32; 4],

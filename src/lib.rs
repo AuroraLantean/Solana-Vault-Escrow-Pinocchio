@@ -53,7 +53,7 @@ fn process_instruction(
     Token2022InitAta::DISCRIMINATOR => Token2022InitAta::try_from((data, accounts))?.process(),
     Token2022MintToken::DISCRIMINATOR => Token2022MintToken::try_from((data, accounts))?.process(),
     InitConfig::DISCRIMINATOR => InitConfig::try_from((data, accounts))?.process(),
-    UpdateConfig::DISCRIMINATOR => UpdateConfig::try_from((data, accounts))?.process(),
+    ConfigUpdate::DISCRIMINATOR => ConfigUpdate::try_from((data, accounts))?.process(),
     CloseConfigPda::DISCRIMINATOR => CloseConfigPda::try_from((data, accounts))?.process(),
     EscrowTokMake::DISCRIMINATOR => EscrowTokMake::try_from((data, accounts))?.process(),
     EscrowTokTake::DISCRIMINATOR => EscrowTokTake::try_from((data, accounts))?.process(),

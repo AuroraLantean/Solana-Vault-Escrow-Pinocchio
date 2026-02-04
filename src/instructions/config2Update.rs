@@ -35,7 +35,7 @@ impl<'a> Config2Update<'a> {
   }
 
   pub fn update1(self) -> ProgramResult {
-    log!("UpdateConfig update1()");
+    log!("ConfigUpdate update1()");
     self.config2.set_new_u32(self.new_u32);
     self.config2.set_new_u64(self.new_u64);
     self.config2.set_new_account1(self.account1);

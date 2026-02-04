@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Update Config PDA
-pub struct UpdateConfig<'a> {
+pub struct ConfigUpdate<'a> {
   pub signer: &'a AccountView,
   pub config_pda: &'a AccountView,
   pub account1: &'a Address,
@@ -20,11 +20,11 @@ pub struct UpdateConfig<'a> {
   pub str_u8array: [u8; 32],
   pub config: &'a mut Config,
 }
-impl<'a> UpdateConfig<'a> {
+impl<'a> ConfigUpdate<'a> {
   pub const DISCRIMINATOR: &'a u8 = &13;
 
   pub fn process(self) -> ProgramResult {
-    log!("UpdateConfig process()");
+    log!("ConfigUpdate process()");
     match self.u8s[0] {
       0 => self.update_status(),
       1 => self.update_fee(),
@@ -34,7 +34,7 @@ impl<'a> UpdateConfig<'a> {
   }
 
   pub fn add_tokens(self) -> ProgramResult {
-    log!("UpdateConfig add_tokens()");
+    log!("ConfigUpdate add_tokens()");
     let mutated_state = (self.config.token_balance())
       .checked_add(self.u64s[1])
       .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
@@ -43,13 +43,13 @@ impl<'a> UpdateConfig<'a> {
   }
 
   pub fn update_status(self) -> ProgramResult {
-    log!("UpdateConfig update_status()");
+    log!("ConfigUpdate update_status()");
     self.config.set_status(self.u8s[1]);
     Ok(())
   }
 
   pub fn update_fee(self) -> ProgramResult {
-    log!("UpdateConfig update_fee()");
+    log!("ConfigUpdate update_fee()");
     let fee = self.u64s[0];
     self.config.set_fee(fee)?;
     let time = get_time()?;
@@ -79,11 +79,11 @@ impl<'a> UpdateConfig<'a> {
     Ok(())
   }
 }
-impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for UpdateConfig<'a> {
+impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for ConfigUpdate<'a> {
   type Error = ProgramError;
 
   fn try_from(value: (&'a [u8], &'a [AccountView])) -> Result<Self, Self::Error> {
-    log!("UpdateConfig try_from");
+    log!("ConfigUpdate try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
     let data_size1 = 88;
