@@ -518,7 +518,7 @@ pub fn check_mint0a(mint: &AccountView, token_program: &AccountView) -> ProgramR
   if mint.data_len() != pinocchio_token::state::Mint::LEN {
     return Ee::MintDataLen.e();
   }
-  if !token_program.address().eq(&pinocchio_token::ID) {
+  if token_program.address().ne(&pinocchio_token::ID) {
     return Ee::TokenProgram.e();
   }
   unsafe {
@@ -538,7 +538,7 @@ pub fn check_mint0b(
   let mint_info = pinocchio_token::state::Mint::from_account_view(mint)?;
   if mint_info
     .mint_authority()
-    .is_some_and(|authority| !mint_authority.address().eq(authority))
+    .is_some_and(|authority| mint_authority.address().ne(authority))
   {
     return Ee::MintOrMintAuthority.e();
   }
@@ -555,7 +555,7 @@ pub fn check_mint22a(mint: &AccountView, token_program: &AccountView) -> Program
   if mint.data_len() != pinocchio_token_2022::state::Mint::BASE_LEN {
     return Ee::MintDataLen.e();
   }
-  if !token_program.address().eq(&pinocchio_token_2022::ID) {
+  if token_program.address().ne(&pinocchio_token_2022::ID) {
     return Ee::TokenProgram.e();
   }
   unsafe {
@@ -575,7 +575,7 @@ pub fn check_mint22b(
 
   if mint_info
     .mint_authority()
-    .is_some_and(|authority| !mint_authority.address().eq(authority))
+    .is_some_and(|authority| mint_authority.address().ne(authority))
   {
     return Ee::MintOrMintAuthority.e();
   }
@@ -611,10 +611,10 @@ pub fn check_ata(ata: &AccountView, owner: &AccountView, mint: &AccountView) -> 
     return Ee::AtaDataLen.e();
   }
   let ata_info = pinocchio_token::state::TokenAccount::from_account_view(ata)?;
-  if !ata_info.owner().eq(owner.address()) {
+  if ata_info.owner().ne(owner.address()) {
     return Ee::AtaOrOwner.e();
   }
-  if !ata_info.mint().eq(mint.address()) {
+  if ata_info.mint().ne(mint.address()) {
     return Ee::AtaOrMint.e();
   }
   Ok(())
@@ -626,10 +626,10 @@ pub fn check_ata22(ata: &AccountView, owner: &AccountView, mint: &AccountView) -
     return Ee::AtaHasNoData.e();
   }
   let ata_info = TokenAccount22::from_account_view(ata)?;
-  if !ata_info.owner().eq(owner.address()) {
+  if ata_info.owner().ne(owner.address()) {
     return Ee::AtaOrOwner.e();
   }
-  if !ata_info.mint().eq(mint.address()) {
+  if ata_info.mint().ne(mint.address()) {
     return Ee::AtaOrMint.e();
   }
   Ok(())
@@ -671,10 +671,10 @@ pub fn check_ata_escrow(
     return Ee::AtaDataLen.e();
   }
   let ata_info = pinocchio_token::state::TokenAccount::from_account_view(ata)?;
-  if !ata_info.owner().eq(owner.address()) {
+  if ata_info.owner().ne(owner.address()) {
     return Ee::AtaOrOwner.e();
   }
-  if !ata_info.mint().eq(mint.address()) {
+  if ata_info.mint().ne(mint.address()) {
     return Ee::AtaOrMint.e();
   }
   Ok(())
@@ -713,14 +713,14 @@ pub fn check_vault(input_vault: &AccountView, config_vault: &Address) -> Program
   Ok(())
 }
 pub fn check_sysprog(system_program: &AccountView) -> ProgramResult {
-  if !system_program.address().eq(&pinocchio_system::ID) {
+  if system_program.address().ne(&pinocchio_system::ID) {
     return Ee::SystemProgram.e();
   }
   Ok(())
 }
 pub const ATOKENGPVBD: Address = pinocchio_associated_token_account::ID;
 pub fn check_atoken_gpvbd(atoken_program: &AccountView) -> ProgramResult {
-  if !atoken_program.address().eq(&ATOKENGPVBD) {
+  if atoken_program.address().ne(&ATOKENGPVBD) {
     return Ee::AtokenGPvbd.e();
   }
   Ok(())

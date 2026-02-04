@@ -16,10 +16,10 @@ pub struct Config2Update<'a> {
   pub account1: &'a Address,
   //pub account2: &'a Address,
   //pub bools: [bool; 4],
-  //pub u8s: [u8; 4],
-  //pub u32s: [u32; 4],
-  //pub u64s: [u64; 4],
-  //pub str_u8array: [u8; 32],
+  //pub u8s: [u8; 4],//remove large argument
+  //pub u32s: [u32; 4],//remove large argument
+  //pub u64s: [u64; 4],//remove large argument
+  //pub str_u8array: [u8; 32],//remove large argument
   pub config2: &'a mut Config2,
 }
 impl<'a> Config2Update<'a> {

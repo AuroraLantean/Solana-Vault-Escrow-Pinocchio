@@ -19,6 +19,8 @@ pub mod escrowTokWithdraw;
 #[allow(non_snake_case)]
 pub mod initConfig;
 #[allow(non_snake_case)]
+pub mod oraclesRead;
+#[allow(non_snake_case)]
 pub mod tok22InitATA;
 #[allow(non_snake_case)]
 pub mod tok22InitMint;
@@ -54,6 +56,7 @@ pub use escrowTokMake::*;
 pub use escrowTokTake::*;
 pub use escrowTokWithdraw::*;
 pub use initConfig::*;
+pub use oraclesRead::*;
 pub use tok22InitATA::*;
 pub use tok22InitMint::*;
 pub use tok22MintToken::*;

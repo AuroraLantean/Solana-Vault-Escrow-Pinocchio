@@ -317,10 +317,24 @@ test("close configPDA", () => {
 
 test("test x", async () => {
 	ll("\n------==");
-	const RentUint8 = Uint8Array.from([
+	const RentSysvar = Uint8Array.from([
 		6, 167, 213, 23, 25, 44, 92, 81, 33, 140, 201, 76, 61, 74, 241, 127, 88,
 		218, 238, 8, 155, 161, 253, 68, 227, 219, 217, 138, 0, 0, 0, 0,
-	]);
-	const pubkey1 = getBase58Decoder().decode(RentUint8);
-	ll("pubkey1:", pubkey1);
+	]); //SysvarRent111111111111111111111111111111111
+	const rentSysvar = getBase58Decoder().decode(RentSysvar);
+	ll("rentSysvar:", rentSysvar);
+
+	const PinocchioTokenID = Uint8Array.from([
+		6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172,
+		28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169,
+	]); //Legacy TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
+	const pinocchioTokenID = getBase58Decoder().decode(PinocchioTokenID);
+	ll("pinocchioTokenID:", pinocchioTokenID);
+
+	const PinocchioToken2022ID = Uint8Array.from([
+		6, 221, 246, 225, 238, 117, 143, 222, 24, 66, 93, 188, 228, 108, 205, 218,
+		182, 26, 252, 77, 131, 185, 13, 39, 254, 189, 249, 40, 216, 161, 139, 252,
+	]); //2022 TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
+	const pinocchioToken2022ID = getBase58Decoder().decode(PinocchioToken2022ID);
+	ll("pinocchioToken2022ID:", pinocchioToken2022ID);
 });
