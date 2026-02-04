@@ -192,25 +192,21 @@ export const initConfig = (
 	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const updateConfig = (
-	bytes4bools: number[],
-	bytes4u8s: number[],
-	bytes4u32s: number[],
-	bytes4u64s: number[],
 	acct1: PublicKey,
-	acct2: PublicKey,
-	str: string,
+	bytes4u8s: number[],
+	numU32: number,
+	numU64: bigint,
+	//str: string,
 	signer: Keypair,
 ) => {
 	const disc = 13;
 	const argData = [
-		...bytes4bools,
 		...bytes4u8s,
-		...bytes4u32s,
-		...bytes4u64s,
-		...strToU8Fixed(str),
+		...numToBytes(numU32, 32),
+		...numToBytes(numU64, 64),
+		//...strToU8Fixed(str),
 	];
 	ll("acct1:", acct1.toBase58());
-	ll("acct2:", acct2.toBase58());
 
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -218,7 +214,6 @@ export const updateConfig = (
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
 			{ pubkey: acct1, isSigner: false, isWritable: false },
-			{ pubkey: acct2, isSigner: false, isWritable: false },
 		],
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),

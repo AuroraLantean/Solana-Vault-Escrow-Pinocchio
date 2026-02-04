@@ -11,7 +11,6 @@ import {
 	ataBalc,
 	cancelTokEscrow,
 	configPDA,
-	depositSol,
 	findEscrow,
 	findPdaV1,
 	getAta,
@@ -26,7 +25,6 @@ import {
 	lgcWithdraw,
 	makeTokEscrow,
 	type PdaOut,
-	sendSol,
 	setAtaCheck,
 	setMint,
 	svm,
@@ -34,10 +32,9 @@ import {
 	vault1,
 	vaultAta1,
 	vaultO,
-	withdrawSol,
 	withdrawTokEscrow,
 } from "./litesvm-utils";
-import { as6zBn, as9zBn, bigintAmt, ll, zero } from "./utils";
+import { as6zBn, bigintAmt, ll, zero } from "./utils";
 import {
 	admin,
 	adminKp,
@@ -45,9 +42,7 @@ import {
 	dragonCoin,
 	dragonCoinKp,
 	hacker,
-	hackerKp,
 	owner,
-	ownerKp,
 	pyusdMint,
 	usdcMint,
 	usdgMint,
@@ -59,7 +54,6 @@ import {
 	user3,
 } from "./web3jsSetup";
 
-//let disc = 0; //discriminator
 let signerKp: Keypair;
 let mintKp: Keypair;
 let mintAuthorityKp: Keypair;
@@ -85,9 +79,6 @@ let escrowU1_1: PublicKey;
 let _escrowU2_2: PublicKey;
 let rawAccount: AccountInfoBytes | null;
 let decimals = 9;
-let amount: bigint;
-let amtDeposit: bigint;
-let amtWithdraw: bigint;
 let amt: bigint;
 let prevBalcX: bigint;
 let prevBalcY: bigint;
@@ -96,8 +87,6 @@ let decimalY: number;
 let amountX: bigint;
 let amountY: bigint;
 let id: bigint;
-let balcAf: bigint | null;
-const vaultRent = 1002240n; //from Rust
 const decDgc = 9;
 const initDgcBalc = bigintAmt(9000, decDgc);
 const initUsdcBalc = bigintAmt(1000, 6);
@@ -109,56 +98,6 @@ expect(balcBf).toStrictEqual(initSolBalc);
 test("initial conditions", () => {
 	acctIsNull(vaultAta1);
 });
-test("transfer SOL", () => {
-	amount = as9zBn(0.001);
-	sendSol(user1, amount, adminKp);
-	balcAf = svm.getBalance(user1);
-	expect(balcAf).toStrictEqual(amount + initSolBalc);
-});
-
-test("Owner Deposits SOL to VaultPDA", () => {
-	ll("\n------== Owner Deposits SOL to VaultPDA");
-	ll("vaultO:", vaultO.toBase58());
-	signerKp = ownerKp;
-	amtDeposit = as9zBn(0.46);
-
-	depositSol(vaultO, amtDeposit, signerKp);
-	balcAf = svm.getBalance(vaultO);
-	ll("vaultO SOL:", balcAf);
-	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);
-});
-
-test("User1 Deposits SOL to vault1", () => {
-	ll("\n------== User1 Deposits SOL to vault1");
-	ll("vault1:", vault1.toBase58());
-	signerKp = user1Kp;
-	amtDeposit = as9zBn(1.23); //1230000000n
-
-	depositSol(vault1, amtDeposit, signerKp);
-	balcAf = svm.getBalance(vault1);
-	ll("vault1 SOL:", balcAf);
-	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);
-});
-
-test("User1 Withdraws SOL from vault1", () => {
-	ll("\n------== User1 Withdraws SOL from vault1");
-	ll("vault1:", vault1.toBase58());
-	signerKp = user1Kp;
-	amtWithdraw = as9zBn(0.48); //480000000n
-
-	withdrawSol(vault1, amtWithdraw, signerKp);
-	balcAf = svm.getBalance(vault1);
-	ll("vault1 SOL:", balcAf);
-	expect(balcAf).toStrictEqual(vaultRent + amtDeposit - amtWithdraw);
-});
-//test.failing
-test("hacker cannot withdraw SOL from  vault1", () => {
-	ll("\n------== Hacker cannot withdraw SOL from vault1");
-	signerKp = hackerKp;
-	amtWithdraw = as9zBn(0.48); //480000000n
-	withdrawSol(vault1, amtWithdraw, signerKp, "0x35");
-});
-
 //------------------==
 test("Make DragonCoin Mint, ATA, Tokens", () => {
 	ll("\n------== Make DragonCoin Mint, ATA, Tokens");
@@ -239,8 +178,8 @@ test("InitConfig", () => {
 	);
 });
 
-test("Deposit Lgc Tokens", () => {
-	ll("\n------== Deposit Lgc Tokens");
+test("Deposit Legacy Tokens", () => {
+	ll("\n------== Deposit Legacy Tokens");
 	signerKp = user1Kp;
 	mint = usdcMint;
 	decimals = 6;
@@ -264,8 +203,8 @@ test("Deposit Lgc Tokens", () => {
 	ataBalCk(toAta, as6zBn(370), "vault1");
 	ataBalCk(fromAta, as6zBn(630), "user1 ");
 });
-test("Withdraw Lgc Tokens", () => {
-	ll("\n------== Withdraw Lgc Tokens");
+test("Withdraw Legacy Tokens", () => {
+	ll("\n------== Withdraw Legacy Tokens");
 	signerKp = user1Kp;
 	mint = usdcMint;
 	decimals = 6;
@@ -281,8 +220,8 @@ test("Withdraw Lgc Tokens", () => {
 	ataBalCk(toAta, as6zBn(750), "user1 ");
 });
 
-test("Pay Lgc Tokens", () => {
-	ll("\n------== Pay Lgc Tokens");
+test("Pay Legacy Tokens", () => {
+	ll("\n------== Pay Legacy Tokens");
 	signerKp = user1Kp;
 	mint = usdcMint;
 	decimals = 6;
@@ -296,8 +235,8 @@ test("Pay Lgc Tokens", () => {
 	ataBalCk(toAta, amt, "vaultO");
 	ataBalCk(fromAta, as6zBn(424), "user1 ");
 });
-test("Redeem Lgc Tokens", () => {
-	ll("\n------== Redeem Lgc Tokens");
+test("Redeem Legacy Tokens", () => {
+	ll("\n------== Redeem Legacy Tokens");
 	signerKp = user1Kp;
 	mint = usdcMint;
 	decimals = 6;

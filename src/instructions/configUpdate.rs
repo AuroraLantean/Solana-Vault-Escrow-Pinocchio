@@ -3,8 +3,8 @@ use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
-  check_data_len, check_pda, get_time, instructions::check_signer, parse_u32, parse_u64, to32bytes,
-  u8_to_bool, u8_to_status, writable, Config, Ee,
+  check_data_len, check_pda, get_time, instructions::check_signer, parse_u32, parse_u64, writable,
+  Config, Ee,
 };
 
 /// Update Config PDA
@@ -12,12 +12,15 @@ pub struct ConfigUpdate<'a> {
   pub signer: &'a AccountView,
   pub config_pda: &'a AccountView,
   pub account1: &'a Address,
-  pub account2: &'a Address,
-  pub bools: [bool; 4],
-  pub u8s: [u8; 4],
-  pub u32s: [u32; 4],
-  pub u64s: [u64; 4],
-  pub str_u8array: [u8; 32],
+  //pub account2: &'a Address,
+  //pub bools: [bool; 4],
+  pub func_selector: u8,
+  pub num_u8: u8,
+  //pub u8s: [u8; 4],
+  pub num_u32: u32,
+  pub num_u64: u64,
+  //pub u64s: [u64; 4], Access violation in stack frame 0 at address 0x1fffffff4 of size 4
+  //pub str_u8array: [u8; 32],
   pub config: &'a mut Config,
 }
 impl<'a> ConfigUpdate<'a> {
@@ -25,8 +28,7 @@ impl<'a> ConfigUpdate<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("ConfigUpdate process()");
-    match self.u8s[0] {
-      0 => self.update_status(),
+    match self.func_selector {
       1 => self.update_fee(),
       2 => self.update_admin(),
       _ => Ee::FunctionSelector.e(),
@@ -36,7 +38,7 @@ impl<'a> ConfigUpdate<'a> {
   pub fn add_tokens(self) -> ProgramResult {
     log!("ConfigUpdate add_tokens()");
     let mutated_state = (self.config.token_balance())
-      .checked_add(self.u64s[1])
+      .checked_add(self.num_u64)
       .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
     self.config.set_token_balance(mutated_state);
     Ok(())
@@ -44,21 +46,20 @@ impl<'a> ConfigUpdate<'a> {
 
   pub fn update_status(self) -> ProgramResult {
     log!("ConfigUpdate update_status()");
-    self.config.set_status(self.u8s[1]);
+    self.config.set_status(self.num_u8);
     Ok(())
   }
 
   pub fn update_fee(self) -> ProgramResult {
     log!("ConfigUpdate update_fee()");
-    let fee = self.u64s[0];
-    self.config.set_fee(fee)?;
-    let time = get_time()?;
-    self.config.set_updated_at(time);
-
-    self.config.set_status(self.u8s[1]);
-    self.config.set_str_u8array(self.str_u8array);
-
     self.config.set_admin(&self.account1);
+
+    self.config.set_status(self.num_u8);
+    self.config.set_updated_at(self.num_u32);
+
+    self.config.set_fee(self.num_u64)?;
+    let _time = get_time()?;
+    //self.config.set_str_u8array(self.str_u8array);
     //self.add_tokens()?;
     Ok(())
   }
@@ -86,10 +87,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for ConfigUpdate<'a> {
     log!("ConfigUpdate try_from");
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
-    let data_size1 = 88;
+    let data_size1 = 16;
     check_data_len(data, data_size1)?; //56+32
 
-    let [signer, config_pda, account1, account2] = accounts else {
+    let [signer, config_pda, account1] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     log!("check accounts");
@@ -107,40 +108,22 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for ConfigUpdate<'a> {
       return Ee::InputDataLen.e();
     }*/
 
-    log!("parse booleans");
-    let b0 = u8_to_bool(data[0])?;
-    let b1 = u8_to_bool(data[1])?;
-    let b2 = u8_to_bool(data[2])?;
-    let b3 = u8_to_bool(data[3])?;
-    let bools = [b0, b1, b2, b3];
+    log!("parse data");
+    let func_selector = data[0];
+    //let _status = u8_to_status(data[1])?;
 
-    log!("parse u8 array");
-    let u8s = [data[4], data[5], data[6], data[7]];
-    log!("u8a: {}, u8b: {}", data[4], data[5]);
-    log!("parse u32 array");
-    let u32a = parse_u32(&data[8..12])?;
-    let u32b = parse_u32(&data[12..16])?;
-    let u32c = parse_u32(&data[16..20])?;
-    let u32d = parse_u32(&data[20..24])?;
-    let u32s = [u32a, u32b, u32c, u32d];
-    log!("u32a: {}", u32a);
+    let num_u8 = data[1];
+    //let b0 = u8_to_bool(data[3])?;
+    log!("func_selector: {}, num_u8: {}", func_selector, num_u8);
 
-    log!("parse u64 array");
-    let u64a = parse_u64(&data[24..32])?;
-    let u64b = parse_u64(&data[32..40])?;
-    let u64c = parse_u64(&data[40..48])?;
-    let u64d = parse_u64(&data[48..56])?;
-    let u64s = [u64a, u64b, u64c, u64d];
-    log!("u64a: {}", u64a);
-    //log!("u8s: {}", &u8s);
-    //log!("u32s: {}", &u32s);
-    //log!("u64s: {}", &u64s);
+    let num_u32 = parse_u32(&data[4..8])?;
+    log!("num_u32: {}", num_u32);
 
-    let str_u8array = *to32bytes(&data[56..data_size1])?;
-    log!("str_u8array: {}", &str_u8array);
+    let num_u64 = parse_u64(&data[8..data_size1])?;
+    log!("num_u64: {}", num_u64);
 
-    //check Status input range
-    let _status = u8_to_status(u8s[1])?;
+    //let str_u8array = *to32bytes(&data[56..data_size1])?;
+    //log!("str_u8array: {}", &str_u8array);
 
     config_pda.check_borrow_mut()?;
     let config: &mut Config = Config::from_account_view(&config_pda)?;
@@ -153,12 +136,11 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for ConfigUpdate<'a> {
       signer,
       config_pda,
       account1: account1.address(),
-      account2: account2.address(),
-      u8s,
-      bools,
-      u32s,
-      u64s,
-      str_u8array,
+      func_selector,
+      num_u8,
+      num_u32,
+      num_u64,
+      //u8s, bools, u32s, u64s, str_u8array,
       config,
     })
   }

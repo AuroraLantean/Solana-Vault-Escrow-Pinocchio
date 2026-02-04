@@ -232,13 +232,11 @@ pub enum ProgramIx {
   #[account(0, signer, writable, name = "authority", desc = "Authority")]
   #[account(1, writable, name = "config_pda", desc = "Config PDA")]
   #[account(2, name = "account1", desc = "Account1")]
-  #[account(3, name = "account2", desc = "Account2")]
   ConfigUpdate {
-    bools: [u8; 4],
     u8s: [u8; 4],
-    u32s: [u32; 4],
-    u64s: [u64; 4],
-    str_u8: [u8; 32],
+    num_u32: u32,
+    num_u64: u64,
+    //str_u8: [u8; 32],
   },
 
   /// 14 Close Config PDA

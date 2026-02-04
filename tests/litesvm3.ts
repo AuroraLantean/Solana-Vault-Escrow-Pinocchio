@@ -53,12 +53,8 @@ ll("admin SOL:", adminBalc);
 expect(adminBalc).toStrictEqual(initSolBalc);
 
 let signerKp: Keypair;
-let _authorityKp: Keypair;
-let _authority: PublicKey;
 let mints: PublicKey[];
-let _vault: PublicKey;
 let progOwner: PublicKey;
-let _firstProgOwner: PublicKey;
 let progAdmin: PublicKey;
 let dest: PublicKey;
 let tokenAmount: bigint;
@@ -68,6 +64,8 @@ let isAuthorized = false;
 let status: Status;
 let str: string;
 let funcSelector: number;
+let numU32: number;
+let numU64: bigint;
 let time: number;
 let bytes4bools: number[];
 let bytes4u8s: number[];
@@ -142,37 +140,27 @@ test("updateConfig + time travel", () => {
 	ll(`configPDA: ${configPDA}`);
 	signerKp = ownerKp;
 	const acct1 = admin;
-	const acct2 = admin;
-	fee = 123000000n;
-	//const fee2 = bytesToBigint(numToBytes(fee));	ll("fee2:", fee2);
 	isAuthorized = true;
 	status = Status.Paused;
-	str = "MoonDog to the Marzzz!";
+	//str = "MoonDog to the Marzzz!";
 	funcSelector = 1; //0 status, 1 fee, 2 admin
-
-	bytes4bools = [0, 0, 0, 0];
 	bytes4u8s = [funcSelector, statusToByte(status), 0, 0];
-	tokenAmount = as9zBn(274);
+	numU32 = 4294967295;
+	numU64 = 123000000n;
+	//bytes4u32s = [...numToBytes(time, 32), ...u32Bytes, ...u32Bytes, ...u32Bytes];
+	//tokenAmount = as9zBn(274);
+	//bytes4u64s = [...numToBytes(fee),		...numToBytes(tokenAmount),...u64Bytes,		...u64Bytes];
 	time = getTime();
-	bytes4u32s = [...numToBytes(time, 32), ...u32Bytes, ...u32Bytes, ...u32Bytes];
-	bytes4u64s = [
-		...numToBytes(fee),
-		...numToBytes(tokenAmount),
-		...u64Bytes,
-		...u64Bytes,
-	];
 	clock = svm.getClock();
 	clock.unixTimestamp = BigInt(time);
 	svm.setClock(clock);
 
 	updateConfig(
-		bytes4bools,
-		bytes4u8s,
-		bytes4u32s,
-		bytes4u64s,
 		acct1,
-		acct2,
-		str,
+		bytes4u8s,
+		numU32,
+		numU64,
+		//str,
 		signerKp,
 	);
 
@@ -182,11 +170,11 @@ test("updateConfig + time travel", () => {
 	ll("rawAccountData:", rawAccountData);
 
 	const decoded = solanaKitDecodeConfigDev(rawAccountData);
-	expect(decoded.fee).toEqual(fee);
-	expect(decoded.updatedAt).toEqual(time);
-	expect(decoded.status).toEqual(status);
-	expect(decoded.str).toEqual(str);
 	expect(decoded.admin).toEqual(acct1);
+	expect(decoded.status).toEqual(status);
+	expect(decoded.updatedAt).toEqual(numU32);
+	expect(decoded.fee).toEqual(numU64);
+	//expect(decoded.str).toEqual(str);
 });
 
 test("extend configPDA", () => {
@@ -203,6 +191,7 @@ test("extend configPDA", () => {
 	ll("newLen1:", newLen1);
 	expect(newLen).toEqual(BigInt(newLen1!));
 });
+
 test("Read Config2", () => {
 	ll("\n------== Read Config2");
 	ll(`configPDA: ${configPDA}`);
@@ -221,10 +210,10 @@ test("Read Config2", () => {
 	expect(decoded.progOwner).toEqual(progOwner);
 	expect(decoded.admin).toEqual(admin);
 	expect(decoded.str).toEqual(str);
-	expect(decoded.fee).toEqual(fee);
+	expect(decoded.fee).toEqual(numU64);
 	expect(decoded.solBalance).toEqual(0n);
 	expect(decoded.tokenBalance).toEqual(0n);
-	expect(decoded.updatedAt).toEqual(time);
+	expect(decoded.updatedAt).toEqual(numU32);
 	expect(decoded.isAuthorized).toEqual(isAuthorized);
 	expect(decoded.status).toEqual(status);
 	expect(decoded.bump).toEqual(configBump);
@@ -289,10 +278,10 @@ test("updateConfig2", () => {
 	expect(decoded.progOwner).toEqual(progOwner);
 	expect(decoded.admin).toEqual(admin);
 	//expect(decoded.str).toEqual(str);
-	expect(decoded.fee).toEqual(fee);
+	expect(decoded.fee).toEqual(numU64);
 	expect(decoded.solBalance).toEqual(0n);
 	expect(decoded.tokenBalance).toEqual(0n);
-	expect(decoded.updatedAt).toEqual(time);
+	expect(decoded.updatedAt).toEqual(numU32);
 	expect(decoded.isAuthorized).toEqual(isAuthorized);
 	expect(decoded.status).toEqual(status);
 	expect(decoded.bump).toEqual(configBump);
