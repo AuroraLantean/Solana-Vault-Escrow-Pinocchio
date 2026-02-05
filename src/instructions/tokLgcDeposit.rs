@@ -64,10 +64,9 @@ impl<'a> TokLgcDeposit<'a> {
 
       log!("TokLgcDeposit 6c");
       let rent = Rent::from_account_view(rent_sysvar)?;
-      log!("TokLgcDeposit 6d");
       let needed_lamports = rent.try_minimum_balance(VAULT_SIZE)?;
 
-      log!("TokLgcDeposit 6e. needed_lamports:{}", needed_lamports); //1002240
+      log!("TokLgcDeposit 6e"); //1002240
       CreateAccount {
         from: user, //keypair
         to: vault,
@@ -76,7 +75,6 @@ impl<'a> TokLgcDeposit<'a> {
         owner: &PROG_ADDR,
       }
       .invoke_signed(&[seed_signer])?;
-      log!("TokLgcDeposit 6f");
     }
     check_pda(vault)?;
     log!("TokLgcDeposit 7: vault is verified");

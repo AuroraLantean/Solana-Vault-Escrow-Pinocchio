@@ -472,7 +472,7 @@ export const lgcDeposit = (
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: fromAta, isSigner: false, isWritable: true },
 			{ pubkey: toAta, isSigner: false, isWritable: true },
-			{ pubkey: userVault, isSigner: false, isWritable: true },
+			{ pubkey: userVault, isSigner: false, isWritable: true }, // true
 			{ pubkey: mint, isSigner: false, isWritable: false },
 			{ pubkey: configPda, isSigner: false, isWritable: true },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
@@ -540,7 +540,7 @@ export const lgcPay = (
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: fromAta, isSigner: false, isWritable: true },
 			{ pubkey: toAta, isSigner: false, isWritable: true },
-			{ pubkey: vault, isSigner: false, isWritable: false },
+			{ pubkey: vault, isSigner: false, isWritable: true }, // true
 			{ pubkey: mint, isSigner: false, isWritable: false },
 			{ pubkey: configPda, isSigner: false, isWritable: true },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },

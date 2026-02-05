@@ -222,8 +222,8 @@ pub enum Ee {
   PdaToBeBelowRentExempt,
   #[error("ToWallet")]
   ToWallet,
-  #[error("ToWalletNoLamport")]
-  ToWalletNoLamport,
+  #[error("VaultNoLamport")]
+  VaultNoLamport,
   #[error("ToWalletForeignPDA")]
   ToWalletForeignPDA,
   #[error("Xyz099")]
@@ -363,7 +363,7 @@ impl TryFrom<u32> for Ee {
       94 => Ok(Ee::Tok22AcctDiscOffset),
       95 => Ok(Ee::PdaToBeBelowRentExempt),
       96 => Ok(Ee::ToWallet),
-      97 => Ok(Ee::ToWalletNoLamport),
+      97 => Ok(Ee::VaultNoLamport),
       98 => Ok(Ee::ToWalletForeignPDA),
       99 => Ok(Ee::Xyz099),
       100 => Ok(Ee::Xyz100),
@@ -487,7 +487,7 @@ impl ToStr for Ee {
       Ee::Tok22AcctDiscOffset => "Tok22AcctDiscOffset",
       Ee::PdaToBeBelowRentExempt => "PdaToBeBelowRentExempt",
       Ee::ToWallet => "ToWallet",
-      Ee::ToWalletNoLamport => "ToWalletNoLamport",
+      Ee::VaultNoLamport => "VaultNoLamport",
       Ee::ToWalletForeignPDA => "ToWalletForeignPDA",
       Ee::Xyz099 => "Xyz099",
 
@@ -706,7 +706,7 @@ pub fn check_pda(account: &AccountView) -> ProgramResult {
 }
 pub fn check_vault(input_vault: &AccountView, config_vault: &Address) -> ProgramResult {
   if input_vault.lamports() == 0 {
-    return Ee::ToWalletNoLamport.e();
+    return Ee::VaultNoLamport.e();
   }
   if !input_vault.owned_by(&PROG_ADDR) {
     return Ee::ToWalletForeignPDA.e();

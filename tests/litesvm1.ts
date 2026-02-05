@@ -8,6 +8,7 @@ import {
 	acctIsNull,
 	ataBalCk,
 	configPDA,
+	depositSol,
 	findPdaV1,
 	getAta,
 	initConfig,
@@ -35,6 +36,7 @@ import {
 	dragonCoinKp,
 	hacker,
 	owner,
+	ownerKp,
 	pyusdMint,
 	usdcMint,
 	usdgMint,
@@ -58,14 +60,14 @@ let toAta: PublicKey;
 let vaultOut: PdaOut;
 let decimals = 9;
 let amt: bigint;
-let _balcBf: bigint | null;
-//let balcAf: bigint | null;
+let balcBf: bigint | null;
+let balcAf: bigint | null;
 const decDgc = 9;
 const initDgcBalc = bigintAmt(9000, decDgc);
 const initUsdcBalc = bigintAmt(1000, 6);
 //const vaultRent = 1002240n; //from Rust
 
-const balcBf = svm.getBalance(admin);
+balcBf = svm.getBalance(admin);
 ll("admin SOL:", balcBf);
 expect(balcBf).toStrictEqual(initSolBalc);
 
@@ -195,6 +197,19 @@ test("Withdraw Legacy Tokens", () => {
 	ataBalCk(toAta, as6zBn(750), "user1 ");
 });
 
+test("Owner Deposits SOL to VaultPDA", () => {
+	ll("\n------== Owner Deposits SOL to VaultPDA");
+	ll("vaultO:", vaultO.toBase58());
+	signerKp = ownerKp;
+	const amtDeposit = as9zBn(0.46);
+
+	depositSol(signerKp, vaultO, amtDeposit);
+	//sendSol(...) makes accounts, not PDA controlled by the
+	balcAf = svm.getBalance(vaultO);
+	ll("vaultO SOL:", balcAf);
+	const vaultRent = 1002240n; //from Rust
+	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);
+});
 test("Pay Legacy Tokens", () => {
 	ll("\n------== Pay Legacy Tokens");
 	signerKp = user1Kp;
