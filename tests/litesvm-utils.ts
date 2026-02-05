@@ -299,9 +299,9 @@ export const closeConfig = (
 };
 
 export const depositSol = (
+	signer: Keypair,
 	vaultPdaX: PublicKey,
 	amount: bigint,
-	signer: Keypair,
 ) => {
 	const disc = 0;
 	const argData = numToBytes(amount);
@@ -454,7 +454,7 @@ export const lgcDeposit = (
 	userSigner: Keypair,
 	fromAta: PublicKey,
 	toAta: PublicKey,
-	toWallet: PublicKey,
+	userVault: PublicKey,
 	mint: PublicKey,
 	configPda: PublicKey,
 	decimals: number,
@@ -472,7 +472,7 @@ export const lgcDeposit = (
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: fromAta, isSigner: false, isWritable: true },
 			{ pubkey: toAta, isSigner: false, isWritable: true },
-			{ pubkey: toWallet, isSigner: false, isWritable: false },
+			{ pubkey: userVault, isSigner: false, isWritable: true },
 			{ pubkey: mint, isSigner: false, isWritable: false },
 			{ pubkey: configPda, isSigner: false, isWritable: true },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },

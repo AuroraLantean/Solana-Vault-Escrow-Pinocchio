@@ -4,8 +4,8 @@ use pinocchio_log::log;
 
 use crate::{
   ata_balc, check_ata, check_atoken_gpvbd, check_data_len, check_decimals, check_mint0a,
-  check_sysprog, check_vault, executable, instructions::check_signer, none_zero_u64, parse_u64,
-  rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee,
+  check_rent_sysvar, check_sysprog, check_vault, executable, instructions::check_signer,
+  none_zero_u64, parse_u64, rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee,
 };
 
 /// TokLgc: Users to Pay Tokens to VaultAdmin
@@ -92,6 +92,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcPay<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     check_atoken_gpvbd(atoken_program)?;
+    check_rent_sysvar(rent_sysvar)?;
 
     writable(user_ata)?;
     check_ata(user_ata, user, mint)?;

@@ -3,8 +3,9 @@ use pinocchio::{error::ProgramError, AccountView, ProgramResult};
 use pinocchio_log::log;
 
 use crate::{
-  check_ata, check_data_len, check_mint0b, check_sysprog, executable, instructions::check_signer,
-  none_zero_u64, parse_u64, rent_exempt_mint, rent_exempt_tokacct, writable,
+  check_ata, check_atoken_gpvbd, check_data_len, check_mint0b, check_rent_sysvar, check_sysprog,
+  executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt_mint,
+  rent_exempt_tokacct, writable,
 };
 
 /// TokLgc Mint Tokens
@@ -90,6 +91,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcMintToken<'a> {
     check_signer(mint_authority)?;
     executable(token_program)?;
     check_sysprog(system_program)?;
+    check_atoken_gpvbd(atoken_program)?;
+    check_rent_sysvar(rent_sysvar)?;
     //check_pda(config_pda)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes

@@ -51,7 +51,7 @@ test("Owner Deposits SOL to VaultPDA", () => {
 	signerKp = ownerKp;
 	amtDeposit = as9zBn(0.46);
 
-	depositSol(vaultO, amtDeposit, signerKp);
+	depositSol(signerKp, vaultO, amtDeposit);
 	balcAf = svm.getBalance(vaultO);
 	ll("vaultO SOL:", balcAf);
 	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);
@@ -63,7 +63,7 @@ test("User1 Deposits SOL to vault1", () => {
 	signerKp = user1Kp;
 	amtDeposit = as9zBn(1.23); //1230000000n
 
-	depositSol(vault1, amtDeposit, signerKp);
+	depositSol(signerKp, vault1, amtDeposit);
 	balcAf = svm.getBalance(vault1);
 	ll("vault1 SOL:", balcAf);
 	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);

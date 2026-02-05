@@ -1,6 +1,6 @@
 use crate::{
-  check_data_len, check_pda, get_rent_exempt, instructions::check_signer, none_zero_u64, parse_u64,
-  writable, Config,
+  check_data_len, check_pda, check_rent_sysvar, check_sysprog, get_rent_exempt,
+  instructions::check_signer, none_zero_u64, parse_u64, writable, Config,
 };
 use core::convert::TryFrom;
 use pinocchio::{error::ProgramError, AccountView, ProgramResult};
@@ -68,6 +68,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for ConfigResize<'a> {
     check_signer(authority)?;
     writable(config_pda)?;
     check_pda(config_pda)?;
+    check_sysprog(system_program)?;
+    check_rent_sysvar(rent_sysvar)?;
 
     config_pda.check_borrow_mut()?;
     let config: &mut Config = Config::from_account_view(&config_pda)?;

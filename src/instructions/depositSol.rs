@@ -9,7 +9,7 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::Transfer as SystemTransfer;
 
 use crate::{
-  check_sysprog,
+  check_rent_sysvar, check_sysprog,
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
   none_zero_u64, sol_balc, Ee, PROG_ADDR, VAULT_SEED, VAULT_SIZE,
 };
@@ -37,7 +37,7 @@ impl<'a> DepositSol<'a> {
       amount,
     } = self;
     log!("DepositSol process");
-    ensure_deposit_accounts(user, vault, rent_sysvar)?;
+    check_vault_exists(user, vault, rent_sysvar)?;
 
     log!("DepositSol 2");
     SystemTransfer {
@@ -63,6 +63,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
     };
     check_signer(user)?;
     check_sysprog(system_program)?;
+    check_rent_sysvar(rent_sysvar)?;
 
     log!("DepositSol data: {}", data);
     let amount = parse_u64(data)?;
@@ -80,12 +81,12 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
 }
 
 /// Ensure the vault exists; if not, create it with PDA seeds. user must be a signer, vault must be writable, and rent minimum must be respected for creation.
-fn ensure_deposit_accounts(
+fn check_vault_exists(
   user: &AccountView,
   vault: &AccountView,
   rent_sysvar: &AccountView,
 ) -> ProgramResult {
-  log!("ensure_deposit_accounts");
+  log!("check_vault_exists");
   // Create when empty and fund rent-exempt.
   if vault.lamports() == 0 {
     let (expected_vault_pda, bump) = derive_pda1(user.address(), VAULT_SEED)?;

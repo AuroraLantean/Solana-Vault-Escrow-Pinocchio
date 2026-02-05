@@ -4,7 +4,7 @@ use pinocchio_log::log;
 use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
-  check_data_len, check_decimals_max, check_sysprog, executable, initialized,
+  check_data_len, check_decimals_max, check_rent_sysvar, check_sysprog, executable, initialized,
   instructions::check_signer, not_initialized, writable,
 };
 use pinocchio_token::{instructions::InitializeMint, state::Mint};
@@ -88,6 +88,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitMint<'a> {
     check_signer(payer)?;
     executable(token_program)?;
     check_sysprog(system_program)?;
+    check_rent_sysvar(rent_sysvar)?;
+
     //check_pda(config_pda)?;
     not_initialized(mint)?;
     initialized(mint_authority)?;

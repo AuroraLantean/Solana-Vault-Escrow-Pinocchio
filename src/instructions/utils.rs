@@ -1,7 +1,11 @@
 //use num_derive::FromPrimitive;
 use pinocchio::{
   error::{ProgramError, ToStr},
-  sysvars::{clock::Clock, rent::Rent, Sysvar},
+  sysvars::{
+    clock::Clock,
+    rent::{Rent, RENT_ID},
+    Sysvar,
+  },
   AccountView, Address, ProgramResult,
 };
 use pinocchio_log::log;
@@ -38,20 +42,20 @@ pub enum Ee {
   AtokenGPvbd,
   #[error("SystemProgram")]
   SystemProgram,
-  #[error("MintNotAccepted")]
-  MintNotAccepted,
-  #[error("MintsAreTheSame")]
-  MintsAreTheSame,
+  #[error("RentSysvar")]
+  RentSysvar,
+  #[error("Xyz013")]
+  Xyz013,
   #[error("EscrowMintX")]
   EscrowMintX,
   #[error("EscrowMintY")]
   EscrowMintY,
   #[error("EscrowId")]
   EscrowId,
-  #[error("Xyz017")]
-  Xyz017,
-  #[error("Xyz018")]
-  Xyz018,
+  #[error("MintNotAccepted")]
+  MintNotAccepted,
+  #[error("MintsAreTheSame")]
+  MintsAreTheSame,
   #[error("Xyz019")]
   Xyz019,
   //Bytes for Numerical
@@ -274,13 +278,13 @@ impl TryFrom<u32> for Ee {
       9 => Ok(Ee::TokenProgram),
       10 => Ok(Ee::AtokenGPvbd),
       11 => Ok(Ee::SystemProgram),
-      12 => Ok(Ee::MintNotAccepted),
-      13 => Ok(Ee::MintsAreTheSame),
+      12 => Ok(Ee::RentSysvar),
+      13 => Ok(Ee::Xyz013),
       14 => Ok(Ee::EscrowMintX),
       15 => Ok(Ee::EscrowMintY),
       16 => Ok(Ee::EscrowId),
-      17 => Ok(Ee::Xyz017),
-      18 => Ok(Ee::Xyz018),
+      17 => Ok(Ee::MintNotAccepted),
+      18 => Ok(Ee::MintsAreTheSame),
       19 => Ok(Ee::Xyz019),
       20 => Ok(Ee::ZeroU128),
       21 => Ok(Ee::ZeroU64),
@@ -391,13 +395,13 @@ impl ToStr for Ee {
       Ee::TokenProgram => "TokenProgram",
       Ee::AtokenGPvbd => "AtokenGPvbd",
       Ee::SystemProgram => "SystemProgram",
-      Ee::MintNotAccepted => "MintNotAccepted",
-      Ee::MintsAreTheSame => "MintsAreTheSame",
+      Ee::RentSysvar => "RentSysvar",
+      Ee::Xyz013 => "Xyz013",
       Ee::EscrowMintX => "EscrowMintX",
       Ee::EscrowMintY => "EscrowMintY",
       Ee::EscrowId => "EscrowId",
-      Ee::Xyz017 => "Xyz017",
-      Ee::Xyz018 => "Xyz018",
+      Ee::MintNotAccepted => "MintNotAccepted",
+      Ee::MintsAreTheSame => "MintsAreTheSame",
       Ee::Xyz019 => "Xyz019",
 
       Ee::ZeroU128 => "ZeroU128",
@@ -712,16 +716,22 @@ pub fn check_vault(input_vault: &AccountView, config_vault: &Address) -> Program
   }
   Ok(())
 }
-pub fn check_sysprog(system_program: &AccountView) -> ProgramResult {
-  if system_program.address().ne(&pinocchio_system::ID) {
+pub fn check_sysprog(account: &AccountView) -> ProgramResult {
+  if account.address().ne(&pinocchio_system::ID) {
     return Ee::SystemProgram.e();
   }
   Ok(())
 }
 pub const ATOKENGPVBD: Address = pinocchio_associated_token_account::ID;
-pub fn check_atoken_gpvbd(atoken_program: &AccountView) -> ProgramResult {
-  if atoken_program.address().ne(&ATOKENGPVBD) {
+pub fn check_atoken_gpvbd(account: &AccountView) -> ProgramResult {
+  if account.address().ne(&ATOKENGPVBD) {
     return Ee::AtokenGPvbd.e();
+  }
+  Ok(())
+}
+pub fn check_rent_sysvar(account: &AccountView) -> ProgramResult {
+  if account.address().ne(&RENT_ID) {
+    return Ee::RentSysvar.e();
   }
   Ok(())
 }

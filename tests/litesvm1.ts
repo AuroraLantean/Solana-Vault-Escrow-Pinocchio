@@ -27,7 +27,7 @@ import {
 	vaultAta1,
 	vaultO,
 } from "./litesvm-utils";
-import { as6zBn, bigintAmt, ll, zero } from "./utils";
+import { as6zBn, as9zBn, bigintAmt, ll } from "./utils";
 import {
 	admin,
 	adminKp,
@@ -58,9 +58,12 @@ let toAta: PublicKey;
 let vaultOut: PdaOut;
 let decimals = 9;
 let amt: bigint;
+let _balcBf: bigint | null;
+//let balcAf: bigint | null;
 const decDgc = 9;
 const initDgcBalc = bigintAmt(9000, decDgc);
 const initUsdcBalc = bigintAmt(1000, 6);
+//const vaultRent = 1002240n; //from Rust
 
 const balcBf = svm.getBalance(admin);
 ll("admin SOL:", balcBf);
@@ -69,6 +72,7 @@ expect(balcBf).toStrictEqual(initSolBalc);
 test("initial conditions", () => {
 	acctIsNull(vaultAta1);
 });
+
 //------------------==
 test("Make DragonCoin Mint, ATA, Tokens", () => {
 	ll("\n------== Make DragonCoin Mint, ATA, Tokens");
@@ -165,7 +169,7 @@ test("Deposit Legacy Tokens", () => {
 		signerKp,
 		fromAta,
 		toAta,
-		vaultOut.pda, //to_wallet
+		vaultOut.pda, //vault as to_wallet
 		mint,
 		configPDA,
 		decimals,

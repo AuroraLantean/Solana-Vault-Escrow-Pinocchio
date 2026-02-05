@@ -7,9 +7,9 @@ use pinocchio::{
 use pinocchio_log::log;
 
 use crate::{
-  ata_balc, check_ata, check_data_len, check_decimals, check_mint0a, check_sysprog, derive_pda1,
-  executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt_mint,
-  rent_exempt_tokacct, writable, Ee, VAULT_SEED,
+  ata_balc, check_ata, check_atoken_gpvbd, check_data_len, check_decimals, check_mint0a,
+  check_rent_sysvar, check_sysprog, derive_pda1, executable, instructions::check_signer,
+  none_zero_u64, parse_u64, rent_exempt_mint, rent_exempt_tokacct, writable, Ee, VAULT_SEED,
 };
 
 /// TokLgc: Users to Withdraw Tokens
@@ -103,6 +103,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcWithdraw<'a> {
     check_signer(user)?;
     executable(token_program)?;
     check_sysprog(system_program)?;
+    check_atoken_gpvbd(atoken_program)?;
+    check_rent_sysvar(rent_sysvar)?;
+
     //check_pda(config_pda)?;
     writable(from_ata)?;
     check_ata(from_ata, vault, mint)?;

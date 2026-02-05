@@ -10,8 +10,9 @@ use pinocchio_system::instructions::CreateAccount;
 
 use crate::{
   ata_balc, check_ata, check_atoken_gpvbd, check_data_len, check_decimals, check_mint0a, check_pda,
-  check_sysprog, derive_pda1, executable, instructions::check_signer, none_zero_u64, parse_u64,
-  rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee, PROG_ADDR, VAULT_SEED, VAULT_SIZE,
+  check_rent_sysvar, check_sysprog, derive_pda1, executable, instructions::check_signer,
+  none_zero_u64, parse_u64, rent_exempt_mint, rent_exempt_tokacct, writable, Config, Ee, PROG_ADDR,
+  VAULT_SEED, VAULT_SIZE,
 };
 
 /// TokLgc: Users to Deposit Tokens
@@ -19,7 +20,7 @@ pub struct TokLgcDeposit<'a> {
   pub user: &'a AccountView, //signer
   pub from_ata: &'a AccountView,
   pub to_ata: &'a AccountView,
-  pub to_wallet: &'a AccountView,
+  pub vault: &'a AccountView,
   pub mint: &'a AccountView,
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
@@ -36,7 +37,7 @@ impl<'a> TokLgcDeposit<'a> {
       user,
       from_ata,
       to_ata,
-      to_wallet,
+      vault,
       mint,
       token_program,
       system_program,
@@ -47,10 +48,10 @@ impl<'a> TokLgcDeposit<'a> {
     } = self;
     log!("TokLgcDeposit process()");
 
-    if to_wallet.lamports() == 0 {
-      log!("TokLgcDeposit 6: make to_wallet");
+    if vault.lamports() == 0 {
+      log!("TokLgcDeposit 6: make vault");
       let (expected_vault_pda, bump) = derive_pda1(user.address(), VAULT_SEED)?;
-      if to_wallet.address() != &expected_vault_pda {
+      if vault.address() != &expected_vault_pda {
         return Ee::VaultPDA.e();
       }
       log!("TokLgcDeposit 6a");
@@ -68,8 +69,8 @@ impl<'a> TokLgcDeposit<'a> {
 
       log!("TokLgcDeposit 6e. needed_lamports:{}", needed_lamports); //1002240
       CreateAccount {
-        from: user,
-        to: to_wallet,
+        from: user, //keypair
+        to: vault,
         lamports: needed_lamports,
         space: VAULT_SIZE as u64,
         owner: &PROG_ADDR,
@@ -77,15 +78,15 @@ impl<'a> TokLgcDeposit<'a> {
       .invoke_signed(&[seed_signer])?;
       log!("TokLgcDeposit 6f");
     }
-    check_pda(to_wallet)?;
-    log!("TokLgcDeposit 7: to_wallet is verified");
+    check_pda(vault)?;
+    log!("TokLgcDeposit 7: vault is verified");
 
     if to_ata.is_data_empty() {
       log!("Make to_ata");
       pinocchio_associated_token_account::instructions::Create {
         funding_account: user,
         account: to_ata,
-        wallet: to_wallet,
+        wallet: vault,
         mint,
         system_program,
         token_program,
@@ -94,7 +95,7 @@ impl<'a> TokLgcDeposit<'a> {
       //Please upgrade to SPL Token 2022 for immutable owner support
     } else {
       log!("to_ata has data");
-      check_ata(to_ata, to_wallet, mint)?;
+      check_ata(to_ata, vault, mint)?;
     }
     writable(to_ata)?;
     rent_exempt_tokacct(to_ata, rent_sysvar)?;
@@ -120,7 +121,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
     let (data, accounts) = value;
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
 
-    let [user, from_ata, to_ata, to_wallet, mint, config_pda, token_program, system_program, atoken_program, rent_sysvar] =
+    let [user, from_ata, to_ata, vault, mint, config_pda, token_program, system_program, atoken_program, rent_sysvar] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -129,7 +130,9 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     check_atoken_gpvbd(atoken_program)?;
+    check_rent_sysvar(rent_sysvar)?;
 
+    writable(vault)?;
     writable(from_ata)?;
     check_ata(from_ata, user, mint)?;
 
@@ -158,7 +161,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcDeposit<'a> {
       user,
       from_ata,
       to_ata,
-      to_wallet,
+      vault,
       mint,
       token_program,
       system_program,

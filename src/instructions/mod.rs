@@ -130,7 +130,7 @@ pub enum ProgramIx {
   #[account(0, signer, writable, name = "user", desc = "User")]
   #[account(1, writable, name = "from", desc = "From ATA")]
   #[account(2, writable, name = "to", desc = "To ATA")]
-  #[account(3, name = "to_wallet", desc = "To Wallet")]
+  #[account(3, name = "vault", desc = "Vault as To Wallet")]
   #[account(4, name = "mint", desc = "Mint")]
   #[account(5, writable, name = "config_pda", desc = "config_pda")]
   #[account(6, name = "token_program", desc = "Token Program")]

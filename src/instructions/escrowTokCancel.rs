@@ -8,9 +8,9 @@ use pinocchio_log::log;
 use pinocchio_token::state::TokenAccount;
 
 use crate::{
-  check_ata, check_atoken_gpvbd, check_data_len, check_decimals, check_mint0a, check_sysprog,
-  executable, instructions::check_signer, none_zero_u64, rent_exempt_mint, rent_exempt_tokacct,
-  writable, Config, Ee, Escrow,
+  check_ata, check_atoken_gpvbd, check_data_len, check_decimals, check_mint0a, check_rent_sysvar,
+  check_sysprog, executable, instructions::check_signer, none_zero_u64, rent_exempt_mint,
+  rent_exempt_tokacct, writable, Config, Ee, Escrow,
 };
 //TODO: add Token2022 interface
 /// Make Cancel Escrow
@@ -237,6 +237,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokCancel<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     check_atoken_gpvbd(atoken_program)?;
+    check_rent_sysvar(rent_sysvar)?;
     log!("EscrowTokCancel try_from 1");
 
     writable(escrow_ata_x)?;
