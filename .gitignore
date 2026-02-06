@@ -20,4 +20,4 @@ idl
 clients
 codama.json
 program_bytes
-tests/*.so
+**/*.so
