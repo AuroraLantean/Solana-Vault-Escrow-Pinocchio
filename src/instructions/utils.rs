@@ -224,8 +224,8 @@ pub enum Ee {
   ToWallet,
   #[error("VaultNoLamport")]
   VaultNoLamport,
-  #[error("ToWalletForeignPDA")]
-  ToWalletForeignPDA,
+  #[error("VaultIsForeign")]
+  VaultIsForeign,
   #[error("Xyz099")]
   Xyz099,
   //Math
@@ -364,7 +364,7 @@ impl TryFrom<u32> for Ee {
       95 => Ok(Ee::PdaToBeBelowRentExempt),
       96 => Ok(Ee::ToWallet),
       97 => Ok(Ee::VaultNoLamport),
-      98 => Ok(Ee::ToWalletForeignPDA),
+      98 => Ok(Ee::VaultIsForeign),
       99 => Ok(Ee::Xyz099),
       100 => Ok(Ee::Xyz100),
       101 => Ok(Ee::Xyz101),
@@ -488,7 +488,7 @@ impl ToStr for Ee {
       Ee::PdaToBeBelowRentExempt => "PdaToBeBelowRentExempt",
       Ee::ToWallet => "ToWallet",
       Ee::VaultNoLamport => "VaultNoLamport",
-      Ee::ToWalletForeignPDA => "ToWalletForeignPDA",
+      Ee::VaultIsForeign => "VaultIsForeign",
       Ee::Xyz099 => "Xyz099",
 
       Ee::Xyz100 => "Xyz100",
@@ -665,7 +665,7 @@ pub fn check_ata_escrow(
   mint: &AccountView,
 ) -> ProgramResult {
   // if !owner.owned_by(&ID) {
-  //   return Ee::ToWalletForeignPDA.e();
+  //   return Ee::VaultIsForeign.e();
   // } ... escrow as owner may not exist yet
   let ata_len = ata.data_len();
   if ata_len == 0 {
@@ -709,7 +709,7 @@ pub fn check_vault(input_vault: &AccountView, config_vault: &Address) -> Program
     return Ee::VaultNoLamport.e();
   }
   if !input_vault.owned_by(&PROG_ADDR) {
-    return Ee::ToWalletForeignPDA.e();
+    return Ee::VaultIsForeign.e();
   }
   if input_vault.address() != config_vault {
     return Ee::ToWallet.e();

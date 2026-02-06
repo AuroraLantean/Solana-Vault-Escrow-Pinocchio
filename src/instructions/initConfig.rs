@@ -1,7 +1,7 @@
 use crate::{
   check_data_len, check_rent_sysvar, check_sysprog, derive_pda1, get_time,
   instructions::check_signer, not_initialized, parse_u64, rent_exempt_mint22, to32bytes,
-  u8_to_bool, Config, Ee, PROG_ADDR, VAULT_SEED,
+  u8_to_bool, writable, Config, Ee, PROG_ADDR, VAULT_SEED,
 };
 use core::convert::TryFrom;
 use pinocchio::{
@@ -116,7 +116,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for InitConfig<'a> {
     check_signer(signer)?;
     check_sysprog(system_program)?;
     check_rent_sysvar(rent_sysvar)?;
-    //writable(config_pda)?;
+    writable(config_pda)?;
     not_initialized(config_pda)?;
     log!("initConfig try 2");
     rent_exempt_mint22(mint0, rent_sysvar)?;

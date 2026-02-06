@@ -117,9 +117,8 @@ impl<'a> EscrowTokMake<'a> {
     } else {
       log!("escrow_ata_x has data");
       check_ata_escrow(escrow_ata_x, escrow_pda, mint_x)?;
+      rent_exempt_tokacct(escrow_ata_x, rent_sysvar)?;
     }
-    writable(escrow_ata_x)?;
-    rent_exempt_tokacct(escrow_ata_x, rent_sysvar)?;
     log!("Vault ATA is found/verified");
 
     pinocchio_token::instructions::TransferChecked {
@@ -172,6 +171,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokMake<'a> {
 
     writable(maker_ata_x)?;
     check_ata(maker_ata_x, maker, mint_x)?;
+    writable(escrow_ata_x)?;
     writable(escrow_pda)?;
     writable(config_pda)?;
     log!("EscrowTokMake try_from 4");

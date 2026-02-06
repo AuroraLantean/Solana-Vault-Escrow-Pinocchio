@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <> */
 import { expect, test } from "bun:test";
-//Tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
 import type { Keypair } from "@solana/web3.js";
 import {
 	acctIsNull,
@@ -22,6 +21,8 @@ import {
 	user1,
 	user1Kp,
 } from "./web3jsSetup";
+
+//Github Tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
 
 let signerKp: Keypair;
 let amount: bigint;

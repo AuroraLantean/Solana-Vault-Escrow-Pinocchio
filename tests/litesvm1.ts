@@ -202,6 +202,9 @@ test("Owner Deposits SOL to VaultPDA", () => {
 	ll("vaultO:", vaultO.toBase58());
 	signerKp = ownerKp;
 	const amtDeposit = as9zBn(0.46);
+	balcBf = svm.getBalance(vaultO);
+	ll("vaultO SOL:", balcBf);
+	expect(balcAf).toBeUndefined();
 
 	depositSol(signerKp, vaultO, amtDeposit);
 	//sendSol(...) makes accounts, not PDA controlled by the

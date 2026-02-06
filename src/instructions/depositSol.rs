@@ -11,7 +11,7 @@ use pinocchio_system::instructions::Transfer as SystemTransfer;
 use crate::{
   check_rent_sysvar, check_sysprog,
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  none_zero_u64, sol_balc, Ee, PROG_ADDR, VAULT_SEED, VAULT_SIZE,
+  none_zero_u64, sol_balc, writable, Ee, PROG_ADDR, VAULT_SEED, VAULT_SIZE,
 };
 
 // Deposit SOL to program PDA
@@ -62,6 +62,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for DepositSol<'a> {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(user)?;
+    writable(vault)?;
     check_sysprog(system_program)?;
     check_rent_sysvar(rent_sysvar)?;
 

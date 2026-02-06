@@ -99,9 +99,8 @@ impl<'a> EscrowTokWithdraw<'a> {
     } else {
       log!("maker_ata_y has data");
       check_ata(maker_ata_y, maker, mint_y)?;
+      rent_exempt_tokacct(maker_ata_y, rent_sysvar)?;
     }
-    writable(maker_ata_y)?;
-    rent_exempt_tokacct(maker_ata_y, rent_sysvar)?;
 
     log!("Make Seed Signer");
     let id_bytes = &id.to_le_bytes();
@@ -147,9 +146,8 @@ impl<'a> EscrowTokWithdraw<'a> {
       } else {
         log!("maker_ata_x has data");
         check_ata(maker_ata_x, maker, mint_x)?;
+        rent_exempt_tokacct(maker_ata_x, rent_sysvar)?;
       }
-      writable(maker_ata_x)?;
-      rent_exempt_tokacct(maker_ata_x, rent_sysvar)?;
 
       log!("Send token x to maker_ata_x");
       pinocchio_token::instructions::TransferChecked {
@@ -229,13 +227,15 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokWithdraw<'a> {
     check_rent_sysvar(rent_sysvar)?;
     log!("EscrowTokWithdraw try_from 1");
 
+    writable(maker_ata_x)?;
+    writable(maker_ata_y)?;
+
     writable(escrow_ata_x)?;
     check_ata(escrow_ata_x, escrow_pda, mint_x)?;
 
-    log!("EscrowTokWithdraw try_from 2");
     writable(escrow_ata_y)?;
     check_ata(escrow_ata_y, escrow_pda, mint_y)?;
-    log!("EscrowTokWithdraw try_from 3");
+    log!("EscrowTokWithdraw try_from 4");
 
     writable(escrow_pda)?;
     writable(config_pda)?;

@@ -51,8 +51,6 @@ impl<'a> TokenLgcInitMint<'a> {
       space,
     }
     .invoke()?;
-    log!("TokenLgcInitMint 7");
-    writable(mint)?;
 
     log!("Init Mint");
     InitializeMint {
@@ -90,7 +88,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokenLgcInitMint<'a> {
     check_sysprog(system_program)?;
     check_rent_sysvar(rent_sysvar)?;
 
-    //check_pda(config_pda)?;
+    writable(mint)?;
     not_initialized(mint)?;
     initialized(mint_authority)?;
     log!("TokenLgcInitMint try_from 3");

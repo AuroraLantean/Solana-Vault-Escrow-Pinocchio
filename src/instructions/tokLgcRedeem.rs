@@ -65,9 +65,8 @@ impl<'a> TokLgcRedeem<'a> {
     } else {
       log!("to_ata has data");
       check_ata(to_ata, user, mint)?;
+      rent_exempt_tokacct(to_ata, rent_sysvar)?;
     }
-    writable(to_ata)?;
-    rent_exempt_tokacct(to_ata, rent_sysvar)?;
     log!("ToATA is found/verified");
 
     let signer_seeds = [
@@ -111,6 +110,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcRedeem<'a> {
     check_rent_sysvar(rent_sysvar)?;
 
     writable(from_ata)?;
+    writable(to_ata)?;
     check_ata(from_ata, vault, mint)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes

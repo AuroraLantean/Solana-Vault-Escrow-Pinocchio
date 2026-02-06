@@ -4,7 +4,7 @@ use pinocchio_log::log;
 
 use crate::{
   check_ata, check_atoken_gpvbd, check_data_len, check_mint0b, check_rent_sysvar, check_sysprog,
-  executable, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt_mint,
+  executable, initialized, instructions::check_signer, none_zero_u64, parse_u64, rent_exempt_mint,
   rent_exempt_tokacct, writable,
 };
 
@@ -38,18 +38,13 @@ impl<'a> TokLgcMintToken<'a> {
       amount,
     } = self;
     log!("TokLgcMintToken process()");
-    rent_exempt_mint(mint, rent_sysvar, 0)?;
-    writable(mint)?;
-    check_mint0b(mint, mint_authority, token_program, decimals)?;
-
-    log!("TokLgcMintToken 2");
     if ata.is_data_empty() {
       log!("Make ata");
       pinocchio_associated_token_account::instructions::Create {
         funding_account: mint_authority,
         account: ata,
         wallet: to_wallet,
-        mint,
+        mint, // writable
         system_program,
         token_program,
       }
@@ -93,11 +88,19 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcMintToken<'a> {
     check_sysprog(system_program)?;
     check_atoken_gpvbd(atoken_program)?;
     check_rent_sysvar(rent_sysvar)?;
+
     //check_pda(config_pda)?;
+    initialized(to_wallet)?;
+    writable(mint)?;
+    initialized(mint)?;
+    writable(ata)?;
+    rent_exempt_mint(mint, rent_sysvar, 0)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     check_data_len(data, 9)?;
     let decimals = data[0];
+    check_mint0b(mint, mint_authority, token_program, decimals)?;
+
     let amount = parse_u64(&data[1..])?;
     log!("decimals: {}, amount: {}", decimals, amount);
     none_zero_u64(amount)?;

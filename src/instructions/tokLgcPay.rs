@@ -58,9 +58,8 @@ impl<'a> TokLgcPay<'a> {
     } else {
       log!("to_ata has data");
       check_ata(to_ata, vault, mint)?;
+      rent_exempt_tokacct(to_ata, rent_sysvar)?;
     }
-    writable(to_ata)?;
-    rent_exempt_tokacct(to_ata, rent_sysvar)?;
     log!("Vault ATA is found/verified");
 
     pinocchio_token::instructions::TransferChecked {
@@ -94,8 +93,10 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcPay<'a> {
     check_atoken_gpvbd(atoken_program)?;
     check_rent_sysvar(rent_sysvar)?;
 
-    writable(vault)?;
     writable(from_ata)?;
+    writable(to_ata)?;
+    writable(vault)?;
+    writable(config_pda)?;
     check_ata(from_ata, user, mint)?;
     log!("TokLgcPay try_from 5");
 

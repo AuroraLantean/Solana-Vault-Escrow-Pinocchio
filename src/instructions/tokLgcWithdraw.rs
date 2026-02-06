@@ -62,9 +62,8 @@ impl<'a> TokLgcWithdraw<'a> {
     } else {
       log!("to_ata has data");
       check_ata(to_ata, user, mint)?;
+      rent_exempt_tokacct(to_ata, rent_sysvar)?;
     }
-    writable(to_ata)?;
-    rent_exempt_tokacct(to_ata, rent_sysvar)?;
     log!("ToATA is found/verified");
 
     let signer_seeds = [
@@ -106,9 +105,11 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for TokLgcWithdraw<'a> {
     check_atoken_gpvbd(atoken_program)?;
     check_rent_sysvar(rent_sysvar)?;
 
-    //check_pda(config_pda)?;
     writable(from_ata)?;
     check_ata(from_ata, vault, mint)?;
+    writable(to_ata)?;
+    //writable(config_pda)?;
+    //check_pda(config_pda)?;
 
     //1+8: u8 takes 1, u64 takes 8 bytes
     check_data_len(data, 9)?;

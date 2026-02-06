@@ -102,9 +102,8 @@ impl<'a> EscrowTokTake<'a> {
     } else {
       log!("escrow_ata_y has data");
       check_ata_escrow(escrow_ata_y, escrow_pda, mint_y)?;
+      rent_exempt_tokacct(escrow_ata_y, rent_sysvar)?;
     }
-    writable(escrow_ata_y)?;
-    rent_exempt_tokacct(escrow_ata_y, rent_sysvar)?;
 
     log!("Check Taker ATA X");
     if taker_ata_x.is_data_empty() {
@@ -180,11 +179,13 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for EscrowTokTake<'a> {
     check_rent_sysvar(rent_sysvar)?;
     log!("EscrowTokTake try_from 1");
 
+    writable(taker_ata_x)?;
     writable(taker_ata_y)?;
     check_ata(taker_ata_y, taker, mint_y)?;
     log!("EscrowTokTake try_from 2");
 
     writable(escrow_ata_x)?;
+    writable(escrow_ata_y)?;
     check_ata(escrow_ata_x, escrow_pda, mint_x)?;
     log!("EscrowTokTake try_from 3");
 

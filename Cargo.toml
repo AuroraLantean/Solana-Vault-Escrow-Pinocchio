@@ -1,5 +1,5 @@
 [package]
-name = "pinocchio-vault"
+name = "pinocchio-vault-escrow"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
-pinocchio = "0.10.1"
+pinocchio = "0.10.2"
 pinocchio-associated-token-account = "0.3.0"
 pinocchio-log = "0.5.1"
 pinocchio-pubkey = "0.3.0"

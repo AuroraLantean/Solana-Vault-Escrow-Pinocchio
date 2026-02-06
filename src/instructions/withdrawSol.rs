@@ -5,7 +5,7 @@ use pinocchio_log::log;
 use crate::{
   get_rent_exempt,
   instructions::{check_pda, check_signer, derive_pda1, parse_u64},
-  none_zero_u64, Ee, VAULT_SEED, VAULT_SIZE,
+  none_zero_u64, writable, Ee, VAULT_SEED, VAULT_SIZE,
 };
 
 //  vault is owned by the program, matches the PDA derived from user. The withdrawn amount is everything above the rent minimum.
@@ -56,6 +56,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for WithdrawSol<'a> {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(user)?;
+    writable(vault)?;
     check_pda(vault)?;
 
     let amount = parse_u64(data)?;

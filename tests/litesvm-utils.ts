@@ -300,7 +300,7 @@ export const closeConfig = (
 
 export const depositSol = (
 	signer: Keypair,
-	vaultPdaX: PublicKey,
+	userVault: PublicKey,
 	amount: bigint,
 ) => {
 	const disc = 0;
@@ -309,7 +309,7 @@ export const depositSol = (
 	const ix = new TransactionInstruction({
 		keys: [
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
-			{ pubkey: vaultPdaX, isSigner: false, isWritable: true },
+			{ pubkey: userVault, isSigner: false, isWritable: true },
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
@@ -489,7 +489,7 @@ export const lgcWithdraw = (
 	userSigner: Keypair,
 	fromAta: PublicKey,
 	toAta: PublicKey,
-	fromWallet: PublicKey,
+	userVault: PublicKey,
 	mint: PublicKey,
 	decimals: number,
 	amount: bigint,
@@ -506,7 +506,7 @@ export const lgcWithdraw = (
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: fromAta, isSigner: false, isWritable: true },
 			{ pubkey: toAta, isSigner: false, isWritable: true },
-			{ pubkey: fromWallet, isSigner: false, isWritable: false },
+			{ pubkey: userVault, isSigner: false, isWritable: false },
 			{ pubkey: mint, isSigner: false, isWritable: false },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
@@ -522,7 +522,7 @@ export const lgcPay = (
 	userSigner: Keypair,
 	fromAta: PublicKey,
 	toAta: PublicKey,
-	vault: PublicKey,
+	centralVault: PublicKey,
 	mint: PublicKey,
 	configPda: PublicKey,
 	decimals: number,
@@ -540,7 +540,7 @@ export const lgcPay = (
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: fromAta, isSigner: false, isWritable: true },
 			{ pubkey: toAta, isSigner: false, isWritable: true },
-			{ pubkey: vault, isSigner: false, isWritable: true }, // true
+			{ pubkey: centralVault, isSigner: false, isWritable: true }, // true
 			{ pubkey: mint, isSigner: false, isWritable: false },
 			{ pubkey: configPda, isSigner: false, isWritable: true },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
@@ -557,7 +557,7 @@ export const lgcRedeem = (
 	userSigner: Keypair,
 	fromAta: PublicKey,
 	toAta: PublicKey,
-	vault: PublicKey,
+	centralVault: PublicKey,
 	configPDA: PublicKey,
 	mint: PublicKey,
 	decimals: number,
@@ -575,7 +575,7 @@ export const lgcRedeem = (
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: fromAta, isSigner: false, isWritable: true },
 			{ pubkey: toAta, isSigner: false, isWritable: true },
-			{ pubkey: vault, isSigner: false, isWritable: false },
+			{ pubkey: centralVault, isSigner: false, isWritable: false },
 			{ pubkey: configPDA, isSigner: false, isWritable: false },
 			{ pubkey: mint, isSigner: false, isWritable: false },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
@@ -589,9 +589,9 @@ export const lgcRedeem = (
 	sendTxns(svm, blockhash, [ix], [userSigner]);
 };
 export const makeTokEscrow = (
-	userSigner: Keypair,
-	fromAta: PublicKey,
-	toAta: PublicKey,
+	maker: Keypair,
+	makerAtaX: PublicKey,
+	escrowAtaX: PublicKey,
 	mintX: PublicKey,
 	mintY: PublicKey,
 	escrowPDA: PublicKey,
@@ -620,9 +620,9 @@ export const makeTokEscrow = (
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
-			{ pubkey: fromAta, isSigner: false, isWritable: true },
-			{ pubkey: toAta, isSigner: false, isWritable: true },
+			{ pubkey: maker.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: makerAtaX, isSigner: false, isWritable: true },
+			{ pubkey: escrowAtaX, isSigner: false, isWritable: true },
 			{ pubkey: mintX, isSigner: false, isWritable: false },
 			{ pubkey: mintY, isSigner: false, isWritable: false },
 			{ pubkey: escrowPDA, isSigner: false, isWritable: true },
@@ -635,10 +635,10 @@ export const makeTokEscrow = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [userSigner]);
+	sendTxns(svm, blockhash, [ix], [maker]);
 };
 export const takeTokEscrow = (
-	userSigner: Keypair,
+	taker: Keypair,
 	takerAtaX: PublicKey,
 	takerAtaY: PublicKey,
 	escrowAtaX: PublicKey,
@@ -671,7 +671,7 @@ export const takeTokEscrow = (
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: taker.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: takerAtaX, isSigner: false, isWritable: true },
 			{ pubkey: takerAtaY, isSigner: false, isWritable: true },
 			{ pubkey: escrowAtaX, isSigner: false, isWritable: true },
@@ -688,10 +688,10 @@ export const takeTokEscrow = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [userSigner]);
+	sendTxns(svm, blockhash, [ix], [taker]);
 };
 export const withdrawTokEscrow = (
-	userSigner: Keypair,
+	maker: Keypair,
 	makerAtaX: PublicKey,
 	makerAtaY: PublicKey,
 	escrowAtaX: PublicKey,
@@ -707,7 +707,7 @@ export const withdrawTokEscrow = (
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
-			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: maker.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: makerAtaX, isSigner: false, isWritable: true },
 			{ pubkey: makerAtaY, isSigner: false, isWritable: true },
 			{ pubkey: escrowAtaX, isSigner: false, isWritable: true },
@@ -724,7 +724,7 @@ export const withdrawTokEscrow = (
 		programId: vaultProgAddr,
 		data: Buffer.from([disc]),
 	});
-	sendTxns(svm, blockhash, [ix], [userSigner]);
+	sendTxns(svm, blockhash, [ix], [maker]);
 };
 export const cancelTokEscrow = (
 	makerSigner: Keypair,
@@ -1007,6 +1007,9 @@ export const vaultProgram = (computeMaxUnits?: bigint) => {
 		svm = svm.withComputeBudget(computeBudget);
 	}
 	const programPath = "target/deploy/pinocchio_vault.so";
+	//# Dump a program from mainnet
+	//solana program dump progAddr pyth.so --url mainnet-beta
+
 	svm.addProgramFromFile(vaultProgAddr, programPath);
 	//return [programId];
 };

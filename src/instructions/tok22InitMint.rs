@@ -69,8 +69,6 @@ impl<'a> Token2022InitMint<'a> {
       space,
     }
     .invoke()?;
-    log!("Token2022InitMint 7");
-    writable(mint)?;
 
     log!("Init Mint");
     InitializeMint {
@@ -86,6 +84,36 @@ impl<'a> Token2022InitMint<'a> {
     /*TODO: add metadata:
     https://solana.stackexchange.com/questions/16831/how-to-add-metadata-for-token-program
     https://github.com/solana-foundation/anchor/blob/b6724d2bcbfb5531224057c49afaa4e8c50c5137/tests/spl/token-extensions/programs/token-extensions/src/instructions.rs#L31
+
+    https://github.com/solana-developers/program-examples
+        invoke(
+        &mpl_instruction::create_metadata_accounts_v3(
+            *token_metadata_program.key,
+            *metadata_account.key,
+            *mint_account.key,
+            *mint_authority.key,
+            *payer.key,
+            *mint_authority.key,
+            args.token_title,
+            args.token_symbol,
+            args.token_uri,
+            None,
+            0,
+            true,
+            false,
+            None,
+            None,
+            None,
+        ),
+        &[
+            metadata_account.clone(),
+            mint_account.clone(),
+            mint_authority.clone(),
+            payer.clone(),
+            token_metadata_program.clone(),
+            rent.clone(),
+        ],
+    )?;
 
     https://solana.com/docs/tokens/extensions/metadata
     Initialize MetadataPointer extension pointing to the Mint account
@@ -134,7 +162,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for Token2022InitMint<'a> {
     executable(token_program)?;
     check_sysprog(system_program)?;
     check_rent_sysvar(rent_sysvar)?;
-    //check_pda(config_pda)?;
+
+    writable(mint)?;
     not_initialized(mint)?;
     initialized(mint_authority)?;
     log!("Token2022InitMint try_from 3");

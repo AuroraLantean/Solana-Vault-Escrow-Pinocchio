@@ -142,6 +142,11 @@ bun test ./tests/test1.ts
 
 ### TODO
 
+- Deploy and Upload Program IDL to interact on Solana Explorers: <https://explorer.solana.com/address/dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN/idl?cluster=devnet>
+- Solana Privacy: MagicBlocks, Orca, Acum, Noir
+- Surfpool: Solana Mainnet Simulator with Native Defi support, account snapshot: <https://www.surfpool.run/>
+- Yellowstone gRPC v11: for streaming data and indexing
+- Test via LiteSVM + SolanaKit: SOL Transfer Example with Solana Kit <https://www.litesvm.com/docs/typescript/examples/sol-transfer>
 - Codama can generate TS and Rust client: <https://solana.com/docs/programs/codama/clients>, but not yet Go client: <https://github.com/codama-idl/codama/issues/973>
 - Mint2022 layout: <https://rareskills.io/post/token-2022>
 - StackExchange: <https://solana.stackexchange.com/questions/23991/how-to-generate-a-go-client-from-pinocchio-rust>
