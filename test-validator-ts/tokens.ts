@@ -27,7 +27,8 @@ import {
 } from "@solana-program/token";
 import { TOKEN_2022_PROGRAM_ADDRESS } from "@solana-program/token-2022";
 import { acctExists, rpc, rpcSubscriptions } from "./httpws";
-import { ll } from "./utils";
+
+const ll = console.log;
 
 export const makeMint = async (
 	feePayerKp: KeyPairSigner<string>,
