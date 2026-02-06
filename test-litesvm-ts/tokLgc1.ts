@@ -213,6 +213,7 @@ test("Owner Deposits SOL to VaultPDA", () => {
 	const vaultRent = 1002240n; //from Rust
 	expect(balcAf).toStrictEqual(vaultRent + amtDeposit);
 });
+
 test("Pay Legacy Tokens", () => {
 	ll("\n------== Pay Legacy Tokens");
 	signerKp = user1Kp;

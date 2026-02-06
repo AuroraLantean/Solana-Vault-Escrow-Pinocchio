@@ -54,9 +54,6 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for OraclesRead<'a> {
     log!("parse u8 array");
     let func_selector = data[0];
     log!("func_selector: {}", func_selector);
-    //let func_selector = data[1];
-    //let func_selector = data[2];
-    //let func_selector = data[3];
 
     let num_u32 = parse_u32(&data[4..8])?;
     log!("num_u32: {}", num_u32);
