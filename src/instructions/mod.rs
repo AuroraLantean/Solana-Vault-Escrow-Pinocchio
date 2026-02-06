@@ -1,15 +1,15 @@
 //---------------== Module Declaration
 //declare your new function mod here to be included into this project, then export it via "pub use"
 #[allow(non_snake_case)]
-pub mod closeConfig;
-#[allow(non_snake_case)]
 pub mod config2Update;
+#[allow(non_snake_case)]
+pub mod configClose;
+#[allow(non_snake_case)]
+pub mod configInit;
 #[allow(non_snake_case)]
 pub mod configResize;
 #[allow(non_snake_case)]
 pub mod configUpdate;
-#[allow(non_snake_case)]
-pub mod depositSol;
 #[allow(non_snake_case)]
 pub mod escrowTokCancel;
 #[allow(non_snake_case)]
@@ -19,9 +19,11 @@ pub mod escrowTokTake;
 #[allow(non_snake_case)]
 pub mod escrowTokWithdraw;
 #[allow(non_snake_case)]
-pub mod initConfig;
-#[allow(non_snake_case)]
 pub mod oraclesRead;
+#[allow(non_snake_case)]
+pub mod solDeposit;
+#[allow(non_snake_case)]
+pub mod solWithdraw;
 #[allow(non_snake_case)]
 pub mod tok22InitATA;
 #[allow(non_snake_case)]
@@ -43,21 +45,20 @@ pub mod tokLgcRedeem;
 #[allow(non_snake_case)]
 pub mod tokLgcWithdraw;
 pub mod utils;
-#[allow(non_snake_case)]
-pub mod withdrawSol;
 
 //file names start with a lower case + Camel cases, but struct names start with Upper case + Camel cases!
-pub use closeConfig::*;
 pub use config2Update::*;
+pub use configClose::*;
+pub use configInit::*;
 pub use configResize::*;
 pub use configUpdate::*;
-pub use depositSol::*;
 pub use escrowTokCancel::*;
 pub use escrowTokMake::*;
 pub use escrowTokTake::*;
 pub use escrowTokWithdraw::*;
-pub use initConfig::*;
 pub use oraclesRead::*;
+pub use solDeposit::*;
+pub use solWithdraw::*;
 pub use tok22InitATA::*;
 pub use tok22InitMint::*;
 pub use tok22MintToken::*;
@@ -69,7 +70,6 @@ pub use tokLgcPay::*;
 pub use tokLgcRedeem::*;
 pub use tokLgcWithdraw::*;
 pub use utils::*;
-pub use withdrawSol::*;
 
 use shank::ShankInstruction;
 
