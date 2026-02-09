@@ -20,7 +20,7 @@ export const dgcAuthority = dgcAuthorityKp.publicKey;
 export const dragonCoin = dragonCoinKp.publicKey;
 
 export const vaultProgAddr = new PublicKey(
-	"7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e",
+	"A9TPi1RSW5apQcZch9CUz5EnuyfSF773zxndJowMrcK3",
 );
 ll("vaultProgAddr:", vaultProgAddr.toBase58());
 

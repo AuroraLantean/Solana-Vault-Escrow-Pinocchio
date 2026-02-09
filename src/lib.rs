@@ -18,7 +18,7 @@ mod litesvm1;
 #[cfg(test)]
 mod litesvm_helpers;
 
-declare_id!("7EKqBVYSCmJbt2T8tGSmwzNKnpL29RqcJcyUr9aEEr6e"); //crate::ID
+declare_id!("A9TPi1RSW5apQcZch9CUz5EnuyfSF773zxndJowMrcK3"); //crate::ID
 pub const PROG_ADDR: Address = Address::new_from_array(ID);
 pub const TOKEN_LGC_ADDR: Address =
   Address::from_str_const("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");

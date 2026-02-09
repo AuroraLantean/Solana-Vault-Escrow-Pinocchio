@@ -1006,7 +1006,7 @@ export const vaultProgram = (computeMaxUnits?: bigint) => {
 		computeBudget.computeUnitLimit = computeMaxUnits;
 		svm = svm.withComputeBudget(computeBudget);
 	}
-	const programPath = "target/deploy/pinocchio_vault.so";
+	const programPath = "target/deploy/pinocchio_vault_escrow.so";
 	//# Dump a program from mainnet
 	//solana program dump progAddr pyth.so --url mainnet-beta
 

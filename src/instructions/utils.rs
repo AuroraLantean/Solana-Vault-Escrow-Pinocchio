@@ -137,8 +137,8 @@ pub enum Ee {
   UserPDA,
   #[error("EscrowPDA")]
   EscrowPDA,
-  #[error("ActionPDA")]
-  ActionPDA,
+  #[error("PythPDA")]
+  PythPDA,
   #[error("Xyz058")]
   Xyz058,
   #[error("Xyz059")]
@@ -154,8 +154,8 @@ pub enum Ee {
   UserDataLengh,
   #[error("EscrowDataLengh")]
   EscrowDataLengh,
-  #[error("ActionDataLengh")]
-  ActionDataLengh,
+  #[error("PythPriceUpdateV2DataLen")]
+  PythPriceUpdateV2DataLen,
   #[error("Xyz066")]
   Xyz066,
   #[error("Xyz067")]
@@ -228,12 +228,12 @@ pub enum Ee {
   VaultIsForeign,
   #[error("Xyz099")]
   Xyz099,
-  //Math
-  //ArithmeticOverflow exists
-  #[error("Xyz100")]
-  Xyz100,
+  #[error("OracleNum")]
+  OracleNum,
   #[error("Xyz101")]
   Xyz101,
+  //Math
+  //ArithmeticOverflow exists
   #[error("MultiplyOverflow")]
   MultiplyOverflow,
   #[error("DividedByZero")]
@@ -323,7 +323,7 @@ impl TryFrom<u32> for Ee {
       54 => Ok(Ee::AdminPDA),
       55 => Ok(Ee::UserPDA),
       56 => Ok(Ee::EscrowPDA),
-      57 => Ok(Ee::ActionPDA),
+      57 => Ok(Ee::PythPDA),
       58 => Ok(Ee::Xyz058),
       59 => Ok(Ee::Xyz059),
       60 => Ok(Ee::ConfigDataLengh),
@@ -331,7 +331,7 @@ impl TryFrom<u32> for Ee {
       62 => Ok(Ee::AdminDataLengh),
       63 => Ok(Ee::UserDataLengh),
       64 => Ok(Ee::EscrowDataLengh),
-      65 => Ok(Ee::ActionDataLengh),
+      65 => Ok(Ee::PythPriceUpdateV2DataLen),
       66 => Ok(Ee::Xyz066),
       67 => Ok(Ee::Xyz067),
       68 => Ok(Ee::Xyz068),
@@ -366,7 +366,7 @@ impl TryFrom<u32> for Ee {
       97 => Ok(Ee::VaultNoLamport),
       98 => Ok(Ee::VaultIsForeign),
       99 => Ok(Ee::Xyz099),
-      100 => Ok(Ee::Xyz100),
+      100 => Ok(Ee::OracleNum),
       101 => Ok(Ee::Xyz101),
       102 => Ok(Ee::MultiplyOverflow),
       103 => Ok(Ee::DividedByZero),
@@ -442,7 +442,7 @@ impl ToStr for Ee {
       Ee::VaultPDA => "VaultPDA",
       Ee::AdminPDA => "AdminPDA",
       Ee::UserPDA => "UserPDA",
-      Ee::ActionPDA => "ActionPDA",
+      Ee::PythPDA => "PythPDA",
       Ee::EscrowPDA => "EscrowPDA",
       Ee::Xyz058 => "Xyz058",
       Ee::Xyz059 => "Xyz059",
@@ -452,7 +452,7 @@ impl ToStr for Ee {
       Ee::AdminDataLengh => "AdminDataLengh",
       Ee::UserDataLengh => "UserDataLengh",
       Ee::EscrowDataLengh => "EscrowDataLengh",
-      Ee::ActionDataLengh => "ActionDataLengh",
+      Ee::PythPriceUpdateV2DataLen => "PythPriceUpdateV2DataLen",
       Ee::Xyz066 => "Xyz066",
       Ee::Xyz067 => "Xyz067",
       Ee::Xyz068 => "Xyz068",
@@ -491,7 +491,7 @@ impl ToStr for Ee {
       Ee::VaultIsForeign => "VaultIsForeign",
       Ee::Xyz099 => "Xyz099",
 
-      Ee::Xyz100 => "Xyz100",
+      Ee::OracleNum => "OracleNum",
       Ee::Xyz101 => "Xyz101",
       Ee::MultiplyOverflow => "MultiplyOverflow",
       Ee::DividedByZero => "DividedByZero",
@@ -736,6 +736,29 @@ pub fn check_rent_sysvar(account: &AccountView) -> ProgramResult {
   Ok(())
 }
 //pub const SYSTEMPROGRAM: pinocchio_pubkey::reexport::Pubkey = solana_system_interface::program::ID;
+
+//-------------== Read Oracle Prices
+//https://solana.stackexchange.com/questions/22293/how-to-convert-a-solana-program-account-info-into-a-pinocchio-account-info
+pub fn pyth_network(account: &AccountView) -> Result<u64, ProgramError> {
+  //Pyth Devnet or Mainnet https://docs.pyth.network/price-feeds/core/contract-addresses/solana
+  account.check_borrow_mut()?;
+  let price_update: &mut PriceUpdateV2 = PriceUpdateV2::from_account_view(&account)?;
+  //pub price_update: Account<'info, PriceUpdateV2>,
+  //let price_update = &ctx.accounts.price_update;
+  log!("Price feed id: {}", price_update.price_message.feed_id);
+  log!("Price: {}", price_update.price_message.price);
+  log!("Confidence: {}", price_update.price_message.conf);
+  log!("Exponent: {}", price_update.price_message.exponent);
+  log!("Publish Time: {}", price_update.price_message.publish_time);
+  Ok(0)
+}
+pub fn get_oracle_pda(oracle_num: u8, account: &AccountView) -> Result<u64, ProgramError> {
+  let price = match oracle_num {
+    0 | 1 => pyth_network(account)?,
+    _ => return Err(Ee::OracleNum.into()),
+  };
+  Ok(price)
+}
 
 //----------------== Check Account Properties
 pub fn writable(account: &AccountView) -> ProgramResult {

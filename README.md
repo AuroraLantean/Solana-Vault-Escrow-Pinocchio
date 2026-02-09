@@ -75,7 +75,10 @@ solana-keygen new -o target/deploy/pinocchio_vault-keypair.json
 solana address -k target/deploy/pinocchio_vault-keypair.json
 ```
 
-Paste it into lib.rs > declare_id! macro.
+Paste it into
+
+- lib.rs: declare_id! macro
+- web3jsSetup.ts: vaultProgAddr
 
 ### Build the program
 
@@ -107,7 +110,7 @@ p[;'/]\
 
   rated/ folder in our project with the program types our client code uses to send transactions to our program.
 
-### Run Tests via LiteSVM
+### Run Tests via NodeSVM in LiteSVM
 
 Write tests in Rust:
 
@@ -122,6 +125,10 @@ See tutorial: <https://litesvm.github.io/litesvm/tutorial.html>
 pnpm add -D litesvm @solana/web3.js @solana/spl-token
 bun test ./tests/litesvm1.ts
 ```
+
+### Run Tests via LiteSVM
+
+See tutorial: <https://www.litesvm.com/docs/getting-started>
 
 ### Run Tests via Solana-Test-Validator
 
@@ -139,6 +146,12 @@ cargo build-sbf
 solana program deploy --program-id target/deploy/pinocchio_vault-keypair.json target/deploy/pinocchio_vault.so --url localhost
 bun test ./tests/test1.ts
 ```
+
+### Pyth SDK for price feeds
+
+Pyth Developer Hub: <https://docs.pyth.network/price-feeds/core/use-real-time-data/pull-integration/solana?ref=pyth-network.ghost.io>
+
+Pyth SDK Crate: <https://crates.io/crates/pyth-solana-receiver-sdk>
 
 ### TODO
 

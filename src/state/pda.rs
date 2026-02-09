@@ -27,7 +27,6 @@ pub struct Config {
   status: u8,             // 1
   vault_bump: u8,         // 1
   bump: u8,               // 1
-                          //expected_len: [u8; 4],  // 4 for u32
 } // padding: [u8; 6] if the struct size needs to be aligned to 32 bytes.
 
 impl Config {
