@@ -1,11 +1,10 @@
 use crate::{
-  check_data_len, check_mint0a, check_oracle_pda, check_pda, instructions::check_signer, parse_u32,
-  parse_u64, writable, Ee,
+  check_data_len, check_mint0a, check_pda, get_oracle_pda, instructions::check_signer, parse_u32,
+  parse_u64, writable,
 };
 use core::convert::TryFrom;
-use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
+use pinocchio::{error::ProgramError, AccountView, ProgramResult};
 use pinocchio_log::log;
-use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
 /// OraclesRead
 pub struct OraclesRead<'a> {
@@ -21,7 +20,7 @@ impl<'a> OraclesRead<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("OraclesRead process()");
-    let price = get_oracle_pda(self.oracle_num)?;
+    let _price = get_oracle_pda(self.oracle_num, self.oracle_account)?;
     Ok(())
   }
 }
@@ -45,11 +44,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for OraclesRead<'a> {
 
     log!("parse u8 array");
     let oracle_num = data[0];
-    log!(
-      "func_selector: {}, oracle_num: {}",
-      func_selector,
-      oracle_num
-    );
+    log!("oracle_num: {}", oracle_num);
     let num_u32 = parse_u32(&data[4..8])?;
     log!("num_u32: {}", num_u32);
 

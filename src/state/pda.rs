@@ -115,7 +115,7 @@ impl Config {
   //Must: there are no mutable borrows of the account data
   #[inline]
   pub unsafe fn from_account_info_unchecked(pda: &AccountView) -> Result<&Self, ProgramError> {
-    Ok(Self::from_bytes_unchecked(pda.borrow_unchecked_mut()))
+    unsafe { Ok(Self::from_bytes_unchecked(pda.borrow_unchecked_mut())) }
     //Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self))
   }
   /// The caller must ensure that `bytes` contains a valid representation of `Account`, and
@@ -123,7 +123,7 @@ impl Config {
   /// At the moment `Account` has an alignment of 1 byte.
   /// This method does not perform a length validation.
   pub unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
-    &*(bytes.as_ptr() as *const &Config)
+    unsafe { &*(bytes.as_ptr() as *const &Config) }
   }
   //----------== Setters
   pub fn set_mint0(&mut self, addr: &Address) {
@@ -304,12 +304,12 @@ impl Escrow {
     unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
   }
   pub unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
-    &*(bytes.as_ptr() as *const &&Escrow)
+    unsafe { &*(bytes.as_ptr() as *const &&Escrow) }
   }
   #[inline]
   pub unsafe fn from_account_info_unchecked(pda: &AccountView) -> Result<&Self, ProgramError> {
     Self::check(pda)?;
-    Ok(Self::from_bytes_unchecked(pda.borrow_unchecked_mut()))
+    unsafe { Ok(Self::from_bytes_unchecked(pda.borrow_unchecked_mut())) }
     //unsafe { Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
   }
 }
@@ -317,7 +317,7 @@ impl Escrow {
 //----------------== Pyth
 // pyth-crosschain-main/pythnet/pythnet_sdk/src/messages.rs
 #[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, BorshSchema)]
+#[derive(Debug, Copy, Clone, PartialEq)] //Serialize, Deserialize, BorshSchema
 pub struct PriceFeedMessage {
   /// `FeedId` but avoid the type alias because of compatibility issues with Anchor's `idl-build` feature.
   pub feed_id: [u8; 32],
@@ -343,6 +343,7 @@ pub struct PriceFeedMessage {
   pub ema_conf: u64,
 }
 // pyth-crosschain-main/target_chains/solana/pyth_solana_receiver_sdk/src/price_update.rs
+#[derive(Debug, Clone)]
 pub enum VerificationLevel {
   Partial {
     #[allow(unused)]
@@ -369,7 +370,7 @@ impl PriceUpdateV2 {
       if account.owner().ne(&Address::from_str_const(
         "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
       )) {
-        Err(Ee::PythPDA.into());
+        return Err(Ee::PythPDA.into());
       }
     }
     unsafe { Ok(&mut *(account.borrow_unchecked_mut().as_ptr() as *mut Self)) }

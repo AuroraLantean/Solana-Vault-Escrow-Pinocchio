@@ -1,3 +1,4 @@
+#cargo-features = ["edition2024"]
 [package]
 name = "pinocchio-vault-escrow"
 version = "0.1.0"
@@ -14,7 +15,7 @@ pinocchio-pubkey = "0.3.0"
 pinocchio-system = "0.5.0"
 pinocchio-token = "0.5.0"
 pinocchio-token-2022 = "0.2.0"
-pyth-solana-receiver-sdk = "1.1.0"
+#pyth-solana-receiver-sdk = "1.1.0"
 shank = "0.4.7"
 thiserror = { version = "2.0.18", default-features = false }
 

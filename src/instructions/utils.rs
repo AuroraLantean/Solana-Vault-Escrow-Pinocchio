@@ -1,4 +1,5 @@
 //use num_derive::FromPrimitive;
+use crate::{PriceUpdateV2, Status, PROG_ADDR};
 use pinocchio::{
   error::{ProgramError, ToStr},
   sysvars::{
@@ -11,9 +12,8 @@ use pinocchio::{
 use pinocchio_log::log;
 use pinocchio_token::state::{Mint, TokenAccount};
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
+//use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 use thiserror::Error;
-
-use crate::{Status, PROG_ADDR};
 
 //TODO: put errors in error.rs ... https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-errors
 #[derive(Clone, Debug, Eq, Error, PartialEq)] //FromPrimitive
@@ -230,8 +230,8 @@ pub enum Ee {
   Xyz099,
   #[error("OracleNum")]
   OracleNum,
-  #[error("Xyz101")]
-  Xyz101,
+  #[error("OraclePriceInvalid")]
+  OraclePriceInvalid,
   //Math
   //ArithmeticOverflow exists
   #[error("MultiplyOverflow")]
@@ -367,7 +367,7 @@ impl TryFrom<u32> for Ee {
       98 => Ok(Ee::VaultIsForeign),
       99 => Ok(Ee::Xyz099),
       100 => Ok(Ee::OracleNum),
-      101 => Ok(Ee::Xyz101),
+      101 => Ok(Ee::OraclePriceInvalid),
       102 => Ok(Ee::MultiplyOverflow),
       103 => Ok(Ee::DividedByZero),
       104 => Ok(Ee::Remainder),
@@ -492,7 +492,7 @@ impl ToStr for Ee {
       Ee::Xyz099 => "Xyz099",
 
       Ee::OracleNum => "OracleNum",
-      Ee::Xyz101 => "Xyz101",
+      Ee::OraclePriceInvalid => "OraclePriceInvalid",
       Ee::MultiplyOverflow => "MultiplyOverflow",
       Ee::DividedByZero => "DividedByZero",
       Ee::Remainder => "Remainder",
@@ -742,15 +742,30 @@ pub fn check_rent_sysvar(account: &AccountView) -> ProgramResult {
 pub fn pyth_network(account: &AccountView) -> Result<u64, ProgramError> {
   //Pyth Devnet or Mainnet https://docs.pyth.network/price-feeds/core/contract-addresses/solana
   account.check_borrow_mut()?;
-  let price_update: &mut PriceUpdateV2 = PriceUpdateV2::from_account_view(&account)?;
+  if account.data_len() != PriceUpdateV2::LEN {
+    return Err(Ee::PythPriceUpdateV2DataLen.into());
+  }
+  unsafe {
+    if account.owner().ne(&Address::from_str_const(
+      "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
+    )) {
+      return Err(Ee::PythPDA.into());
+    }
+  }
+  let price_update: &PriceUpdateV2 =
+    unsafe { &*(account.borrow_unchecked_mut().as_ptr() as *const PriceUpdateV2) };
   //pub price_update: Account<'info, PriceUpdateV2>,
   //let price_update = &ctx.accounts.price_update;
-  log!("Price feed id: {}", price_update.price_message.feed_id);
-  log!("Price: {}", price_update.price_message.price);
+  //log!("Price feed id: {}", price_update.price_message.feed_id);
+  let price = price_update.price_message.price;
+  log!("Price: {}", price);
   log!("Confidence: {}", price_update.price_message.conf);
   log!("Exponent: {}", price_update.price_message.exponent);
   log!("Publish Time: {}", price_update.price_message.publish_time);
-  Ok(0)
+  if price <= 0 {
+    return Err(Ee::OraclePriceInvalid.into());
+  }
+  Ok(price as u64)
 }
 pub fn get_oracle_pda(oracle_num: u8, account: &AccountView) -> Result<u64, ProgramError> {
   let price = match oracle_num {
