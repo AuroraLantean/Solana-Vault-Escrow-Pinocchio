@@ -1,6 +1,6 @@
 use crate::{
-  check_data_len, check_mint0a, check_pda, get_oracle_pda, instructions::check_signer, parse_u32,
-  parse_u64, writable,
+  check_data_len, check_mint0a, check_pda, instructions::check_signer, parse_u32, parse_u64,
+  read_oracle_pda, writable,
 };
 use core::convert::TryFrom;
 use pinocchio::{error::ProgramError, AccountView, ProgramResult};
@@ -20,7 +20,7 @@ impl<'a> OraclesRead<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("OraclesRead process()");
-    let _price = get_oracle_pda(self.oracle_vendor, self.oracle_pda)?;
+    let _price = read_oracle_pda(self.oracle_vendor, self.oracle_pda)?;
     Ok(())
   }
 }

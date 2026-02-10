@@ -1,4 +1,4 @@
-use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
+use pinocchio::{error::ProgramError, sysvars::clock::Clock, AccountView, Address, ProgramResult};
 
 use crate::{none_zero_u64, Ee, PROG_ADDR};
 
@@ -343,7 +343,10 @@ pub struct PriceFeedMessage {
   pub ema_conf: u64,
 }
 // pyth-crosschain-main/target_chains/solana/pyth_solana_receiver_sdk/src/price_update.rs
-#[derive(Debug, Clone)]
+/// This enum represents how much a price update has been verified:
+/// - If `Full`, we have verified the signatures for two thirds of the current guardians.
+/// - If `Partial`, only `num_signatures` guardian signatures have been checked.
+#[derive(Debug, Clone, PartialEq)]
 pub enum VerificationLevel {
   Partial {
     #[allow(unused)]
@@ -351,6 +354,7 @@ pub enum VerificationLevel {
   },
   Full,
 }
+pub type FeedId = [u8; 32];
 #[derive(Clone, Debug)]
 #[repr(C)] //0..8 	Discriminator 	8 bytes
 pub struct PriceUpdateV2 {
@@ -366,6 +370,7 @@ impl PriceUpdateV2 {
     if pda.data_len() != Self::LEN {
       return Ee::PythPriceUpdateV2DataLen.e();
     }
+    //check that the accounts are owned by the Pyth Solana Receiver
     unsafe {
       if pda.owner().ne(&Address::from_str_const(
         "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
@@ -378,5 +383,53 @@ impl PriceUpdateV2 {
   pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
     Self::check(pda)?;
     unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
+  }
+
+  // target_chains/solana/pyth_solana_receiver_sdk/src/price_update.rs
+  /// Ported from get_price_no_older_than_with_custom_verification_level()
+  /// Get a `Price` from a `PriceUpdateV2` account for a given `FeedId` no older than `maximum_age` with customizable verification level.
+  ///
+  /// # Warning
+  /// Lowering the verification level from `Full` to `Partial` increases the risk of using a malicious price update.
+  /// Please read the documentation for [`VerificationLevel`] for more information.
+  ///
+  /// # Example
+  /// ```ignore
+  /// use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, VerificationLevel, PriceUpdateV2};
+  /// const MAXIMUM_AGE : u64 = 30;
+  /// const FEED_ID: &str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD
+  ///     let price_update = &mut ctx.accounts.price_update;
+  ///     let price = price_update.get_price_no_older_than_with_custom_verification_level(&Clock::get()?, MAXIMUM_AGE, &get_feed_id_from_hex(FEED_ID)?, VerificationLevel::Partial{num_signatures: 5})?;
+  ///     Ok(())
+  /// }
+  ///```
+  pub fn get_price(
+    &self,
+    clock: &Clock,
+    maximum_age: u64,
+    feed_id: &FeedId,
+  ) -> Result<i64, ProgramError> {
+    if self.verification_level != VerificationLevel::Full {
+      return Err(Ee::PythPriceVerification.into());
+    } // target_chains/solana/pyth_solana_receiver_sdk/src/error.rs
+
+    if self.price_message.feed_id != *feed_id {
+      return Err(Ee::PythMismatchedFeedId.into());
+    } //get_price_unchecked(feed_id)?
+
+    //check if price feed update's age exceeds the requested maximum age"
+    if self
+      .price_message
+      .publish_time
+      .saturating_add(maximum_age.try_into().unwrap())
+      >= clock.unix_timestamp
+    {
+      return Err(Ee::OraclePriceTooOld.into());
+    }
+    if self.price_message.price <= 0 {
+      return Err(Ee::OraclePriceInvalid.into());
+    }
+    // The actual price is `(price ± conf)* 10^exponent`.
+    Ok(self.price_message.price)
   }
 }

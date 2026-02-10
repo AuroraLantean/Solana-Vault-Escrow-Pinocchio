@@ -8,6 +8,7 @@ edition = "2021"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
+hex = { version = "0.4.3", default-features = false }
 pinocchio = "0.10.2"
 pinocchio-associated-token-account = "0.3.0"
 pinocchio-log = "0.5.1"

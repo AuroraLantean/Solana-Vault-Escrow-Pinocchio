@@ -1,5 +1,5 @@
 //use num_derive::FromPrimitive;
-use crate::{PriceUpdateV2, Status, PROG_ADDR};
+use crate::{FeedId, PriceUpdateV2, Status, PROG_ADDR};
 use pinocchio::{
   error::{ProgramError, ToStr},
   sysvars::{
@@ -13,6 +13,7 @@ use pinocchio_log::log;
 use pinocchio_token::state::{Mint, TokenAccount};
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 //use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
+use hex::FromHex;
 use thiserror::Error;
 
 //TODO: put errors in error.rs ... https://learn.blueshift.gg/en/courses/pinocchio-for-dummies/pinocchio-errors
@@ -154,8 +155,8 @@ pub enum Ee {
   UserDataLengh,
   #[error("EscrowDataLengh")]
   EscrowDataLengh,
-  #[error("PythPriceUpdateV2DataLen")]
-  PythPriceUpdateV2DataLen,
+  #[error("Xyz0065")]
+  Xyz0065,
   #[error("Xyz066")]
   Xyz066,
   #[error("Xyz067")]
@@ -228,10 +229,10 @@ pub enum Ee {
   VaultIsForeign,
   #[error("Xyz099")]
   Xyz099,
-  #[error("OracleNum")]
-  OracleNum,
-  #[error("OraclePriceInvalid")]
-  OraclePriceInvalid,
+  #[error("Xyz100")]
+  Xyz100,
+  #[error("Xyz101")]
+  Xyz101,
   //Math
   //ArithmeticOverflow exists
   #[error("MultiplyOverflow")]
@@ -247,6 +248,27 @@ pub enum Ee {
   FunctionSelector,
   #[error("ClockGet")]
   ClockGet,
+  #[error("Xyz108")]
+  Xyz108,
+  #[error("Xyz109")]
+  Xyz109,
+  //Oracles...
+  #[error("OracleNum")]
+  OracleNum,
+  #[error("OraclePriceInvalid")]
+  OraclePriceInvalid,
+  #[error("OraclePriceTooOld")]
+  OraclePriceTooOld,
+  #[error("PythPriceUpdateV2DataLen")]
+  PythPriceUpdateV2DataLen,
+  #[error("PythPriceVerification")]
+  PythPriceVerification,
+  #[error("PythMismatchedFeedId")]
+  PythMismatchedFeedId,
+  #[error("PythFeedIdNonHexCharacter")]
+  PythFeedIdNonHexCharacter,
+  #[error("PythFeedIdMustBe32Bytes")]
+  PythFeedIdMustBe32Bytes,
   #[error("NotMapped")]
   NotMapped,
   //ProgramResult: AccountBorrowFailed
@@ -331,7 +353,7 @@ impl TryFrom<u32> for Ee {
       62 => Ok(Ee::AdminDataLengh),
       63 => Ok(Ee::UserDataLengh),
       64 => Ok(Ee::EscrowDataLengh),
-      65 => Ok(Ee::PythPriceUpdateV2DataLen),
+      65 => Ok(Ee::Xyz0065),
       66 => Ok(Ee::Xyz066),
       67 => Ok(Ee::Xyz067),
       68 => Ok(Ee::Xyz068),
@@ -366,14 +388,24 @@ impl TryFrom<u32> for Ee {
       97 => Ok(Ee::VaultNoLamport),
       98 => Ok(Ee::VaultIsForeign),
       99 => Ok(Ee::Xyz099),
-      100 => Ok(Ee::OracleNum),
-      101 => Ok(Ee::OraclePriceInvalid),
+      100 => Ok(Ee::Xyz100),
+      101 => Ok(Ee::Xyz101),
       102 => Ok(Ee::MultiplyOverflow),
       103 => Ok(Ee::DividedByZero),
       104 => Ok(Ee::Remainder),
       105 => Ok(Ee::EmptyData),
       106 => Ok(Ee::FunctionSelector),
       107 => Ok(Ee::ClockGet),
+      108 => Ok(Ee::Xyz108),
+      109 => Ok(Ee::Xyz109),
+      110 => Ok(Ee::OracleNum),
+      111 => Ok(Ee::OraclePriceInvalid),
+      112 => Ok(Ee::OraclePriceTooOld),
+      113 => Ok(Ee::PythPriceUpdateV2DataLen),
+      114 => Ok(Ee::PythPriceVerification),
+      115 => Ok(Ee::PythMismatchedFeedId),
+      116 => Ok(Ee::PythFeedIdNonHexCharacter),
+      117 => Ok(Ee::PythFeedIdMustBe32Bytes),
       _ => Err(Ee::NotMapped.into()),
     }
   }
@@ -452,7 +484,7 @@ impl ToStr for Ee {
       Ee::AdminDataLengh => "AdminDataLengh",
       Ee::UserDataLengh => "UserDataLengh",
       Ee::EscrowDataLengh => "EscrowDataLengh",
-      Ee::PythPriceUpdateV2DataLen => "PythPriceUpdateV2DataLen",
+      Ee::Xyz0065 => "Xyz0065",
       Ee::Xyz066 => "Xyz066",
       Ee::Xyz067 => "Xyz067",
       Ee::Xyz068 => "Xyz068",
@@ -491,14 +523,25 @@ impl ToStr for Ee {
       Ee::VaultIsForeign => "VaultIsForeign",
       Ee::Xyz099 => "Xyz099",
 
-      Ee::OracleNum => "OracleNum",
-      Ee::OraclePriceInvalid => "OraclePriceInvalid",
+      Ee::Xyz100 => "Xyz100",
+      Ee::Xyz101 => "Xyz101",
       Ee::MultiplyOverflow => "MultiplyOverflow",
       Ee::DividedByZero => "DividedByZero",
       Ee::Remainder => "Remainder",
       Ee::EmptyData => "EmptyData",
       Ee::FunctionSelector => "FunctionSelector",
       Ee::ClockGet => "ClockGet",
+      Ee::Xyz108 => "Xyz108",
+      Ee::Xyz109 => "Xyz109",
+
+      Ee::OracleNum => "OracleNum",
+      Ee::OraclePriceInvalid => "OraclePriceInvalid",
+      Ee::OraclePriceTooOld => "OraclePriceTooOld",
+      Ee::PythPriceUpdateV2DataLen => "PythPriceUpdateV2DataLen",
+      Ee::PythPriceVerification => "PythPriceVerification",
+      Ee::PythMismatchedFeedId => "PythMismatchedFeedId",
+      Ee::PythFeedIdNonHexCharacter => "PythFeedIdNonHexCharacter",
+      Ee::PythFeedIdMustBe32Bytes => "PythFeedIdMustBe32Bytes",
       Ee::NotMapped => "NotMapped",
     }
   }
@@ -738,7 +781,36 @@ pub fn check_rent_sysvar(account: &AccountView) -> ProgramResult {
 //pub const SYSTEMPROGRAM: pinocchio_pubkey::reexport::Pubkey = solana_system_interface::program::ID;
 
 //-------------== Read Oracle Prices
+pub const MAX_PRICE_AGE: u64 = 60; // in seconds
+
 //https://solana.stackexchange.com/questions/22293/how-to-convert-a-solana-program-account-info-into-a-pinocchio-account-info
+
+/// Get a `FeedId` from a hex string.
+///
+/// Price feed ids are a 32 byte unique identifier for each price feed in the Pyth network.
+/// They are sometimes represented as a 64 character hex string (with or without a 0x prefix).
+///
+/// # Example
+///
+/// ```
+/// use pyth_solana_receiver_sdk::price_update::get_feed_id_from_hex;
+/// let feed_id = get_feed_id_from_hex("0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d").unwrap();
+/// ```
+pub fn get_feed_id_from_hex(input: &str) -> Result<FeedId, ProgramError> {
+  let mut feed_id: FeedId = [0; 32];
+  match input.len() {
+    66 => {
+      feed_id.copy_from_slice(
+        &<[u8; 32]>::from_hex(&input[2..]).map_err(|_| Ee::PythFeedIdNonHexCharacter)?,
+      )
+      //&hex::decode()
+    }
+    64 => feed_id
+      .copy_from_slice(&<[u8; 32]>::from_hex(input).map_err(|_| Ee::PythFeedIdNonHexCharacter)?),
+    _ => Ee::PythFeedIdMustBe32Bytes.e()?,
+  }
+  Ok(feed_id)
+}
 pub fn pyth_network(pda: &AccountView) -> Result<u64, ProgramError> {
   //Pyth Devnet or Mainnet https://docs.pyth.network/price-feeds/core/contract-addresses/solana
   pda.check_borrow_mut()?;
@@ -748,17 +820,21 @@ pub fn pyth_network(pda: &AccountView) -> Result<u64, ProgramError> {
 
   //let price_update = &ctx.accounts.price_update;
   //log!("Price feed id: {}", price_update.price_message.feed_id);
-  let price = price_update.price_message.price;
-  log!("Price: {}", price);
+  log!("price_message.price: {}", price_update.price_message.price);
   log!("Confidence: {}", price_update.price_message.conf);
   log!("Exponent: {}", price_update.price_message.exponent);
   log!("Publish Time: {}", price_update.price_message.publish_time);
-  if price <= 0 {
-    return Err(Ee::OraclePriceInvalid.into());
-  }
+
+  pub const FEED_ID: &str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD price feed id from https://pyth.network/developers/price-feed-ids
+
+  let price = price_update.get_price(
+    &Clock::get()?,
+    MAX_PRICE_AGE,
+    &get_feed_id_from_hex(FEED_ID)?,
+  )?;
   Ok(price as u64)
 }
-pub fn get_oracle_pda(oracle_vendor: u8, pda: &AccountView) -> Result<u64, ProgramError> {
+pub fn read_oracle_pda(oracle_vendor: u8, pda: &AccountView) -> Result<u64, ProgramError> {
   let price = match oracle_vendor {
     0 | 1 => pyth_network(pda)?,
     _ => return Err(Ee::OracleNum.into()),

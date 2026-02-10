@@ -37,7 +37,7 @@ let signerKp: Keypair;
 let mints: PublicKey[];
 let progOwner: PublicKey;
 let progAdmin: PublicKey;
-let oracleProg: PublicKey;
+let oraclePDA: PublicKey;
 let tokenMint: PublicKey;
 let tokenProg: PublicKey;
 let oracleVendor = 0;
@@ -113,21 +113,21 @@ test("OraclesRead", () => {
 	ll("vault1:", vault1.toBase58());
 	ll(`configPDA: ${configPDA}`);
 	signerKp = user1Kp;
-	oracleProg = usdcMint;
+	oraclePDA = usdcMint;
 	tokenMint = usdcMint;
 	tokenProg = TOKEN_PROGRAM_ID; //TOKEN_2022_PROGRAM_ID;
 	oracleVendor = 0;
 	numU32 = 12;
 	numU64 = 1100n;
 
-	ll("oracleProg:", oracleProg.toBase58());
+	ll("oraclePDA:", oraclePDA.toBase58());
 	ll("tokenMint:", tokenMint.toBase58());
 	ll("tokenProg:", tokenProg.toBase58());
 	ll("oracleVendor:", oracleVendor);
 	oraclesRead(
 		signerKp,
 		configPDA,
-		oracleProg,
+		oraclePDA,
 		tokenMint,
 		tokenProg,
 		oracleVendor,
