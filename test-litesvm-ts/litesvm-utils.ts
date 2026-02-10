@@ -114,7 +114,7 @@ export const findEscrow = (
 };
 
 //-------------== LiteSVM Methods
-export const sendSol = (addrTo: PublicKey, amount: bigint, signer: Keypair) => {
+export const sendSol = (signer: Keypair, addrTo: PublicKey, amount: bigint) => {
 	const blockhash = svm.latestBlockhash();
 	const ixs = [
 		SystemProgram.transfer({
@@ -145,6 +145,7 @@ export const makeAccount = (
 //-------------== Program Methods
 const _testMint = (item: PublicKey) => item === undefined;
 export const initConfig = (
+	signer: Keypair,
 	mints: PublicKey[],
 	progOwner: PublicKey,
 	progAdmin: PublicKey,
@@ -152,7 +153,6 @@ export const initConfig = (
 	status: Status,
 	fee: bigint,
 	str: string,
-	signer: Keypair,
 ) => {
 	const disc = 12;
 	const argData = [
@@ -192,12 +192,12 @@ export const initConfig = (
 	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const updateConfig = (
+	signer: Keypair,
 	acct1: PublicKey,
 	bytes4u8s: number[],
 	numU32: number,
 	numU64: bigint,
 	//str: string,
-	signer: Keypair,
 ) => {
 	const disc = 13;
 	const argData = [
@@ -243,6 +243,7 @@ export const configResize = (
 	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const updateConfig2 = (
+	signer: Keypair,
 	bytes4bools: number[],
 	bytes4u8s: number[],
 	bytes4u32s: number[],
@@ -250,7 +251,6 @@ export const updateConfig2 = (
 	acct1: PublicKey,
 	acct2: PublicKey,
 	str: string,
-	signer: Keypair,
 ) => {
 	const disc = 20;
 	const argData = [
@@ -319,9 +319,9 @@ export const depositSol = (
 	sendTxns(svm, blockhash, [ix], [signer]);
 };
 export const withdrawSol = (
+	signer: Keypair,
 	vaultPdaX: PublicKey,
 	amount: bigint,
-	signer: Keypair,
 	expectedError = "",
 ) => {
 	const disc = 1;
@@ -764,14 +764,14 @@ export const cancelTokEscrow = (
 };
 
 export const oraclesRead = (
+	signer: Keypair,
 	configPDA: PublicKey,
-	oracleProgram: PublicKey,
+	oraclePDA: PublicKey,
 	tokenMint: PublicKey,
 	tokenProg: PublicKey,
 	oracleVendor: number,
 	num_u32: number,
 	num_u64: bigint,
-	signer: Keypair,
 ) => {
 	const disc = 21;
 	if (oracleVendor > 255) throw new Error("oracleVendor > 255");
@@ -784,14 +784,14 @@ export const oraclesRead = (
 		...numToBytes(num_u64, 64),
 	];
 	ll("configPDA:", configPDA.toBase58());
-	ll("oracleProgram:", oracleProgram.toBase58());
+	ll("oraclePDA:", oraclePDA.toBase58());
 
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
-			{ pubkey: oracleProgram, isSigner: false, isWritable: false },
+			{ pubkey: oraclePDA, isSigner: false, isWritable: false },
 			{ pubkey: tokenMint, isSigner: false, isWritable: false },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
 		],

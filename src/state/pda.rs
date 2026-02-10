@@ -362,17 +362,21 @@ pub struct PriceUpdateV2 {
 impl PriceUpdateV2 {
   pub const LEN: usize = 8 + 32 + 2 + 32 + 8 + 8 + 4 + 8 + 8 + 8 + 8 + 8;
 
-  pub fn from_account_view(account: &AccountView) -> Result<&mut Self, ProgramError> {
-    if account.data_len() != Self::LEN {
-      return Err(Ee::PythPriceUpdateV2DataLen.into());
+  pub fn check(pda: &AccountView) -> ProgramResult {
+    if pda.data_len() != Self::LEN {
+      return Ee::PythPriceUpdateV2DataLen.e();
     }
     unsafe {
-      if account.owner().ne(&Address::from_str_const(
+      if pda.owner().ne(&Address::from_str_const(
         "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
       )) {
-        return Err(Ee::PythPDA.into());
+        return Ee::PythPDA.e();
       }
     }
-    unsafe { Ok(&mut *(account.borrow_unchecked_mut().as_ptr() as *mut Self)) }
+    Ok(())
+  }
+  pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
+    Self::check(pda)?;
+    unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
   }
 }

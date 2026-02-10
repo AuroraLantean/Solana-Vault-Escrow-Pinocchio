@@ -75,6 +75,7 @@ test("InitConfig", () => {
 	ll("progOwner:", progOwner.toBase58(), progOwner.toBytes());
 	ll("progAdmin:", progAdmin.toBase58(), progAdmin.toBytes());
 	initConfig(
+		signerKp,
 		mints,
 		progOwner,
 		progAdmin,
@@ -82,7 +83,6 @@ test("InitConfig", () => {
 		status,
 		fee,
 		str,
-		signerKp,
 	);
 
 	const pdaRaw = svm.getAccount(configPDA);
@@ -125,6 +125,7 @@ test("OraclesRead", () => {
 	ll("tokenProg:", tokenProg.toBase58());
 	ll("oracleVendor:", oracleVendor);
 	oraclesRead(
+		signerKp,
 		configPDA,
 		oracleProg,
 		tokenMint,
@@ -132,6 +133,5 @@ test("OraclesRead", () => {
 		oracleVendor,
 		numU32,
 		numU64,
-		signerKp,
 	);
 });

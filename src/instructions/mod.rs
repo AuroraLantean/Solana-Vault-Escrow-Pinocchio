@@ -342,7 +342,7 @@ pub enum ProgramIx {
   /// 21 OraclesRead
   #[account(0, signer, writable, name = "signer", desc = "signer")]
   #[account(1, writable, name = "config_pda", desc = "Config PDA")]
-  #[account(2, name = "oracle_program", desc = "Oracle Program")]
+  #[account(2, name = "oracle_pda", desc = "Oracle PDA")]
   #[account(3, name = "token_mint", desc = "Token Mint")]
   #[account(4, name = "token_program", desc = "Token Program")]
   OraclesRead {

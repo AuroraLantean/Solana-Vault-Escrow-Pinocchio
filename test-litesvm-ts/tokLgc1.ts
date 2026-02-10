@@ -144,6 +144,7 @@ test("InitConfig", () => {
 	ll("progOwner:", progOwner.toBase58(), progOwner.toBytes());
 	ll("progAdmin:", progAdmin.toBase58(), progAdmin.toBytes());
 	initConfig(
+		signerKp,
 		mints,
 		progOwner,
 		progAdmin,
@@ -151,7 +152,6 @@ test("InitConfig", () => {
 		status,
 		fee,
 		str,
-		signerKp,
 	);
 });
 

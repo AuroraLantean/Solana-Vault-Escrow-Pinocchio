@@ -101,6 +101,7 @@ test("InitConfig", () => {
 	ll("progOwner:", progOwner.toBase58(), progOwner.toBytes());
 	ll("progAdmin:", progAdmin.toBase58(), progAdmin.toBytes());
 	initConfig(
+		signerKp,
 		mints,
 		progOwner,
 		progAdmin,
@@ -108,7 +109,6 @@ test("InitConfig", () => {
 		status,
 		fee,
 		str,
-		signerKp,
 	);
 
 	const pdaRaw = svm.getAccount(configPDA);
@@ -156,12 +156,12 @@ test("updateConfig + time travel", () => {
 	svm.setClock(clock);
 
 	updateConfig(
+		signerKp,
 		acct1,
 		bytes4u8s,
 		numU32,
 		numU64,
 		//str,
-		signerKp,
 	);
 
 	const pdaRaw = svm.getAccount(configPDA);
@@ -253,6 +253,7 @@ test("updateConfig2", () => {
 	];
 
 	updateConfig2(
+		signerKp,
 		bytes4bools,
 		bytes4u8s,
 		bytes4u32s,
@@ -260,7 +261,6 @@ test("updateConfig2", () => {
 		acct1,
 		acct2,
 		str,
-		signerKp,
 	);
 
 	const pdaRaw = svm.getAccount(configPDA);

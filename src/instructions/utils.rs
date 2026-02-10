@@ -739,22 +739,13 @@ pub fn check_rent_sysvar(account: &AccountView) -> ProgramResult {
 
 //-------------== Read Oracle Prices
 //https://solana.stackexchange.com/questions/22293/how-to-convert-a-solana-program-account-info-into-a-pinocchio-account-info
-pub fn pyth_network(account: &AccountView) -> Result<u64, ProgramError> {
+pub fn pyth_network(pda: &AccountView) -> Result<u64, ProgramError> {
   //Pyth Devnet or Mainnet https://docs.pyth.network/price-feeds/core/contract-addresses/solana
-  account.check_borrow_mut()?;
-  if account.data_len() != PriceUpdateV2::LEN {
-    return Err(Ee::PythPriceUpdateV2DataLen.into());
-  }
-  unsafe {
-    if account.owner().ne(&Address::from_str_const(
-      "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
-    )) {
-      return Err(Ee::PythPDA.into());
-    }
-  }
-  let price_update: &PriceUpdateV2 =
-    unsafe { &*(account.borrow_unchecked_mut().as_ptr() as *const PriceUpdateV2) };
-  //pub price_update: Account<'info, PriceUpdateV2>,
+  pda.check_borrow_mut()?;
+  let price_update: &PriceUpdateV2 = PriceUpdateV2::from_account_view(&pda)?;
+  //check pda data length and its owner
+  //let price_update: &PriceUpdateV2 =  unsafe { &*(pda.borrow_unchecked_mut().as_ptr() as *const PriceUpdateV2) };
+
   //let price_update = &ctx.accounts.price_update;
   //log!("Price feed id: {}", price_update.price_message.feed_id);
   let price = price_update.price_message.price;
@@ -767,9 +758,9 @@ pub fn pyth_network(account: &AccountView) -> Result<u64, ProgramError> {
   }
   Ok(price as u64)
 }
-pub fn get_oracle_pda(oracle_num: u8, account: &AccountView) -> Result<u64, ProgramError> {
-  let price = match oracle_num {
-    0 | 1 => pyth_network(account)?,
+pub fn get_oracle_pda(oracle_vendor: u8, pda: &AccountView) -> Result<u64, ProgramError> {
+  let price = match oracle_vendor {
+    0 | 1 => pyth_network(pda)?,
     _ => return Err(Ee::OracleNum.into()),
   };
   Ok(price)

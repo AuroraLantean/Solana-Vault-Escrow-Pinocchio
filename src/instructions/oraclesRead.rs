@@ -10,8 +10,8 @@ use pinocchio_log::log;
 pub struct OraclesRead<'a> {
   pub signer: &'a AccountView,
   pub config_pda: &'a AccountView,
-  pub oracle_account: &'a AccountView,
-  pub oracle_num: u8,
+  pub oracle_pda: &'a AccountView,
+  pub oracle_vendor: u8,
   pub num_u32: u32,
   pub num_u64: u64,
 }
@@ -20,7 +20,7 @@ impl<'a> OraclesRead<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("OraclesRead process()");
-    let _price = get_oracle_pda(self.oracle_num, self.oracle_account)?;
+    let _price = get_oracle_pda(self.oracle_vendor, self.oracle_pda)?;
     Ok(())
   }
 }
@@ -34,7 +34,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for OraclesRead<'a> {
     let data_size1 = 16;
     check_data_len(data, data_size1)?;
 
-    let [signer, config_pda, oracle_account, token_mint, token_program] = accounts else {
+    let [signer, config_pda, oracle_pda, token_mint, token_program] = accounts else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(signer)?;
@@ -43,8 +43,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for OraclesRead<'a> {
     check_mint0a(token_mint, token_program)?;
 
     log!("parse u8 array");
-    let oracle_num = data[0];
-    log!("oracle_num: {}", oracle_num);
+    let oracle_vendor = data[0];
+    log!("oracle_vendor: {}", oracle_vendor);
     let num_u32 = parse_u32(&data[4..8])?;
     log!("num_u32: {}", num_u32);
 
@@ -54,8 +54,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for OraclesRead<'a> {
     Ok(Self {
       signer,
       config_pda,
-      oracle_account,
-      oracle_num,
+      oracle_pda,
+      oracle_vendor,
       num_u32,
       num_u64,
     })
