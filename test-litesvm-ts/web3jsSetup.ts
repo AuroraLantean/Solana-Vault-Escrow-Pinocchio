@@ -44,3 +44,13 @@ export const ATokenGPvbd = new PublicKey(
 	"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
 );
 export const decUsdx = 6;
+
+export const PythReceiver = new PublicKey(
+	"rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
+);
+export const PythPriceFeed_BTCUSD = new PublicKey(
+	"4cSM2e6rvbGQUFiJbqytoVMi5GgghSMr8LwVrT9VPSPo",
+);
+export const PythPriceFeed_SOLUSD = new PublicKey(
+	"7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE",
+);

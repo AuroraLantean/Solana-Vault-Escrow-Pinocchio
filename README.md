@@ -153,6 +153,26 @@ Pyth Developer Hub: <https://docs.pyth.network/price-feeds/core/use-real-time-da
 
 Pyth SDK Crate: <https://crates.io/crates/pyth-solana-receiver-sdk>
 
+### Surfpool
+
+Why Surfpool <https://www.surfpool.run/>
+
+- Fork Mainnet accounts
+- Special RPC to manipulate time and state
+- Set balances for any SOL/token
+- Surfpool MCP for Cursor or Copilot
+- Surfpool Cloud for team testing: `surfpool cloud start`; add your RPC URL into your txtx.yml; Copy runbooks/deployment/signers.localnet.tx into signers.surfnet.tx; Then run it `surfpool run deployment --env surfnet -u`
+
+Examples: <https://github.com/txtx/surfpool-examples>
+
+```bash
+surfpool start --watch --network mainnet
+surfpool run <program-method> --env surfnet -u
+```
+
+Get tokens at <https://cloud.txtx.run/faucet> into your local network. Check in terminal: `spl-token display <tokenMint> --output json`
+
+
 ### TODO
 
 - Deploy and Upload Program IDL to interact on Solana Explorers: <https://explorer.solana.com/address/dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN/idl?cluster=devnet>

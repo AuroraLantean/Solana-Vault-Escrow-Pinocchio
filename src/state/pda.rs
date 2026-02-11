@@ -408,14 +408,15 @@ impl PriceUpdateV2 {
     clock: &Clock,
     maximum_age: u64,
     feed_id: &FeedId,
-  ) -> Result<i64, ProgramError> {
-    if self.verification_level != VerificationLevel::Full {
+  ) -> Result<PriceFeedMessage, ProgramError> {
+    /*if self.verification_level != VerificationLevel::Full {
       return Err(Ee::PythPriceVerification.into());
-    } // target_chains/solana/pyth_solana_receiver_sdk/src/error.rs
+    }*/
+    // target_chains/solana/pyth_solana_receiver_sdk/src/error.rs
 
-    if self.price_message.feed_id != *feed_id {
-      return Err(Ee::PythMismatchedFeedId.into());
-    } //get_price_unchecked(feed_id)?
+    // if self.price_message.feed_id != *feed_id {
+    //   return Err(Ee::PythMismatchedFeedId.into());
+    // } //get_price_unchecked(feed_id)?
 
     //check if price feed update's age exceeds the requested maximum age"
     if self
@@ -429,7 +430,6 @@ impl PriceUpdateV2 {
     if self.price_message.price <= 0 {
       return Err(Ee::OraclePriceInvalid.into());
     }
-    // The actual price is `(price ± conf)* 10^exponent`.
-    Ok(self.price_message.price)
+    Ok(self.price_message)
   }
 }

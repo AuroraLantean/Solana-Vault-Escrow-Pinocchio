@@ -1,5 +1,5 @@
 //use num_derive::FromPrimitive;
-use crate::{FeedId, PriceUpdateV2, Status, PROG_ADDR};
+use crate::{FeedId, PriceFeedMessage, PriceUpdateV2, Status, PROG_ADDR};
 use pinocchio::{
   error::{ProgramError, ToStr},
   sysvars::{
@@ -824,14 +824,23 @@ pub fn pyth_network(pda: &AccountView) -> Result<u64, ProgramError> {
   log!("Confidence: {}", price_update.price_message.conf);
   log!("Exponent: {}", price_update.price_message.exponent);
   log!("Publish Time: {}", price_update.price_message.publish_time);
+  //log!("PriceVerification: {}", price_update.verification_level);
 
-  pub const FEED_ID: &str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD price feed id from https://pyth.network/developers/price-feed-ids
+  pub const FEED_ID: &str = "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43"; //"0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD price feed id from https://pyth.network/developers/price-feed-ids
 
-  let price = price_update.get_price(
+  let price_feed_message = price_update.get_price(
     &Clock::get()?,
     MAX_PRICE_AGE,
     &get_feed_id_from_hex(FEED_ID)?,
   )?;
+  // The actual price is `(price ± conf)* 10^exponent`.
+  log!(
+    "The price is ({} ± {}) * 10^{}",
+    price_feed_message.price,
+    price_feed_message.conf,
+    price_feed_message.exponent
+  );
+  let price = price_feed_message.price * (10i64 ^ (price_feed_message.exponent as i64));
   Ok(price as u64)
 }
 pub fn read_oracle_pda(oracle_vendor: u8, pda: &AccountView) -> Result<u64, ProgramError> {

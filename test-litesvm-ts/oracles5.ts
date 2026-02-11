@@ -11,6 +11,7 @@ import {
 	initSolBalc,
 	oraclesRead,
 	setMint,
+	setPriceFeedPda,
 	svm,
 	vault1,
 	vaultO,
@@ -20,6 +21,7 @@ import {
 	admin,
 	owner,
 	ownerKp,
+	PythPriceFeed_BTCUSD,
 	pyusdMint,
 	usdcMint,
 	usdgMint,
@@ -113,7 +115,7 @@ test("OraclesRead", () => {
 	ll("vault1:", vault1.toBase58());
 	ll(`configPDA: ${configPDA}`);
 	signerKp = user1Kp;
-	oraclePDA = usdcMint;
+	oraclePDA = PythPriceFeed_BTCUSD;
 	tokenMint = usdcMint;
 	tokenProg = TOKEN_PROGRAM_ID; //TOKEN_2022_PROGRAM_ID;
 	oracleVendor = 0;
@@ -124,6 +126,8 @@ test("OraclesRead", () => {
 	ll("tokenMint:", tokenMint.toBase58());
 	ll("tokenProg:", tokenProg.toBase58());
 	ll("oracleVendor:", oracleVendor);
+	const _rawAcctData = new Uint8Array([0, 0, 0]);
+	setPriceFeedPda(oraclePDA);
 	oraclesRead(
 		signerKp,
 		configPDA,

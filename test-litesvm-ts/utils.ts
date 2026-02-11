@@ -267,3 +267,15 @@ export const getTimeB = () => {
 	const time = getTime();
 	return BigInt(time);
 };
+
+export type SolanaAccount = {
+	account: {
+		data: string[];
+		executable: boolean;
+		lamports: number;
+		owner: string;
+		rentEpoch: number;
+		space: number;
+	};
+	pubkey: string;
+};

@@ -23,12 +23,14 @@ import {
 	type SimulatedTransactionInfo,
 	TransactionMetadata,
 } from "litesvm";
+import pricefeedBTCUSD from "../pricefeeds/BTCUSD.json";
 import type { Status } from "./decoder";
 import {
 	boolToByte,
 	checkBigint,
 	checkDecimals,
 	numToBytes,
+	type SolanaAccount,
 	statusToByte,
 	strToU8Fixed,
 	zero,
@@ -60,11 +62,6 @@ svm.airdrop(user2, initSolBalc);
 svm.airdrop(user3, initSolBalc);
 svm.airdrop(hacker, initSolBalc);
 svm.airdrop(dgcAuthority, initSolBalc);
-
-export const getRawAccount = (address: PublicKey) => {
-	const rawAccount = svm.getAccount(address);
-	return rawAccount;
-};
 
 export type PdaOut = {
 	pda: PublicKey;
@@ -113,37 +110,7 @@ export const findEscrow = (
 	return { pda, bump };
 };
 
-//-------------== LiteSVM Methods
-export const sendSol = (signer: Keypair, addrTo: PublicKey, amount: bigint) => {
-	const blockhash = svm.latestBlockhash();
-	const ixs = [
-		SystemProgram.transfer({
-			fromPubkey: signer.publicKey,
-			toPubkey: addrTo,
-			lamports: amount,
-		}),
-	];
-	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
-};
-export const makeAccount = (
-	signer: Keypair,
-	newAccount: PublicKey,
-	programId: PublicKey,
-) => {
-	const blockhash = svm.latestBlockhash();
-	const ixs = [
-		SystemProgram.createAccount({
-			fromPubkey: signer.publicKey,
-			newAccountPubkey: newAccount,
-			lamports: Number(svm.minimumBalanceForRentExemption(BigInt(4))),
-			space: 4,
-			programId: programId,
-		}),
-	];
-	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
-};
 //-------------== Program Methods
-const _testMint = (item: PublicKey) => item === undefined;
 export const initConfig = (
 	signer: Keypair,
 	mints: PublicKey[],
@@ -800,7 +767,39 @@ export const oraclesRead = (
 	});
 	sendTxns(svm, blockhash, [ix], [signer]);
 };
-//-------------==
+
+//-------------== LiteSVM System Methods
+export const sendSol = (signer: Keypair, addrTo: PublicKey, amount: bigint) => {
+	const blockhash = svm.latestBlockhash();
+	const ixs = [
+		SystemProgram.transfer({
+			fromPubkey: signer.publicKey,
+			toPubkey: addrTo,
+			lamports: amount,
+		}),
+	];
+	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
+};
+
+export const makeAccount = (
+	signer: Keypair,
+	newAccount: PublicKey,
+	programId: PublicKey,
+) => {
+	const blockhash = svm.latestBlockhash();
+	const ixs = [
+		SystemProgram.createAccount({
+			fromPubkey: signer.publicKey,
+			newAccountPubkey: newAccount,
+			lamports: Number(svm.minimumBalanceForRentExemption(BigInt(4))),
+			space: 4,
+			programId: programId,
+		}),
+	];
+	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
+};
+//const rawAccount = svm.getAccount(address);
+
 //When you want to make Mint without the Mint Keypair. E.g. UsdtMintKp;
 //https://solana.com/docs/tokens/basics/create-mint
 export const setMint = (
@@ -829,6 +828,28 @@ export const setMint = (
 		data: rawMintAcctData,
 		owner: programId,
 		executable: false,
+	});
+};
+
+export const setPriceFeedPda = (addr: PublicKey) => {
+	//const path = "pricefeeds/BTCUSD.json";
+	//const file = Bun.file(path);
+	const contents: SolanaAccount = pricefeedBTCUSD; // await file.json();
+	ll("contents:", contents);
+	const account = contents.account;
+
+	if (account.data.length < 2)
+		throw new Error("account data should have length 2");
+	// biome-ignore lint/style/noNonNullAssertion: <>
+	const data = Uint8Array.fromBase64(account.data[0]!);
+	ll("data:", data);
+	ll("lamports:", account.lamports);
+	svm.setAccount(addr, {
+		lamports: account.lamports,
+		data,
+		owner: new PublicKey(account.owner),
+		executable: account.executable,
+		//rentEpoch: account.rentEpoch,
 	});
 };
 //-------------== USDC or USDT

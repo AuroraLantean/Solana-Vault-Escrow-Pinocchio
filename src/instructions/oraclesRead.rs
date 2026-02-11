@@ -20,7 +20,8 @@ impl<'a> OraclesRead<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("OraclesRead process()");
-    let _price = read_oracle_pda(self.oracle_vendor, self.oracle_pda)?;
+    let price = read_oracle_pda(self.oracle_vendor, self.oracle_pda)?;
+    log!("price: {}", price);
     Ok(())
   }
 }

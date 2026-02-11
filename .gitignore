@@ -11,6 +11,7 @@ test-ledger
 .yarn
 .env*
 aarchives
+pricefeeds
 justfile
 env.ts
 index.ts
