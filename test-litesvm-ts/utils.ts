@@ -222,6 +222,23 @@ export const u8ArrayToStr = (u8Array: Uint8Array) => {
 	ll("string:", str);
 	return str;
 };
+/// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/fromHex
+export const decodeHexstrToUint8 = (inputStr: string) => {
+	//0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43 should yield [230, 45, 246, 200, 180, 168, 95, 225, 166, 125, 180, 77, 193, 45, 229, 219, 51, 15, 122, 198, 107, 114, 220, 101, 138, 254, 223, 15, 74, 65, 91, 67]
+	let str = inputStr;
+	const length = str.length;
+	if (length === 66) {
+		str = str.slice(2);
+	} else if (length === 64) {
+	} else {
+		throw new Error("string length invalid");
+	}
+	ll("str:", str);
+	const bytes = Uint8Array.fromHex(str);
+	ll("bytes:", bytes);
+	return bytes;
+};
+
 export const boolToByte = (input: boolean) => (input ? 1 : 0);
 export const statusToByte = (status: Status) => {
 	let out = -1;

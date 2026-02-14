@@ -21,7 +21,8 @@ import {
 	admin,
 	owner,
 	ownerKp,
-	PythPriceFeed_BTCUSD,
+	type PriceFeed,
+	pythPricefeedBTCUSD,
 	pyusdMint,
 	usdcMint,
 	usdgMint,
@@ -39,16 +40,17 @@ let signerKp: Keypair;
 let mints: PublicKey[];
 let progOwner: PublicKey;
 let progAdmin: PublicKey;
-let oraclePDA: PublicKey;
+let _oraclePDA: PublicKey;
 let tokenMint: PublicKey;
 let tokenProg: PublicKey;
-let oracleVendor = 0;
-let numU32 = 0;
+const oracleVendor = 0;
+const _numU32 = 0;
 let numU64 = 0n;
 let fee: bigint;
 let isAuthorized = false;
 let status: Status;
 let str: string;
+let pricefeedPair: PriceFeed;
 
 test("Set Mints", () => {
 	ll("\n------== Set Mints");
@@ -112,30 +114,24 @@ test("InitConfig", () => {
 });
 test("OraclesRead", () => {
 	ll("\n------== OraclesRead");
+	ll(
+		"make sure you pull pricefeed account data first into the 'pricefeeds' folder",
+		"and those account data files should be named as pythBTC.json, pythETH.json, pythSOL.json according to web3jsSetup.ts",
+	);
 	ll("vault1:", vault1.toBase58());
 	ll(`configPDA: ${configPDA}`);
 	signerKp = user1Kp;
-	oraclePDA = PythPriceFeed_BTCUSD;
 	tokenMint = usdcMint;
 	tokenProg = TOKEN_PROGRAM_ID; //TOKEN_2022_PROGRAM_ID;
-	oracleVendor = 0;
-	numU32 = 12;
 	numU64 = 1100n;
 
-	ll("oraclePDA:", oraclePDA.toBase58());
 	ll("tokenMint:", tokenMint.toBase58());
 	ll("tokenProg:", tokenProg.toBase58());
 	ll("oracleVendor:", oracleVendor);
-	const _rawAcctData = new Uint8Array([0, 0, 0]);
-	setPriceFeedPda(oraclePDA);
-	oraclesRead(
-		signerKp,
-		configPDA,
-		oraclePDA,
-		tokenMint,
-		tokenProg,
-		oracleVendor,
-		numU32,
-		numU64,
-	);
+
+	pricefeedPair = pythPricefeedBTCUSD;
+	setPriceFeedPda(pricefeedPair);
+	oraclesRead(signerKp, configPDA, tokenMint, tokenProg, pricefeedPair, numU64);
+	//pricefeedPair = pythPricefeedETHUSD;
+	//pricefeedPair = pythPricefeedSOLUSD;
 });

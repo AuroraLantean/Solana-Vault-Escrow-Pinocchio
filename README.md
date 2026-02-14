@@ -172,9 +172,9 @@ surfpool run <program-method> --env surfnet -u
 
 Get tokens at <https://cloud.txtx.run/faucet> into your local network. Check in terminal: `spl-token display <tokenMint> --output json`
 
-
 ### TODO
 
+- LiteSVM Utility: <https://github.com/brimigs/anchor-litesvm>
 - Deploy and Upload Program IDL to interact on Solana Explorers: <https://explorer.solana.com/address/dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN/idl?cluster=devnet>
 - Solana Privacy: MagicBlocks, Orca, Acum, Noir
 - Surfpool: Solana Mainnet Simulator with Native Defi support, account snapshot: <https://www.surfpool.run/>

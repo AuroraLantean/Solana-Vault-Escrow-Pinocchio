@@ -17,7 +17,7 @@ pinocchio-system = "0.5.0"
 pinocchio-token = "0.5.0"
 pinocchio-token-2022 = "0.2.0"
 #pyth-solana-receiver-sdk = "1.1.0"
-shank = "0.4.7"
+shank = "0.4.8"
 thiserror = { version = "2.0.18", default-features = false }
 
 

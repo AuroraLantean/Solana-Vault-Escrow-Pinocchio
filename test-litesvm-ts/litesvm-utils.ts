@@ -23,14 +23,14 @@ import {
 	type SimulatedTransactionInfo,
 	TransactionMetadata,
 } from "litesvm";
-import pricefeedBTCUSD from "../pricefeeds/BTCUSD.json";
+
 import type { Status } from "./decoder";
 import {
 	boolToByte,
 	checkBigint,
 	checkDecimals,
+	decodeHexstrToUint8,
 	numToBytes,
-	type SolanaAccount,
 	statusToByte,
 	strToU8Fixed,
 	zero,
@@ -41,6 +41,7 @@ import {
 	dgcAuthority,
 	hacker,
 	owner,
+	type PriceFeed,
 	RentSysvar,
 	SYSTEM_PROGRAM,
 	usdtMint,
@@ -733,32 +734,30 @@ export const cancelTokEscrow = (
 export const oraclesRead = (
 	signer: Keypair,
 	configPDA: PublicKey,
-	oraclePDA: PublicKey,
 	tokenMint: PublicKey,
 	tokenProg: PublicKey,
-	oracleVendor: number,
-	num_u32: number,
+	pricefeed: PriceFeed,
 	num_u64: bigint,
 ) => {
 	const disc = 21;
-	if (oracleVendor > 255) throw new Error("oracleVendor > 255");
+	if (pricefeed.vendor > 255) throw new Error("oracleVendor > 255");
 	const argData = [
-		oracleVendor,
+		pricefeed.vendor,
 		0,
 		0,
 		0,
-		...numToBytes(num_u32, 32),
 		...numToBytes(num_u64, 64),
+		...decodeHexstrToUint8(pricefeed.feedId),
 	];
 	ll("configPDA:", configPDA.toBase58());
-	ll("oraclePDA:", oraclePDA.toBase58());
+	ll("oraclePDA:", pricefeed.addr.toBase58());
 
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
-			{ pubkey: oraclePDA, isSigner: false, isWritable: false },
+			{ pubkey: pricefeed.addr, isSigner: false, isWritable: false },
 			{ pubkey: tokenMint, isSigner: false, isWritable: false },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
 		],
@@ -831,12 +830,13 @@ export const setMint = (
 	});
 };
 
-export const setPriceFeedPda = (addr: PublicKey) => {
-	//const path = "pricefeeds/BTCUSD.json";
+//---------------==
+export const setPriceFeedPda = (pricefeed: PriceFeed) => {
 	//const file = Bun.file(path);
-	const contents: SolanaAccount = pricefeedBTCUSD; // await file.json();
-	ll("contents:", contents);
-	const account = contents.account;
+	// await file.json();
+	ll("addr:", pricefeed.addr.toBase58());
+	ll("jsonData:", pricefeed.json);
+	const account = pricefeed.json.account;
 
 	if (account.data.length < 2)
 		throw new Error("account data should have length 2");
@@ -844,7 +844,7 @@ export const setPriceFeedPda = (addr: PublicKey) => {
 	const data = Uint8Array.fromBase64(account.data[0]!);
 	ll("data:", data);
 	ll("lamports:", account.lamports);
-	svm.setAccount(addr, {
+	svm.setAccount(pricefeed.addr, {
 		lamports: account.lamports,
 		data,
 		owner: new PublicKey(account.owner),

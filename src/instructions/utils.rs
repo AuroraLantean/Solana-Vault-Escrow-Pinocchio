@@ -1,5 +1,5 @@
 //use num_derive::FromPrimitive;
-use crate::{FeedId, PriceFeedMessage, PriceUpdateV2, Status, PROG_ADDR};
+use crate::{PriceUpdateV2, Status, VerificationLevel, PROG_ADDR};
 use pinocchio::{
   error::{ProgramError, ToStr},
   sysvars::{
@@ -9,7 +9,7 @@ use pinocchio::{
   },
   AccountView, Address, ProgramResult,
 };
-use pinocchio_log::log;
+use pinocchio_log::log; //logger::log_message
 use pinocchio_token::state::{Mint, TokenAccount};
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 //use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
@@ -796,8 +796,8 @@ pub const MAX_PRICE_AGE: u64 = 60; // in seconds
 /// use pyth_solana_receiver_sdk::price_update::get_feed_id_from_hex;
 /// let feed_id = get_feed_id_from_hex("0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d").unwrap();
 /// ```
-pub fn get_feed_id_from_hex(input: &str) -> Result<FeedId, ProgramError> {
-  let mut feed_id: FeedId = [0; 32];
+pub fn get_feed_id_from_hex(input: &str) -> Result<[u8; 32], ProgramError> {
+  let mut feed_id: [u8; 32] = [0; 32];
   match input.len() {
     66 => {
       feed_id.copy_from_slice(
@@ -811,41 +811,71 @@ pub fn get_feed_id_from_hex(input: &str) -> Result<FeedId, ProgramError> {
   }
   Ok(feed_id)
 }
-pub fn pyth_network(pda: &AccountView) -> Result<u64, ProgramError> {
+pub fn pyth_network(pda: &AccountView, feed_id: [u8; 32]) -> Result<u64, ProgramError> {
+  log!("pyth_network");
   //Pyth Devnet or Mainnet https://docs.pyth.network/price-feeds/core/contract-addresses/solana
   pda.check_borrow_mut()?;
   let price_update: &PriceUpdateV2 = PriceUpdateV2::from_account_view(&pda)?;
   //check pda data length and its owner
   //let price_update: &PriceUpdateV2 =  unsafe { &*(pda.borrow_unchecked_mut().as_ptr() as *const PriceUpdateV2) };
 
+  //Anchor
   //let price_update = &ctx.accounts.price_update;
-  //log!("Price feed id: {}", price_update.price_message.feed_id);
-  log!("price_message.price: {}", price_update.price_message.price);
-  log!("Confidence: {}", price_update.price_message.conf);
-  log!("Exponent: {}", price_update.price_message.exponent);
-  log!("Publish Time: {}", price_update.price_message.publish_time);
-  //log!("PriceVerification: {}", price_update.verification_level);
+  //let price = price_update.get_price_no_older_than(&Clock::get()?, maximum_age, &feed_id)?;
+  //price.price,  price.conf, price.exponent
+  //The price is (6672813624000 ± 2181500799) * 10^-8
+  log!("pyth_network: parsing posted_slot");
+  log!("posted_slot: {}", price_update.posted_slot()); //Failed here!
 
-  pub const FEED_ID: &str = "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43"; //"0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD price feed id from https://pyth.network/developers/price-feed-ids
+  log!("write_authority");
+  //log_message(&price_update.write_authority().to_bytes()); TODO: ERROR
+  /*pub enum VerificationLevel {  Partial { num_signatures: u8,},  Full,}} */
+  log!("verification_level");
+  //log_message(&price_update.verification_level.try_into()?);
+  if *price_update.verification_level() == VerificationLevel::Full {
+    log!("verification_level is full");
+  } else {
+    log!("verification_level is partial");
+  }
 
-  let price_feed_message = price_update.get_price(
-    &Clock::get()?,
-    MAX_PRICE_AGE,
-    &get_feed_id_from_hex(FEED_ID)?,
-  )?;
+  let price_mesg = price_update.price_message();
+  //log_message(&price_mesg.feed_id);
+  log!("price: {}", price_mesg.price());
+  log!("conf: {}", price_mesg.conf);
+  log!("exponent: {}", price_mesg.exponent);
+  log!("publish_time: {}", price_mesg.publish_time);
+  log!("prev_publish_time: {}", price_mesg.prev_publish_time);
+  /*pub struct PriceFeedMessage {
+    pub feed_id: [u8; 32],
+    pub price: i64,
+    pub conf: u64,
+    pub exponent: i32,
+    pub publish_time: i64,
+    pub prev_publish_time: i64,
+    pub ema_price: i64,
+    pub ema_conf: u64,
+  } */
+
+  //pub const FEED_ID: &str = "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43"; from https://pyth.network/developers/price-feed-ids
+
+  let price_feed_message = price_update.get_price(&Clock::get()?, MAX_PRICE_AGE, &feed_id)?;
   // The actual price is `(price ± conf)* 10^exponent`.
   log!(
     "The price is ({} ± {}) * 10^{}",
-    price_feed_message.price,
-    price_feed_message.conf,
+    price_feed_message.price(),
+    price_feed_message.conf, //confidence_interval
     price_feed_message.exponent
   );
-  let price = price_feed_message.price * (10i64 ^ (price_feed_message.exponent as i64));
-  Ok(price as u64)
+  let asset_price = price_feed_message.price() as f64 * 10f64.powi(price_feed_message.exponent);
+  Ok(asset_price as u64)
 }
-pub fn read_oracle_pda(oracle_vendor: u8, pda: &AccountView) -> Result<u64, ProgramError> {
+pub fn read_oracle_pda(
+  oracle_vendor: u8,
+  pda: &AccountView,
+  feed_id: [u8; 32],
+) -> Result<u64, ProgramError> {
   let price = match oracle_vendor {
-    0 | 1 => pyth_network(pda)?,
+    0 | 1 => pyth_network(pda, feed_id)?,
     _ => return Err(Ee::OracleNum.into()),
   };
   Ok(price)

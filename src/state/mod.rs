@@ -4,3 +4,5 @@ pub mod pda;
 pub use pda::*;
 pub mod config_new;
 pub use config_new::*;
+pub mod pricefeeds;
+pub use pricefeeds::*;
