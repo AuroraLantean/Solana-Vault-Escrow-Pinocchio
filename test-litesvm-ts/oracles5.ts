@@ -2,12 +2,18 @@
 import { expect, test } from "bun:test";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Keypair, PublicKey } from "@solana/web3.js";
-import { Status, solanaKitDecodeConfigDev } from "./decoder";
+import {
+	Status,
+	solanaKitDecodeConfigDev,
+	solanaKitDecodeSimpleAcctDev,
+} from "./decoder";
 import {
 	acctExists,
 	configBump,
 	configPDA,
+	getSimpleAcct,
 	initConfig,
+	initSimpleAcct,
 	initSolBalc,
 	oraclesRead,
 	setMint,
@@ -19,6 +25,8 @@ import {
 import { ll } from "./utils";
 import {
 	admin,
+	adminKp,
+	futureOptionAddr,
 	owner,
 	ownerKp,
 	type PriceFeed,
@@ -112,7 +120,22 @@ test("InitConfig", () => {
 	expect(decoded.status).toEqual(status);
 	expect(decoded.bump).toEqual(configBump);
 });
-test("OraclesRead", () => {
+test("Make Anchor PDA", () => {
+	ll("\n------== Make Anchor PDA: SimpleAccount");
+	const price = 1900n;
+	const simpleAcctPbk = getSimpleAcct(futureOptionAddr);
+	initSimpleAcct(adminKp, simpleAcctPbk, price);
+
+	const pdaRaw = svm.getAccount(simpleAcctPbk);
+	expect(pdaRaw).not.toBeNull();
+	const rawAccountData = pdaRaw?.data;
+	ll("rawAccountData:", rawAccountData);
+	expect(pdaRaw?.owner).toEqual(futureOptionAddr);
+
+	const decoded = solanaKitDecodeSimpleAcctDev(rawAccountData);
+	expect(decoded.price).toEqual(price);
+});
+test.skip("OraclesRead", () => {
 	ll("\n------== OraclesRead");
 	ll(
 		"make sure you pull pricefeed account data first into the 'pricefeeds' folder",

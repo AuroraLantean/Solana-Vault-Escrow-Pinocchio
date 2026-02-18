@@ -174,6 +174,7 @@ Get tokens at <https://cloud.txtx.run/faucet> into your local network. Check in 
 
 ### TODO
 
+- Security: <https://dev.to/ola-zoll/i-built-a-hacking-playground-for-solana-so-you-dont-have-to-lose-real-money-learning-21df>
 - LiteSVM Utility: <https://github.com/brimigs/anchor-litesvm>
 - Deploy and Upload Program IDL to interact on Solana Explorers: <https://explorer.solana.com/address/dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN/idl?cluster=devnet>
 - Solana Privacy: MagicBlocks, Orca, Acum, Noir

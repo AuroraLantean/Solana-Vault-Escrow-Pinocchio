@@ -39,6 +39,7 @@ import {
 	ATokenGPvbd,
 	admin,
 	dgcAuthority,
+	futureOptionAddr,
 	hacker,
 	owner,
 	type PriceFeed,
@@ -111,6 +112,18 @@ export const findEscrow = (
 	return { pda, bump };
 };
 
+export const getSimpleAcct = (programId: PublicKey): PublicKey => {
+	const [publickey, _bump] = PublicKey.findProgramAddressSync(
+		[
+			Buffer.from("future_option_simple_acct"),
+			//user.toBuffer(),
+			//opt_ctrt.toBuffer(),
+		],
+		programId,
+	);
+	ll("SimpleAcct:", publickey.toBase58());
+	return publickey;
+};
 //-------------== Program Methods
 export const initConfig = (
 	signer: Keypair,
@@ -1020,8 +1033,8 @@ export const setAtaCheck = (
 	}
 };
 //---------------== Deployment
-export const vaultProgram = (computeMaxUnits?: bigint) => {
-	ll("load VaultProgram...");
+export const deployVaultProgram = (computeMaxUnits?: bigint) => {
+	ll("load deployVaultProgram...");
 	if (computeMaxUnits) {
 		const computeBudget = new ComputeBudget();
 		computeBudget.computeUnitLimit = computeMaxUnits;
@@ -1034,8 +1047,47 @@ export const vaultProgram = (computeMaxUnits?: bigint) => {
 	svm.addProgramFromFile(vaultProgAddr, programPath);
 	//return [programId];
 };
-vaultProgram();
+deployVaultProgram();
+ll("deployVaultProgram() is successful");
+acctExists(vaultProgAddr);
 
+export const deployAnchorProgram = (computeMaxUnits?: bigint) => {
+	ll("deployProgram...");
+	if (computeMaxUnits) {
+		const computeBudget = new ComputeBudget();
+		computeBudget.computeUnitLimit = computeMaxUnits;
+		svm = svm.withComputeBudget(computeBudget);
+	}
+	const programPath = "program_bytes/future_option_market.so";
+	//# Dump a program from mainnet
+	//solana program dump progAddr pyth.so --url mainnet-beta
+	svm.addProgramFromFile(futureOptionAddr, programPath);
+	//return [programId];
+};
+deployAnchorProgram();
+acctExists(futureOptionAddr);
+ll("deployAnchorProgram() is successful");
+
+export const initSimpleAcct = (
+	signer: Keypair,
+	simpleAcctPDA: PublicKey,
+	price: bigint,
+) => {
+	const disc = Uint8Array.from([70, 220, 86, 48, 234, 178, 26, 125]); //copied from Anchor IDL
+	const argData = [...numToBytes(price)];
+
+	const blockhash = svm.latestBlockhash();
+	const ix = new TransactionInstruction({
+		keys: [
+			{ pubkey: simpleAcctPDA, isSigner: false, isWritable: true },
+			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
+			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
+		],
+		programId: futureOptionAddr,
+		data: Buffer.from([...disc, ...argData]),
+	});
+	sendTxns(svm, blockhash, [ix], [signer], "", futureOptionAddr);
+};
 //---------------== Run Test
 export const sendTxns = (
 	svm: LiteSVM,

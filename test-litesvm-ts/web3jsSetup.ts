@@ -27,6 +27,10 @@ export const vaultProgAddr = new PublicKey(
 	"A9TPi1RSW5apQcZch9CUz5EnuyfSF773zxndJowMrcK3",
 );
 ll("vaultProgAddr:", vaultProgAddr.toBase58());
+export const futureOptionAddr = new PublicKey(
+	"CgZEcSRPh1Ay1EYR4VJPTJRYcRkTDjjZhBAjZ5M8keGp",
+);
+ll("futureOptionAddr:", futureOptionAddr.toBase58());
 
 export const SYSTEM_PROGRAM = new PublicKey("11111111111111111111111111111111"); //default
 export const RentSysvar = new PublicKey(
