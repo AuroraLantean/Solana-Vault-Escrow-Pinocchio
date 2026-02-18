@@ -1,5 +1,5 @@
 //use num_derive::FromPrimitive;
-use crate::{PriceUpdateV2, Status, VerificationLevel, PROG_ADDR};
+use crate::{PriceUpdateV2, SimpleAcct, Status, VerificationLevel, PROG_ADDR};
 use pinocchio::{
   error::{ProgramError, ToStr},
   sysvars::{
@@ -269,6 +269,10 @@ pub enum Ee {
   PythFeedIdNonHexCharacter,
   #[error("PythFeedIdMustBe32Bytes")]
   PythFeedIdMustBe32Bytes,
+  #[error("SimpleAcctDataLen")]
+  SimpleAcctDataLen,
+  #[error("SimpleAcctOwner")]
+  SimpleAcctOwner,
   #[error("NotMapped")]
   NotMapped,
   //ProgramResult: AccountBorrowFailed
@@ -406,6 +410,8 @@ impl TryFrom<u32> for Ee {
       115 => Ok(Ee::PythMismatchedFeedId),
       116 => Ok(Ee::PythFeedIdNonHexCharacter),
       117 => Ok(Ee::PythFeedIdMustBe32Bytes),
+      118 => Ok(Ee::SimpleAcctDataLen),
+      119 => Ok(Ee::SimpleAcctOwner),
       _ => Err(Ee::NotMapped.into()),
     }
   }
@@ -542,6 +548,8 @@ impl ToStr for Ee {
       Ee::PythMismatchedFeedId => "PythMismatchedFeedId",
       Ee::PythFeedIdNonHexCharacter => "PythFeedIdNonHexCharacter",
       Ee::PythFeedIdMustBe32Bytes => "PythFeedIdMustBe32Bytes",
+      Ee::SimpleAcctDataLen => "SimpleAcctDataLen",
+      Ee::SimpleAcctOwner => "SimpleAcctOwner",
       Ee::NotMapped => "NotMapped",
     }
   }
@@ -869,6 +877,13 @@ pub fn pyth_network(pda: &AccountView, feed_id: [u8; 32]) -> Result<u64, Program
   let asset_price = price_feed_message.price() as f64 * 10f64.powi(price_feed_message.exponent);
   Ok(asset_price as u64)
 }
+pub fn simple_acct(pda: &AccountView, feed_id: [u8; 32]) -> Result<u64, ProgramError> {
+  log!("simple_acct");
+  pda.check_borrow_mut()?;
+  let simple_acct: &SimpleAcct = SimpleAcct::from_account_view(&pda)?;
+  let price = simple_acct.price();
+  Ok(price)
+}
 pub fn read_oracle_pda(
   oracle_vendor: u8,
   pda: &AccountView,
@@ -876,6 +891,7 @@ pub fn read_oracle_pda(
 ) -> Result<u64, ProgramError> {
   let price = match oracle_vendor {
     0 | 1 => pyth_network(pda, feed_id)?,
+    255 => simple_acct(pda, feed_id)?,
     _ => return Err(Ee::OracleNum.into()),
   };
   Ok(price)

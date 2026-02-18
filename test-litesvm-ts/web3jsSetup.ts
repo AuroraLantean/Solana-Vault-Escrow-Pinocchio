@@ -79,3 +79,12 @@ export const pythPricefeedSOLUSD: PriceFeed = {
 	addr: new PublicKey("7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE"),
 	json: jsonPythSOL,
 };
+export const makeFakePricefeed = (target: PublicKey): PriceFeed => {
+	return {
+		vendor: 255,
+		feedId:
+			"0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
+		addr: target,
+		json: jsonPythBTC,
+	};
+};

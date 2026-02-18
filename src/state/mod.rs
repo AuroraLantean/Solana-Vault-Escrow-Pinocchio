@@ -6,3 +6,5 @@ pub mod config_new;
 pub use config_new::*;
 pub mod pricefeeds;
 pub use pricefeeds::*;
+pub mod anchor_acct;
+pub use anchor_acct::*;

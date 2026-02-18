@@ -21,7 +21,7 @@ impl<'a> OraclesRead<'a> {
   pub fn process(self) -> ProgramResult {
     log!("OraclesRead process()");
     let price = read_oracle_pda(self.oracle_vendor, self.oracle_pda, self.feed_id)?;
-    log!("price: {}", price);
+    log!("process():price: {}", price);
     Ok(())
   }
 }

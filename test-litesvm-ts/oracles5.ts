@@ -11,13 +11,14 @@ import {
 	acctExists,
 	configBump,
 	configPDA,
-	getSimpleAcct,
 	initConfig,
 	initSimpleAcct,
 	initSolBalc,
 	oraclesRead,
 	setMint,
 	setPriceFeedPda,
+	simpleAcctPbk,
+	simpleAcctPricefeed,
 	svm,
 	vault1,
 	vaultO,
@@ -58,7 +59,7 @@ let fee: bigint;
 let isAuthorized = false;
 let status: Status;
 let str: string;
-let pricefeedPair: PriceFeed;
+let pricefeed: PriceFeed;
 
 test("Set Mints", () => {
 	ll("\n------== Set Mints");
@@ -122,8 +123,7 @@ test("InitConfig", () => {
 });
 test("Make Anchor PDA", () => {
 	ll("\n------== Make Anchor PDA: SimpleAccount");
-	const price = 1900n;
-	const simpleAcctPbk = getSimpleAcct(futureOptionAddr);
+	const price = 73200n;
 	initSimpleAcct(adminKp, simpleAcctPbk, price);
 
 	const pdaRaw = svm.getAccount(simpleAcctPbk);
@@ -135,6 +135,21 @@ test("Make Anchor PDA", () => {
 	const decoded = solanaKitDecodeSimpleAcctDev(rawAccountData);
 	expect(decoded.price).toEqual(price);
 });
+test("Read SimpleAcct from FutureOption Anchor Program", () => {
+	ll("\n------== Read SimpleAcct from FutureOption Anchor Program");
+	signerKp = user1Kp;
+	tokenMint = usdcMint;
+	tokenProg = TOKEN_PROGRAM_ID; //TOKEN_2022_PROGRAM_ID;
+	oraclesRead(
+		signerKp,
+		configPDA,
+		tokenMint,
+		tokenProg,
+		simpleAcctPricefeed,
+		numU64,
+	);
+});
+
 test.skip("OraclesRead", () => {
 	ll("\n------== OraclesRead");
 	ll(
@@ -152,9 +167,9 @@ test.skip("OraclesRead", () => {
 	ll("tokenProg:", tokenProg.toBase58());
 	ll("oracleVendor:", oracleVendor);
 
-	pricefeedPair = pythPricefeedBTCUSD;
-	setPriceFeedPda(pricefeedPair);
-	oraclesRead(signerKp, configPDA, tokenMint, tokenProg, pricefeedPair, numU64);
-	//pricefeedPair = pythPricefeedETHUSD;
-	//pricefeedPair = pythPricefeedSOLUSD;
+	pricefeed = pythPricefeedBTCUSD;
+	setPriceFeedPda(pricefeed);
+	oraclesRead(signerKp, configPDA, tokenMint, tokenProg, pricefeed, numU64);
+	//pricefeed = pythPricefeedETHUSD;
+	//pricefeed = pythPricefeedSOLUSD;
 });

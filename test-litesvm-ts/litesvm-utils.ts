@@ -41,6 +41,7 @@ import {
 	dgcAuthority,
 	futureOptionAddr,
 	hacker,
+	makeFakePricefeed,
 	owner,
 	type PriceFeed,
 	RentSysvar,
@@ -124,6 +125,9 @@ export const getSimpleAcct = (programId: PublicKey): PublicKey => {
 	ll("SimpleAcct:", publickey.toBase58());
 	return publickey;
 };
+export const simpleAcctPbk = getSimpleAcct(futureOptionAddr);
+export const simpleAcctPricefeed = makeFakePricefeed(simpleAcctPbk);
+
 //-------------== Program Methods
 export const initConfig = (
 	signer: Keypair,
