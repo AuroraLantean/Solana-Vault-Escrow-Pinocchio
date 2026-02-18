@@ -9,7 +9,7 @@ use pinocchio::{
   },
   AccountView, Address, ProgramResult,
 };
-use pinocchio_log::log; //logger::log_message
+use pinocchio_log::{log, logger::log_message}; //logger::log_message
 use pinocchio_token::state::{Mint, TokenAccount};
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 //use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
@@ -273,6 +273,8 @@ pub enum Ee {
   SimpleAcctDataLen,
   #[error("SimpleAcctOwner")]
   SimpleAcctOwner,
+  #[error("SimpleAcctWriteAuthority")]
+  SimpleAcctWriteAuthority,
   #[error("NotMapped")]
   NotMapped,
   //ProgramResult: AccountBorrowFailed
@@ -412,6 +414,7 @@ impl TryFrom<u32> for Ee {
       117 => Ok(Ee::PythFeedIdMustBe32Bytes),
       118 => Ok(Ee::SimpleAcctDataLen),
       119 => Ok(Ee::SimpleAcctOwner),
+      120 => Ok(Ee::SimpleAcctWriteAuthority),
       _ => Err(Ee::NotMapped.into()),
     }
   }
@@ -550,6 +553,7 @@ impl ToStr for Ee {
       Ee::PythFeedIdMustBe32Bytes => "PythFeedIdMustBe32Bytes",
       Ee::SimpleAcctDataLen => "SimpleAcctDataLen",
       Ee::SimpleAcctOwner => "SimpleAcctOwner",
+      Ee::SimpleAcctWriteAuthority => "SimpleAcctWriteAuthority",
       Ee::NotMapped => "NotMapped",
     }
   }
@@ -877,11 +881,24 @@ pub fn pyth_network(pda: &AccountView, feed_id: [u8; 32]) -> Result<u64, Program
   let asset_price = price_feed_message.price() as f64 * 10f64.powi(price_feed_message.exponent);
   Ok(asset_price as u64)
 }
-pub fn simple_acct(pda: &AccountView, feed_id: [u8; 32]) -> Result<u64, ProgramError> {
+pub fn simple_acct(
+  pda: &AccountView,
+  write_authority_exp: &AccountView,
+) -> Result<u64, ProgramError> {
   log!("simple_acct");
   pda.check_borrow_mut()?;
   let simple_acct: &SimpleAcct = SimpleAcct::from_account_view(&pda)?;
+  log!("SimpleAcct::from_account_view() successful");
+  let write_authority = simple_acct.write_authority();
+  if write_authority.ne(write_authority_exp.address()) {
+    return Err(Ee::SimpleAcctWriteAuthority.into());
+  }
+  log!("reading write_authority is successful");
+  //log!("write_authority{}", write_authority);
+  //log_message(write_authority); //invalid utf-8 sequence of 1 bytes from index 3: []
+  //log_message(&write_authority.to_bytes());
   let price = simple_acct.price();
+  log!("price: {}", price);
   Ok(price)
 }
 pub fn read_oracle_pda(
@@ -891,7 +908,7 @@ pub fn read_oracle_pda(
 ) -> Result<u64, ProgramError> {
   let price = match oracle_vendor {
     0 | 1 => pyth_network(pda, feed_id)?,
-    255 => simple_acct(pda, feed_id)?,
+    //255 => simple_acct(pda, feed_id)?,
     _ => return Err(Ee::OracleNum.into()),
   };
   Ok(price)

@@ -47,9 +47,10 @@ expect(adminBalc).toStrictEqual(initSolBalc);
 
 let signerKp: Keypair;
 let mints: PublicKey[];
+let signer: PublicKey;
 let progOwner: PublicKey;
 let progAdmin: PublicKey;
-let _oraclePDA: PublicKey;
+let writeAuthority: PublicKey;
 let tokenMint: PublicKey;
 let tokenProg: PublicKey;
 const oracleVendor = 0;
@@ -124,7 +125,10 @@ test("InitConfig", () => {
 test("Make Anchor PDA", () => {
 	ll("\n------== Make Anchor PDA: SimpleAccount");
 	const price = 73200n;
-	initSimpleAcct(adminKp, simpleAcctPbk, price);
+	signerKp = adminKp;
+	signer = signerKp.publicKey;
+	ll("signer:", signer.toBase58());
+	initSimpleAcct(signerKp, simpleAcctPbk, price);
 
 	const pdaRaw = svm.getAccount(simpleAcctPbk);
 	expect(pdaRaw).not.toBeNull();
@@ -133,6 +137,7 @@ test("Make Anchor PDA", () => {
 	expect(pdaRaw?.owner).toEqual(futureOptionAddr);
 
 	const decoded = solanaKitDecodeSimpleAcctDev(rawAccountData);
+	expect(decoded.writeAuthority).toEqual(signer);
 	expect(decoded.price).toEqual(price);
 });
 test("Read SimpleAcct from FutureOption Anchor Program", () => {
@@ -140,11 +145,17 @@ test("Read SimpleAcct from FutureOption Anchor Program", () => {
 	signerKp = user1Kp;
 	tokenMint = usdcMint;
 	tokenProg = TOKEN_PROGRAM_ID; //TOKEN_2022_PROGRAM_ID;
+
+	signer = signerKp.publicKey;
+	ll("signer:", signer.toBase58(), signer.toBytes());
+	writeAuthority = admin;
+
 	oraclesRead(
 		signerKp,
 		configPDA,
 		tokenMint,
 		tokenProg,
+		writeAuthority,
 		simpleAcctPricefeed,
 		numU64,
 	);
@@ -169,7 +180,7 @@ test.skip("OraclesRead", () => {
 
 	pricefeed = pythPricefeedBTCUSD;
 	setPriceFeedPda(pricefeed);
-	oraclesRead(signerKp, configPDA, tokenMint, tokenProg, pricefeed, numU64);
+	//oraclesRead(signerKp, configPDA, tokenMint, tokenProg, pricefeed, numU64);
 	//pricefeed = pythPricefeedETHUSD;
 	//pricefeed = pythPricefeedSOLUSD;
 });

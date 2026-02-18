@@ -753,6 +753,7 @@ export const oraclesRead = (
 	configPDA: PublicKey,
 	tokenMint: PublicKey,
 	tokenProg: PublicKey,
+	writeAuthority: PublicKey,
 	pricefeed: PriceFeed,
 	num_u64: bigint,
 ) => {
@@ -777,6 +778,7 @@ export const oraclesRead = (
 			{ pubkey: pricefeed.addr, isSigner: false, isWritable: false },
 			{ pubkey: tokenMint, isSigner: false, isWritable: false },
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
+			{ pubkey: writeAuthority, isSigner: false, isWritable: false },
 		],
 		programId: vaultProgAddr,
 		data: Buffer.from([disc, ...argData]),

@@ -6,12 +6,16 @@ use pinocchio_log::log; //logger::log_message
 #[repr(C)]
 pub struct SimpleAcct {
   anchor_discriminator: [u8; 8], // 8 bytes
+  write_authority: Address,      // 32 bytes
   price: [u8; 8],                //8 bytes for u64,
                                  //unknown: [u8; 8],
 }
 impl SimpleAcct {
-  pub const LEN: usize = 8 + 8; // 16
+  pub const LEN: usize = 8 + 8 + 32; // 48
 
+  pub fn write_authority(&self) -> &Address {
+    &self.write_authority
+  }
   pub fn price(&self) -> u64 {
     u64::from_le_bytes(self.price)
   }
@@ -34,7 +38,6 @@ impl SimpleAcct {
   pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
     Self::check(pda)?;
     log!("check() in from_account_view() successful");
-
     unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
   }
 }

@@ -345,6 +345,7 @@ pub enum ProgramIx {
   #[account(2, name = "oracle_pda", desc = "Oracle PDA")]
   #[account(3, name = "token_mint", desc = "Token Mint")]
   #[account(4, name = "token_program", desc = "Token Program")]
+  #[account(5, name = "write_authority", desc = "Write Authority")]
   OraclesRead {
     oracle_vendor: u8,
     num_u32: u32,

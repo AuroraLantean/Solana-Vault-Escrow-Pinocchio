@@ -1,6 +1,6 @@
 use crate::{
   check_data_len, check_mint0a, check_pda, instructions::check_signer, parse_u64, read_oracle_pda,
-  to32bytes, writable,
+  simple_acct, to32bytes, writable,
 };
 use core::convert::TryFrom;
 use pinocchio::{error::ProgramError, AccountView, ProgramResult};
@@ -11,6 +11,7 @@ pub struct OraclesRead<'a> {
   pub signer: &'a AccountView,
   pub config_pda: &'a AccountView,
   pub oracle_pda: &'a AccountView,
+  pub write_authority: &'a AccountView,
   pub oracle_vendor: u8,
   pub num_u64: u64,
   pub feed_id: [u8; 32],
@@ -20,8 +21,9 @@ impl<'a> OraclesRead<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("OraclesRead process()");
-    let price = read_oracle_pda(self.oracle_vendor, self.oracle_pda, self.feed_id)?;
-    log!("process():price: {}", price);
+    simple_acct(self.oracle_pda, self.write_authority)?;
+    //let price = read_oracle_pda(self.oracle_vendor, self.oracle_pda, self.feed_id)?;
+    //log!("process():price: {}", price);
     Ok(())
   }
 }
@@ -35,7 +37,8 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for OraclesRead<'a> {
     let data_size1 = 44;
     check_data_len(data, data_size1)?;
 
-    let [signer, config_pda, oracle_pda, token_mint, token_program] = accounts else {
+    let [signer, config_pda, oracle_pda, token_mint, token_program, write_authority] = accounts
+    else {
       return Err(ProgramError::NotEnoughAccountKeys);
     };
     check_signer(signer)?;
@@ -54,6 +57,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for OraclesRead<'a> {
       signer,
       config_pda,
       oracle_pda,
+      write_authority,
       oracle_vendor,
       num_u64,
       feed_id,
