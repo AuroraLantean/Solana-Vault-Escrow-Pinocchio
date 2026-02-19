@@ -4,76 +4,134 @@ use pinocchio_log::log; //logger::log_message
 
 //----------------== Pyth
 // pyth-crosschain-main/pythnet/pythnet_sdk/src/messages.rs
+//#[derive(Debug, Copy, Clone, PartialEq)] //Serialize, Deserialize, BorshSchema
 #[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq)] //Serialize, Deserialize, BorshSchema
 pub struct PriceFeedMessage {
-  pub feed_id: [u8; 32],
-  price: [u8; 8], //i64,
-  pub conf: u64,
-  pub exponent: i32,
-  /// The timestamp of this price update in seconds
-  pub publish_time: i64,
-  /// The timestamp of the previous price update. This field is intended to allow users to
-  /// identify the single unique price update for any moment in time:
+  feed_id: [u8; 32],
+  price: [u8; 8],        //i64,
+  conf: [u8; 8],         //u64,
+  exponent: [u8; 4],     //i32,
+  publish_time: [u8; 8], //i64, in seconds
   /// for any time t, the unique update is the one such that prev_publish_time < t <= publish_time.
-  ///
   /// Note that there may not be such an update while we are migrating to the new message-sending logic,
   /// as some price updates on pythnet may not be sent to other chains (because the message-sending
-  /// logic may not have triggered). We can solve this problem by making the message-sending mandatory
-  /// (which we can do once publishers have migrated over).
+  /// logic may not have triggered). We can solve this problem by making the message-sending mandatory (which we can do once publishers have migrated over).
   ///
-  /// Additionally, this field may be equal to publish_time if the message is sent on a slot where
-  /// where the aggregation was unsuccesful. This problem will go away once all publishers have
-  /// migrated over to a recent version of pyth-agent.
-  pub prev_publish_time: i64,
-  pub ema_price: i64,
-  pub ema_conf: u64,
+  /// Additionally, this field may be equal to publish_time if the message is sent on a slot where where the aggregation was unsuccesful. This problem will go away once all publishers have migrated over to a recent version of pyth-agent.
+  prev_publish_time: [u8; 8], //i64,
+  ema_price: [u8; 8],    //i64,
+  ema_conf: [u8; 8],     //u64,
 }
 impl PriceFeedMessage {
+  pub fn feed_id(&self) -> &[u8; 32] {
+    &self.feed_id
+  }
   pub fn price(&self) -> i64 {
     i64::from_le_bytes(self.price)
+  }
+  pub fn conf(&self) -> u64 {
+    u64::from_le_bytes(self.conf)
+  }
+  pub fn exponent(&self) -> i32 {
+    i32::from_le_bytes(self.exponent)
+  }
+  pub fn publish_time(&self) -> i64 {
+    i64::from_le_bytes(self.publish_time)
+  }
+  pub fn prev_publish_time(&self) -> i64 {
+    i64::from_le_bytes(self.prev_publish_time)
+  }
+  pub fn ema_price(&self) -> i64 {
+    i64::from_le_bytes(self.ema_price)
+  }
+  pub fn ema_conf(&self) -> u64 {
+    u64::from_le_bytes(self.ema_conf)
   }
 }
 // pyth-crosschain-main/target_chains/solana/pyth_solana_receiver_sdk/src/price_update.rs
 /// This enum represents how much a price update has been verified:
 /// - If `Full`, we have verified the signatures for two thirds of the current guardians.
 /// - If `Partial`, only `num_signatures` guardian signatures have been checked.
-#[derive(Debug, Clone, PartialEq)]
+/*#[derive(Debug, Clone, PartialEq)]
 pub enum VerificationLevel {
   Partial {
     #[allow(unused)]
     num_signatures: u8,
   },
   Full,
-}
-#[derive(Clone, Debug)]
-#[repr(C)]
+}*/
+#[repr(C)] //#[derive(Clone, Debug)]
 pub struct PriceUpdateV2 {
-  anchor_discriminator: [u8; 8],         // 8 bytes
-  write_authority: Address,              // 32 bytes
-  verification_level: VerificationLevel, // 2 bytes
-  price_message: PriceFeedMessage,       // 32 + 8 + 8 + 4 + 8 + 8
-  posted_slot: [u8; 8],                  //8 bytes for u64,
-  unknown: [u8; 8],                      //8 bytes
+  anchor_discriminator: [u8; 8], // 8 bytes
+  write_authority: Address,      // 32 bytes
+  /// `[0]` = variant (0 = Partial, 1 = Full), `[1]` = num_signatures when Partial.
+  verification_level: u8, // 1 bytes
+  //verification_level: [u8; 2], // 2 bytes
+  price_message: PriceFeedMessage, // 32 + 8 + 8 + 4 + 8 + 8
+  posted_slot: [u8; 8],            //8 bytes for u64, the last unknown 8 bytes are Anchor padding
 }
 impl PriceUpdateV2 {
-  pub const LEN: usize = 8 + 32 + 2 + 32 + 8 + 8 + 4 + 8 + 8 + 8 + 8 + 8; // 134
+  /// Total serialized size in bytes — verified at compile time via `size_of`.
+  pub const LEN: usize = core::mem::size_of::<PriceUpdateV2>();
+  //pub const LEN: usize = 8 + 32 + 2 + 32 + 8 + 8 + 4 + 8 + 8 + 8 + 8 + 8; // 134
+
+  /// Anchor discriminator: first 8 bytes of `sha256("account:PriceUpdateV2")`.
+  pub const DISCRIMINATOR: [u8; 8] = [0x22, 0xf1, 0x23, 0x63, 0x9d, 0x7e, 0xf4, 0xcd];
+
+  /// Zero-copy borrow of `bytes` as a `PriceUpdateV2`.
+  ///
+  /// # Safety
+  /// `bytes` must be at least `Self::LEN` bytes long and contain a valid Borsh-serialised `PriceUpdateV2`.  No alignment constraint beyond 1 byte.
+  #[inline(always)]
+  pub unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
+    &*(bytes.as_ptr() as *const Self)
+  }
+  /// Borrow `data` as a `PriceUpdateV2`, checking length and discriminator.
+  /// Returns `None` when either check fails.
+  #[inline]
+  pub fn from_account_data(data: &[u8]) -> Result<&Self, ProgramError> {
+    log!("PythPriceUpdateV2 data_len(): {}", data.len()); // 134
+    if data.len() < Self::LEN {
+      return Err(Ee::PythPriceUpdateV2DataLen.into());
+    }
+    if data[..8] != Self::DISCRIMINATOR {
+      return Err(Ee::PythPriceUpdateV2Discriminator.into());
+    }
+    //check that the accounts are owned by the Pyth Solana Receiver
+    unsafe { Ok(Self::from_bytes_unchecked(data)) }
+  }
+  pub fn from_account_view(pda: &AccountView) -> Result<&Self, ProgramError> {
+    Self::check(pda)?;
+    log!("check() in from_account_view() successful");
+    unsafe {
+      let reinterpreted = &*(pda.try_borrow().unwrap().as_ptr() as *const Self);
+      Ok(reinterpreted)
+    }
+  }
 
   pub fn write_authority(&self) -> &Address {
     &self.write_authority
   }
-  pub fn verification_level(&self) -> &VerificationLevel {
-    &self.verification_level
+  /// `true` when all guardian signatures have been verified.
+  #[inline(always)]
+  pub fn is_fully_verified(&self) -> bool {
+    self.verification_level == 1
+    //self.verification_level[0] == 1
   }
+  /// Number of guardian signatures checked for a `Partial` verification. Returns `None` when the verification level is `Full`.
+  /*#[inline(always)]
+  pub fn num_signatures(&self) -> Option<u8> {
+    if self.verification_level[0] == 0 {
+      Some(self.verification_level[1])
+    } else {
+      None
+    }
+  }*/
   pub fn price_message(&self) -> &PriceFeedMessage {
     &self.price_message
   }
   pub fn posted_slot(&self) -> u64 {
-    log!("posted_slot len: {}", self.posted_slot.len() as u64); // 8
-    log!("posted_slot[0]: {}", self.posted_slot[0]);
-    //error message: Program A9TPi1RSW5apQcZch9CUz5EnuyfSF773zxndJowMrcK3 failed: account data too small for instruction
-
-    log!("posted_slot: {}", &self.posted_slot);
+    //error message: Program failed: account data too small for instruction
     u64::from_le_bytes(self.posted_slot)
   }
   pub fn check(pda: &AccountView) -> ProgramResult {
@@ -91,20 +149,6 @@ impl PriceUpdateV2 {
       }
     }
     Ok(())
-  }
-  pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
-    Self::check(pda)?;
-    log!("check() in from_account_view() successful");
-    /*
-    // 8-bytes aligned account data + 8 bytes of trailing data.
-    let mut data = [0u64; size_of::<RuntimeAccount>() / size_of::<u64>() + 1];
-    data[0] = NOT_BORROWED as u64;
-
-    let account = data.as_mut_ptr() as *mut RuntimeAccount;
-    unsafe { (*account).data_len = 8 };
-
-    let account_view = AccountView { raw: account };     */
-    unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
   }
 
   // target_chains/solana/pyth_solana_receiver_sdk/src/price_update.rs
@@ -130,7 +174,8 @@ impl PriceUpdateV2 {
     clock: &Clock,
     maximum_age: u64,
     feed_id: &[u8; 32],
-  ) -> Result<PriceFeedMessage, ProgramError> {
+  ) -> Result<(), ProgramError> {
+    //PriceFeedMessage
     log!("get_price(): feed_id input: {}", feed_id);
     /*if self.verification_level != VerificationLevel::Full {
       return Err(Ee::PythPriceVerification.into());
@@ -144,7 +189,7 @@ impl PriceUpdateV2 {
     //check if price feed update's age exceeds the requested maximum age"
     if self
       .price_message
-      .publish_time
+      .publish_time()
       .saturating_add(maximum_age.try_into().unwrap())
       >= clock.unix_timestamp
     {
@@ -153,6 +198,7 @@ impl PriceUpdateV2 {
     if self.price_message.price() <= 0 {
       return Err(Ee::OraclePriceInvalid.into());
     }
-    Ok(self.price_message)
+    Ok(())
+    //Ok(self.price_message)
   }
 }

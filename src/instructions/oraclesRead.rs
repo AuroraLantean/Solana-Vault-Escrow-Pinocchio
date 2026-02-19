@@ -21,9 +21,9 @@ impl<'a> OraclesRead<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("OraclesRead process()");
-    simple_acct(self.oracle_pda, self.write_authority)?;
-    //let price = read_oracle_pda(self.oracle_vendor, self.oracle_pda, self.feed_id)?;
-    //log!("process():price: {}", price);
+    //simple_acct(self.oracle_pda, self.write_authority)?;
+    let price = read_oracle_pda(self.oracle_vendor, self.oracle_pda, self.feed_id)?;
+    log!("process():read_oracle_pda():price: {}", price);
     Ok(())
   }
 }

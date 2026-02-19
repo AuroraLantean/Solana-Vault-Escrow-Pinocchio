@@ -7,8 +7,9 @@ use pinocchio_log::log; //logger::log_message
 pub struct SimpleAcct {
   anchor_discriminator: [u8; 8], // 8 bytes
   write_authority: Address,      // 32 bytes
-  price: [u8; 8],                //8 bytes for u64,
-                                 //unknown: [u8; 8],
+  verification_level: [u8; 2],
+  price: [u8; 8], //8 bytes for u64,
+                  //unknown: [u8; 8],
 }
 impl SimpleAcct {
   pub const LEN: usize = 8 + 8 + 32; // 48

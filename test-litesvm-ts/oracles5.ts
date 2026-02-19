@@ -140,7 +140,7 @@ test("Make Anchor PDA", () => {
 	expect(decoded.writeAuthority).toEqual(signer);
 	expect(decoded.price).toEqual(price);
 });
-test("Read SimpleAcct from FutureOption Anchor Program", () => {
+test.skip("Read SimpleAcct from FutureOption Anchor Program", () => {
 	ll("\n------== Read SimpleAcct from FutureOption Anchor Program");
 	signerKp = user1Kp;
 	tokenMint = usdcMint;
@@ -161,7 +161,7 @@ test("Read SimpleAcct from FutureOption Anchor Program", () => {
 	);
 });
 
-test.skip("OraclesRead", () => {
+test("OraclesRead", () => {
 	ll("\n------== OraclesRead");
 	ll(
 		"make sure you pull pricefeed account data first into the 'pricefeeds' folder",
@@ -172,6 +172,7 @@ test.skip("OraclesRead", () => {
 	signerKp = user1Kp;
 	tokenMint = usdcMint;
 	tokenProg = TOKEN_PROGRAM_ID; //TOKEN_2022_PROGRAM_ID;
+	writeAuthority = admin;
 	numU64 = 1100n;
 
 	ll("tokenMint:", tokenMint.toBase58());
@@ -180,7 +181,15 @@ test.skip("OraclesRead", () => {
 
 	pricefeed = pythPricefeedBTCUSD;
 	setPriceFeedPda(pricefeed);
-	//oraclesRead(signerKp, configPDA, tokenMint, tokenProg, pricefeed, numU64);
+	oraclesRead(
+		signerKp,
+		configPDA,
+		tokenMint,
+		tokenProg,
+		writeAuthority,
+		pricefeed,
+		numU64,
+	);
 	//pricefeed = pythPricefeedETHUSD;
 	//pricefeed = pythPricefeedSOLUSD;
 });
