@@ -90,7 +90,7 @@ impl PriceUpdateV2 {
   /// Returns `None` when either check fails.
   #[inline]
   pub fn from_account_data(data: &[u8]) -> Result<&Self, ProgramError> {
-    log!("PythPriceUpdateV2 data_len(): {}", data.len()); // 134
+    log!("PythPriceUpdateV2 data_len() should be 134: {}", data.len());
     if data.len() < Self::LEN {
       return Err(Ee::PythPriceUpdateV2DataLen.into());
     }
@@ -101,14 +101,11 @@ impl PriceUpdateV2 {
     unsafe { Ok(Self::from_bytes_unchecked(data)) }
   }
   pub fn from_account_view(pda: &AccountView) -> Result<&Self, ProgramError> {
-    Self::check(pda)?;
-    log!("check() in from_account_view() successful");
-    unsafe {
-      let reinterpreted = &*(pda.try_borrow().unwrap().as_ptr() as *const Self);
-      Ok(reinterpreted)
+    if pda.data_len() < Self::LEN {
+      return Err(Ee::PythPriceUpdateV2DataLen.into());
     }
+    unsafe { Ok(&*(pda.try_borrow().unwrap().as_ptr() as *const Self)) }
   }
-
   pub fn write_authority(&self) -> &Address {
     &self.write_authority
   }
@@ -134,23 +131,6 @@ impl PriceUpdateV2 {
     //error message: Program failed: account data too small for instruction
     u64::from_le_bytes(self.posted_slot)
   }
-  pub fn check(pda: &AccountView) -> ProgramResult {
-    log!("PythPriceUpdateV2 data_len(): {}", pda.data_len()); // 134
-    if pda.data_len() != Self::LEN {
-      return Ee::PythPriceUpdateV2DataLen.e();
-    }
-    //check that the accounts are owned by the Pyth Solana Receiver
-    unsafe {
-      //log_message(&pda.owner().to_bytes());
-      if pda.owner().ne(&Address::from_str_const(
-        "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
-      )) {
-        return Ee::PythPDA.e();
-      }
-    }
-    Ok(())
-  }
-
   // target_chains/solana/pyth_solana_receiver_sdk/src/price_update.rs
   /// Ported from get_price_no_older_than_with_custom_verification_level()
   /// Get a `Price` from a `PriceUpdateV2` account for a given `FeedId` no older than `maximum_age` with customizable verification level.
@@ -169,36 +149,42 @@ impl PriceUpdateV2 {
   ///     Ok(())
   /// }
   ///```
-  pub fn get_price(
+  pub fn get_price_no_older_than(
     &self,
     clock: &Clock,
     maximum_age: u64,
     feed_id: &[u8; 32],
-  ) -> Result<(), ProgramError> {
-    //PriceFeedMessage
+  ) -> Result<f64, ProgramError> {
     log!("get_price(): feed_id input: {}", feed_id);
-    /*if self.verification_level != VerificationLevel::Full {
-      return Err(Ee::PythPriceVerification.into());
-    }*/
     // target_chains/solana/pyth_solana_receiver_sdk/src/error.rs
+    let price_mesg = self.price_message();
+    log!("price: {}", price_mesg.price());
+    log!("conf: {}", price_mesg.conf());
+    log!("exponent: {}", price_mesg.exponent());
+    log!("publish_time: {}", price_mesg.publish_time());
+    log!("prev_publish_time: {}", price_mesg.prev_publish_time());
 
-    // if self.price_message.feed_id != *feed_id {
-    //   return Err(Ee::PythMismatchedFeedId.into());
-    // } //get_price_unchecked(feed_id)?
+    // The actual price is `(price ± conf)* 10^exponent`.
+    log!(
+      "The price is ({} ± {}) * 10^{}",
+      price_mesg.price(),
+      price_mesg.conf(), //confidence_interval
+      price_mesg.exponent()
+    );
+    if price_mesg.price() <= 0 {
+      return Err(Ee::OraclePriceInvalid.into());
+    }
+    let asset_price = price_mesg.price() as f64 * 10f64.powi(price_mesg.exponent());
+    log!("asset_price = {}", asset_price as i64);
 
     //check if price feed update's age exceeds the requested maximum age"
-    if self
-      .price_message
+    if price_mesg
       .publish_time()
       .saturating_add(maximum_age.try_into().unwrap())
       >= clock.unix_timestamp
     {
       return Err(Ee::OraclePriceTooOld.into());
     }
-    if self.price_message.price() <= 0 {
-      return Err(Ee::OraclePriceInvalid.into());
-    }
-    Ok(())
-    //Ok(self.price_message)
+    Ok(asset_price)
   }
 }
