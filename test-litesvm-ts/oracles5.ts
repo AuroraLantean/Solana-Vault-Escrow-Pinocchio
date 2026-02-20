@@ -2,6 +2,7 @@
 import { expect, test } from "bun:test";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Keypair, PublicKey } from "@solana/web3.js";
+import type { Clock } from "litesvm";
 import {
 	Status,
 	solanaKitDecodeConfigDev,
@@ -17,6 +18,7 @@ import {
 	oraclesRead,
 	setMint,
 	setPriceFeedPda,
+	setTime,
 	simpleAcctPbk,
 	simpleAcctPricefeed,
 	svm,
@@ -61,6 +63,7 @@ let isAuthorized = false;
 let status: Status;
 let str: string;
 let pricefeed: PriceFeed;
+let _clock: Clock;
 
 test("Set Mints", () => {
 	ll("\n------== Set Mints");
@@ -160,7 +163,8 @@ test.skip("Read SimpleAcct from FutureOption Anchor Program", () => {
 		numU64,
 	);
 });
-
+// jjb; jj clone-pyth
+// clear; jj tts 5
 test("OraclesRead", () => {
 	ll("\n------== OraclesRead");
 	ll(
@@ -181,6 +185,7 @@ test("OraclesRead", () => {
 
 	pricefeed = pythPricefeedBTCUSD;
 	setPriceFeedPda(pricefeed);
+	setTime(svm);
 	oraclesRead(
 		signerKp,
 		configPDA,

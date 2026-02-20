@@ -1,5 +1,5 @@
 //use num_derive::FromPrimitive;
-use crate::{PriceUpdateV2, SimpleAcct, Status, PROG_ADDR};
+use crate::{SimpleAcct, Status, PROG_ADDR};
 use pinocchio::{
   error::{ProgramError, ToStr},
   sysvars::{
@@ -9,7 +9,7 @@ use pinocchio::{
   },
   AccountView, Address, ProgramResult,
 };
-use pinocchio_log::{log, logger::log_message}; //logger::log_message
+use pinocchio_log::log; //logger::log_message
 use pinocchio_token::state::{Mint, TokenAccount};
 use pinocchio_token_2022::state::{Mint as Mint22, TokenAccount as TokenAccount22};
 //use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
@@ -796,22 +796,11 @@ pub fn check_rent_sysvar(account: &AccountView) -> ProgramResult {
 }
 //pub const SYSTEMPROGRAM: pinocchio_pubkey::reexport::Pubkey = solana_system_interface::program::ID;
 
-//-------------== Read Oracle Prices
-pub const MAX_PRICE_AGE: u64 = 60; // in seconds
-
-//https://solana.stackexchange.com/questions/22293/how-to-convert-a-solana-program-account-info-into-a-pinocchio-account-info
-
+//-------------==
 /// Get a `FeedId` from a hex string.
 ///
 /// Price feed ids are a 32 byte unique identifier for each price feed in the Pyth network.
 /// They are sometimes represented as a 64 character hex string (with or without a 0x prefix).
-///
-/// # Example
-///
-/// ```
-/// use pyth_solana_receiver_sdk::price_update::get_feed_id_from_hex;
-/// let feed_id = get_feed_id_from_hex("0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d").unwrap();
-/// ```
 pub fn get_feed_id_from_hex(input: &str) -> Result<[u8; 32], ProgramError> {
   let mut feed_id: [u8; 32] = [0; 32];
   match input.len() {
@@ -827,51 +816,7 @@ pub fn get_feed_id_from_hex(input: &str) -> Result<[u8; 32], ProgramError> {
   }
   Ok(feed_id)
 }
-pub fn pyth_network(pda: &AccountView, feed_id: [u8; 32]) -> Result<u64, ProgramError> {
-  log!("pyth_network");
-  //Pyth Devnet or Mainnet https://docs.pyth.network/price-feeds/core/contract-addresses/solana
-  //check that the accounts are owned by the Pyth Solana Receiver according to https://docs.pyth.network/price-feeds/core/contract-addresses/solana
-  log!("PythPriceUpdateV2 data_len(): {}", pda.data_len()); // 134
-  unsafe {
-    //log_message(&pda.owner().to_bytes());
-    if pda.owner().ne(&Address::from_str_const(
-      "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
-    )) {
-      return Err(Ee::PythPDA.into());
-    }
-  }
-  pda.check_borrow()?;
-  let data = pda.try_borrow()?;
-  let price_update: &PriceUpdateV2 = PriceUpdateV2::from_account_data(&data)?;
-  //let price_update: &PriceUpdateV2 = PriceUpdateV2::from_account_view(&pda)?;
-  log!("pyth_network reading price_update success");
 
-  //Anchor
-  //let price = price_update.get_price_no_older_than(&Clock::get()?, maximum_age, &feed_id)?;
-
-  /*if price_update.write_authority().ne(&Address::from_str_const(
-    "4cSM2e6rvbGQUFiJbqytoVMi5GgghSMr8LwVrT9VPSPo",
-  )) { log!("write_authority incorrect!!!");}*/
-
-  if !price_update.is_fully_verified() {
-    log!("verification_level: not verified!!!");
-    return Err(Ee::PythPriceVerification.into());
-  }
-
-  let price_mesg = price_update.price_message();
-  if !price_mesg.feed_id().eq(&feed_id) {
-    log!("feed_id is NOT correct");
-    log!("feed_id: {}", &feed_id);
-    log!("price_mesg.feed_id(): {}", price_mesg.feed_id());
-    return Err(Ee::PythMismatchedFeedId.into());
-  }
-  log!("posted_slot: {}", price_update.posted_slot());
-
-  let asset_price =
-    price_update.get_price_no_older_than(&Clock::get()?, MAX_PRICE_AGE, &feed_id)?;
-
-  Ok(asset_price as u64)
-}
 pub fn simple_acct(
   pda: &AccountView,
   write_authority_exp: &AccountView,
@@ -890,18 +835,6 @@ pub fn simple_acct(
   //log_message(&write_authority.to_bytes());
   let price = simple_acct.price();
   log!("price: {}", price);
-  Ok(price)
-}
-pub fn read_oracle_pda(
-  oracle_vendor: u8,
-  pda: &AccountView,
-  feed_id: [u8; 32],
-) -> Result<u64, ProgramError> {
-  let price = match oracle_vendor {
-    0 | 1 => pyth_network(pda, feed_id)?,
-    //255 => simple_acct(pda, feed_id)?,
-    _ => return Err(Ee::OracleNum.into()),
-  };
   Ok(price)
 }
 
@@ -1155,6 +1088,12 @@ pub fn check_tokacct_interface(ata: &AccountView) -> ProgramResult {
 pub fn get_time() -> Result<u32, ProgramError> {
   let clock = Clock::get().map_err(|_| Ee::ClockGet)?;
   let time = clock.unix_timestamp as u32;
+  log!("Solana time: {}", time);
+  Ok(time)
+}
+pub fn get_time_i64() -> Result<i64, ProgramError> {
+  let clock = Clock::get().map_err(|_| Ee::ClockGet)?;
+  let time = clock.unix_timestamp;
   log!("Solana time: {}", time);
   Ok(time)
 }

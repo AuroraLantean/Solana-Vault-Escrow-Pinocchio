@@ -277,10 +277,10 @@ export const statusToByte = (status: Status) => {
 
 export const getTime = () => {
 	const time = Math.floor(Date.now() / 1000);
-	ll("time:", time);
+	ll("JS time:", time);
 	return time;
 };
-export const getTimeB = () => {
+export const getTimeBig = () => {
 	const time = getTime();
 	return BigInt(time);
 };

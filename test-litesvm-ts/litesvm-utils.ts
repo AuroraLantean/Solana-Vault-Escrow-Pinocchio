@@ -30,6 +30,7 @@ import {
 	checkBigint,
 	checkDecimals,
 	decodeHexstrToUint8,
+	getTimeBig,
 	numToBytes,
 	statusToByte,
 	strToU8Fixed,
@@ -1210,3 +1211,9 @@ export const checkLogs = (
 	const raw = svm.getAccount(ata);
 	return { raw, ata };
 };*/
+export const setTime = (svm: LiteSVM) => {
+	const time = getTimeBig();
+	const clock = svm.getClock();
+	clock.unixTimestamp = time;
+	svm.setClock(clock);
+};

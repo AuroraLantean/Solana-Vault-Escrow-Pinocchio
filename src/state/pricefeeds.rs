@@ -1,8 +1,66 @@
-use crate::Ee;
-use pinocchio::{error::ProgramError, sysvars::clock::Clock, AccountView, Address, ProgramResult};
+use crate::{get_time_i64, Ee};
+use pinocchio::{error::ProgramError, AccountView, Address};
 use pinocchio_log::log; //logger::log_message
 
 //----------------== Pyth
+pub fn read_oracle_pda(
+  oracle_vendor: u8,
+  pda: &AccountView,
+  feed_id: [u8; 32],
+) -> Result<u64, ProgramError> {
+  let price = match oracle_vendor {
+    0 | 1 => pyth_network(pda, feed_id)?,
+    //255 => simple_acct(pda, feed_id)?,
+    _ => return Err(Ee::OracleNum.into()),
+  };
+  Ok(price)
+}
+pub const MAX_PRICE_AGE: u64 = 60; // in seconds
+
+pub fn pyth_network(pda: &AccountView, feed_id: [u8; 32]) -> Result<u64, ProgramError> {
+  log!("pyth_network");
+  //Pyth Devnet or Mainnet https://docs.pyth.network/price-feeds/core/contract-addresses/solana
+  //check that the accounts are owned by the Pyth Solana Receiver according to https://docs.pyth.network/price-feeds/core/contract-addresses/solana
+  log!("PythPriceUpdateV2 data_len(): {}", pda.data_len()); // 134
+  unsafe {
+    //log_message(&pda.owner().to_bytes());
+    if pda.owner().ne(&Address::from_str_const(
+      "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
+    )) {
+      return Err(Ee::PythPDA.into());
+    }
+  }
+  pda.check_borrow()?;
+  let data = pda.try_borrow()?;
+  let price_update: &PriceUpdateV2 = PriceUpdateV2::from_account_data(&data)?;
+  //let price_update: &PriceUpdateV2 = PriceUpdateV2::from_account_view(&pda)?;
+  log!("pyth_network reading price_update success");
+
+  //Anchor
+  //let price = price_update.get_price_no_older_than(&Clock::get()?, maximum_age, &feed_id)?;
+
+  /*if price_update.write_authority().ne(&Address::from_str_const(
+    "4cSM2e6rvbGQUFiJbqytoVMi5GgghSMr8LwVrT9VPSPo",
+  )) { log!("write_authority incorrect!!!");}*/
+
+  if !price_update.is_fully_verified() {
+    log!("verification_level: not verified!!!");
+    return Err(Ee::PythPriceVerification.into());
+  }
+
+  let price_mesg = price_update.price_message();
+  if !price_mesg.feed_id().eq(&feed_id) {
+    log!("feed_id is NOT correct");
+    log!("feed_id: {}", &feed_id);
+    log!("price_mesg.feed_id(): {}", price_mesg.feed_id());
+    return Err(Ee::PythMismatchedFeedId.into());
+  }
+  log!("posted_slot: {}", price_update.posted_slot());
+
+  let asset_price = price_update.get_price_no_older_than(MAX_PRICE_AGE, &feed_id)?;
+
+  Ok(asset_price as u64)
+}
 // pyth-crosschain-main/pythnet/pythnet_sdk/src/messages.rs
 //#[derive(Debug, Copy, Clone, PartialEq)] //Serialize, Deserialize, BorshSchema
 #[repr(C)]
@@ -132,26 +190,8 @@ impl PriceUpdateV2 {
     u64::from_le_bytes(self.posted_slot)
   }
   // target_chains/solana/pyth_solana_receiver_sdk/src/price_update.rs
-  /// Ported from get_price_no_older_than_with_custom_verification_level()
-  /// Get a `Price` from a `PriceUpdateV2` account for a given `FeedId` no older than `maximum_age` with customizable verification level.
-  ///
-  /// # Warning
-  /// Lowering the verification level from `Full` to `Partial` increases the risk of using a malicious price update.
-  /// Please read the documentation for [`VerificationLevel`] for more information.
-  ///
-  /// # Example
-  /// ```ignore
-  /// use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, VerificationLevel, PriceUpdateV2};
-  /// const MAXIMUM_AGE : u64 = 30;
-  /// const FEED_ID: &str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD
-  ///     let price_update = &mut ctx.accounts.price_update;
-  ///     let price = price_update.get_price_no_older_than_with_custom_verification_level(&Clock::get()?, MAXIMUM_AGE, &get_feed_id_from_hex(FEED_ID)?, VerificationLevel::Partial{num_signatures: 5})?;
-  ///     Ok(())
-  /// }
-  ///```
   pub fn get_price_no_older_than(
     &self,
-    clock: &Clock,
     maximum_age: u64,
     feed_id: &[u8; 32],
   ) -> Result<f64, ProgramError> {
@@ -163,6 +203,10 @@ impl PriceUpdateV2 {
     log!("exponent: {}", price_mesg.exponent());
     log!("publish_time: {}", price_mesg.publish_time());
     log!("prev_publish_time: {}", price_mesg.prev_publish_time());
+    log!(
+      "delta_time:  {}",
+      price_mesg.publish_time() - price_mesg.prev_publish_time()
+    );
 
     // The actual price is `(price ± conf)* 10^exponent`.
     log!(
@@ -178,10 +222,15 @@ impl PriceUpdateV2 {
     log!("asset_price = {}", asset_price as i64);
 
     //check if price feed update's age exceeds the requested maximum age"
+    let max_time = price_mesg
+      .publish_time()
+      .saturating_add(maximum_age.try_into().unwrap());
+    log!("max_time:    {}", max_time);
+    let time = get_time_i64()?;
     if price_mesg
       .publish_time()
       .saturating_add(maximum_age.try_into().unwrap())
-      >= clock.unix_timestamp
+      <= time
     {
       return Err(Ee::OraclePriceTooOld.into());
     }

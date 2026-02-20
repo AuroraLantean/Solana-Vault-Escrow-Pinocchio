@@ -1,6 +1,6 @@
 use crate::{
   check_data_len, check_mint0a, check_pda, instructions::check_signer, parse_u64, read_oracle_pda,
-  simple_acct, to32bytes, writable,
+  to32bytes, writable,
 };
 use core::convert::TryFrom;
 use pinocchio::{error::ProgramError, AccountView, ProgramResult};

@@ -17,6 +17,7 @@ import {
 	initConfig,
 	initSolBalc,
 	setMint,
+	setTime,
 	svm,
 	updateConfig,
 	updateConfig2,
@@ -25,7 +26,6 @@ import {
 } from "./litesvm-utils";
 import {
 	as9zBn,
-	getTime,
 	ll,
 	numToBytes,
 	statusToByte,
@@ -66,13 +66,13 @@ let str: string;
 let funcSelector: number;
 let numU32: number;
 let numU64: bigint;
-let time: number;
+let _time: number;
 let bytes4bools: number[];
 let bytes4u8s: number[];
 let bytes4u32s: number[];
 let bytes4u64s: number[];
 
-let clock: Clock;
+let _clock: Clock;
 
 test("Set Mints", () => {
 	ll("\n------== Set Mints");
@@ -150,10 +150,7 @@ test("updateConfig + time travel", () => {
 	//bytes4u32s = [...numToBytes(time, 32), ...u32Bytes, ...u32Bytes, ...u32Bytes];
 	//tokenAmount = as9zBn(274);
 	//bytes4u64s = [...numToBytes(fee),		...numToBytes(tokenAmount),...u64Bytes,		...u64Bytes];
-	time = getTime();
-	clock = svm.getClock();
-	clock.unixTimestamp = BigInt(time);
-	svm.setClock(clock);
+	setTime(svm);
 
 	updateConfig(
 		signerKp,
