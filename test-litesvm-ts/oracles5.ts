@@ -163,7 +163,6 @@ test.skip("Read SimpleAcct from FutureOption Anchor Program", () => {
 		numU64,
 	);
 });
-// jjb; jj clone-pyth
 // clear; jj tts 5
 test("OraclesRead", () => {
 	ll("\n------== OraclesRead");

@@ -1075,6 +1075,19 @@ deployAnchorProgram();
 acctExists(futureOptionAddr);
 ll("deployAnchorProgram() is successful");
 
+/*pub struct InitSimpleAccount<'info> {
+  #[account(
+        init,
+        payer = signer,
+        space = 8 + 40,//SimpleAcct::INIT_SPACE,
+        seeds = [SIMPLEACCT],
+        bump
+    )]
+  pub simple_acct: Account<'info, SimpleAcct>,
+  #[account(mut)]
+  pub signer: Signer<'info>,
+  pub system_program: Program<'info, System>,
+} */
 export const initSimpleAcct = (
 	signer: Keypair,
 	simpleAcctPDA: PublicKey,
