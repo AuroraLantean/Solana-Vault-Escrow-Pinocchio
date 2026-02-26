@@ -1,12 +1,16 @@
 use crate::{
-  check_data_len, check_pda, executable, instructions::check_signer, parse_u16, parse_u64,
-  to32bytes, writable, Ee,
+  check_pda, executable, get_rent_exempt, instructions::check_signer, writable, Ee, LoanDataAcct,
+  PROG_ADDR,
 };
 use core::convert::TryFrom;
 use pinocchio::{
-  error::ProgramError, sysvars::instructions::INSTRUCTIONS_ID, AccountView, ProgramResult,
+  cpi::{Seed, Signer},
+  error::ProgramError,
+  sysvars::instructions::INSTRUCTIONS_ID,
+  AccountView, ProgramResult,
 };
 use pinocchio_log::log;
+use pinocchio_system::instructions::CreateAccount;
 
 /// FlashloanBorrow
 pub struct FlashloanBorrow<'a> {
@@ -18,6 +22,7 @@ pub struct FlashloanBorrow<'a> {
   pub token_program: &'a AccountView,
   pub system_program: &'a AccountView,
   pub config_pda: &'a AccountView,
+  pub rent_sysvar: &'a AccountView,
   pub token_accounts: &'a [AccountView],
   //pub lender_ata: &'a AccountView,
   //pub user_ata: &'a AccountView,
@@ -34,6 +39,42 @@ impl<'a> FlashloanBorrow<'a> {
 
   pub fn process(self) -> ProgramResult {
     log!("FlashloanBorrow process()");
+    let FlashloanBorrow {
+      signer,
+      lender_pda,
+      loan_data,
+      mint,
+      instruction_sysvar,
+      token_program,
+      system_program,
+      config_pda,
+      rent_sysvar,
+      token_accounts,
+      bump,
+      fee,
+      amounts,
+    } = self;
+    let fee_bytes = fee.to_le_bytes();
+    let signer_seeds = [
+      Seed::from("protocol".as_bytes()),
+      Seed::from(&fee_bytes),
+      Seed::from(&self.bump),
+    ];
+    let signer_seeds = [Signer::from(&signer_seeds)];
+
+    // Open the LoanData account and create a mutable slice to push the Loan struct to it
+    let size = size_of::<LoanDataAcct>() * amounts.len();
+    let lamports = get_rent_exempt(self.loan_data, rent_sysvar, size)?;
+
+    CreateAccount {
+      from: signer,
+      to: loan_data,
+      lamports,
+      space: size as u64,
+      owner: &PROG_ADDR,
+    }
+    .invoke()?;
+
     Ok(())
   }
 }
@@ -46,7 +87,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for FlashloanBorrow<'a> {
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
     //let instruction_data = LoanInstructionData::try_from(data)?;
 
-    let [signer, lender_pda, loan_data, mint, instruction_sysvar, config_pda, token_program, system_program, token_accounts @ ..] =
+    let [signer, lender_pda, loan_data, mint, instruction_sysvar, config_pda, token_program, system_program, rent_sysvar, token_accounts @ ..] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
@@ -103,6 +144,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for FlashloanBorrow<'a> {
       config_pda,
       token_program,
       system_program,
+      rent_sysvar,
       token_accounts,
       //lender_ata, user_ata,
       bump: [*bump],
