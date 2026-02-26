@@ -1112,7 +1112,7 @@ export const initSimpleAcct = (
 export const flashloan = (
 	userSigner: Keypair,
 	lenderPda: PublicKey,
-	loanData: PublicKey,
+	loanRecords: PublicKey,
 	//lenderAta: PublicKey,
 	//userAta: PublicKey,
 	mint: PublicKey,
@@ -1131,7 +1131,7 @@ export const flashloan = (
 		keys: [
 			{ pubkey: userSigner.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: lenderPda, isSigner: false, isWritable: false },
-			{ pubkey: loanData, isSigner: false, isWritable: true },
+			{ pubkey: loanRecords, isSigner: false, isWritable: true },
 			{ pubkey: mint, isSigner: false, isWritable: false },
 			{
 				pubkey: SYSVAR_INSTRUCTIONS_PUBKEY,

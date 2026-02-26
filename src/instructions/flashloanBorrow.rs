@@ -1,6 +1,6 @@
 use crate::{
-  check_pda, executable, get_rent_exempt, instructions::check_signer, writable, Ee, LoanDataAcct,
-  PROG_ADDR,
+  amount_from_token_acct, check_pda, executable, get_rent_exempt, instructions::check_signer,
+  writable, Ee, LoanRecord, PROG_ADDR,
 };
 use core::convert::TryFrom;
 use pinocchio::{
@@ -10,13 +10,12 @@ use pinocchio::{
   AccountView, ProgramResult,
 };
 use pinocchio_log::log;
-use pinocchio_system::instructions::CreateAccount;
 
 /// FlashloanBorrow
 pub struct FlashloanBorrow<'a> {
   pub signer: &'a AccountView,
   pub lender_pda: &'a AccountView,
-  pub loan_data: &'a AccountView,
+  pub loan_records: &'a AccountView,
   pub mint: &'a AccountView,
   pub instruction_sysvar: &'a AccountView,
   pub token_program: &'a AccountView,
@@ -26,6 +25,7 @@ pub struct FlashloanBorrow<'a> {
   pub token_accounts: &'a [AccountView],
   //pub lender_ata: &'a AccountView,
   //pub user_ata: &'a AccountView,
+  pub decimals: u8,
   pub bump: [u8; 1],
   pub fee: u16,
   pub amounts: &'a [u64],
@@ -42,7 +42,7 @@ impl<'a> FlashloanBorrow<'a> {
     let FlashloanBorrow {
       signer,
       lender_pda,
-      loan_data,
+      loan_records,
       mint,
       instruction_sysvar,
       token_program,
@@ -50,6 +50,7 @@ impl<'a> FlashloanBorrow<'a> {
       config_pda,
       rent_sysvar,
       token_accounts,
+      decimals,
       bump,
       fee,
       amounts,
@@ -62,18 +63,68 @@ impl<'a> FlashloanBorrow<'a> {
     ];
     let signer_seeds = [Signer::from(&signer_seeds)];
 
-    // Open the LoanData account and create a mutable slice to push the Loan struct to it
-    let size = size_of::<LoanDataAcct>() * amounts.len();
-    let lamports = get_rent_exempt(self.loan_data, rent_sysvar, size)?;
+    // Open the LoanRecord account and create a mutable slice to push the Loan struct to it
+    let size = size_of::<LoanRecord>() * amounts.len();
+    let lamports = get_rent_exempt(loan_records, rent_sysvar, size)?;
 
-    CreateAccount {
+    pinocchio_system::instructions::CreateAccount {
       from: signer,
-      to: loan_data,
+      to: loan_records,
       lamports,
       space: size as u64,
       owner: &PROG_ADDR,
     }
     .invoke()?;
+
+    //Make a mutable slice from the loan account's data. We will populate this slice in a for loop as we process each loan and its corresponding transfer:
+    let mut loan_records = loan_records.try_borrow_mut()?;
+    let loan_records_slice = unsafe {
+      core::slice::from_raw_parts_mut(loan_records.as_mut_ptr() as *mut LoanRecord, amounts.len())
+    };
+
+    //loop through all the loans. In each iteration, we get the lender_token_acct and borrower_token_acct, calculate the balance due to the protocol, save this data in the loanRecord account, and transfer the tokens.
+    for (i, amount) in amounts.iter().enumerate() {
+      if *amount == 0 {
+        return Ee::BorrowedAmountIsZero.e();
+      }
+      let lender_token_acct = &token_accounts[i * 2];
+      let borrower_token_acct = &token_accounts[i * 2 + 1];
+
+      // Get the balance of the lender's token account and add the fee to it so we can save it to the loan account
+      let balance = amount_from_token_acct(lender_token_acct)?;
+      if balance == 0 {
+        return Ee::LenderPdaBalanceIsZero.e();
+      }
+      if *amount > balance {
+        return Ee::BorrowAmountTooBig.e();
+      }
+
+      let balance_with_fee = balance
+        .checked_add(
+          amount
+            .checked_mul(fee as u64)
+            .and_then(|x| x.checked_div(10_000))
+            .ok_or_else(|| Ee::MultDivNone)?,
+        )
+        .ok_or_else(|| Ee::AddToOverflow)?;
+
+      // Push the Loan struct to the loan account
+      loan_records_slice[i] = LoanRecord {
+        lender_token_acct: lender_token_acct.address().to_bytes(),
+        balance_with_fee,
+      };
+
+      // Transfer the tokens from the lenderPda to the borrower
+      pinocchio_token::instructions::TransferChecked {
+        from: lender_token_acct,
+        mint,
+        to: borrower_token_acct,
+        authority: lender_pda,
+        amount: *amount,
+        decimals,
+      }
+      .invoke_signed(&signer_seeds)?;
+    }
 
     Ok(())
   }
@@ -87,13 +138,13 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for FlashloanBorrow<'a> {
     log!("accounts len: {}, data len: {}", accounts.len(), data.len());
     //let instruction_data = LoanInstructionData::try_from(data)?;
 
-    let [signer, lender_pda, loan_data, mint, instruction_sysvar, config_pda, token_program, system_program, rent_sysvar, token_accounts @ ..] =
+    let [signer, lender_pda, loan_records, mint, instruction_sysvar, config_pda, token_program, system_program, rent_sysvar, token_accounts @ ..] =
       accounts
     else {
       return Err(ProgramError::NotEnoughAccountKeys);
     }; //lender_ata, user_ata
     check_signer(signer)?;
-    writable(loan_data)?;
+    writable(loan_records)?;
     executable(token_program)?;
     writable(config_pda)?;
     check_pda(config_pda)?;
@@ -102,15 +153,17 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for FlashloanBorrow<'a> {
     if instruction_sysvar.address().ne(&INSTRUCTIONS_ID) {
       return Err(ProgramError::UnsupportedSysvar);
     }
-    // Each loan requires a protocol_token_account and a borrower_token_account
+    // Each loan requires a lender_token_acct and a borrower_token_acct
     if (token_accounts.len() % 2).ne(&0) || token_accounts.len().eq(&0) {
       return Err(Ee::TokenAcctsLength.into());
     }
-    if loan_data.try_borrow()?.len().ne(&0) {
-      return Err(Ee::LoanDataAcct.into());
+    if loan_records.try_borrow()?.len().ne(&0) {
+      return Err(Ee::LoanRecordAcct.into());
     }
 
     //-------== parse variadic data
+    let (decimals, data) = data.split_first().ok_or_else(|| Ee::ByteSizeForU8)?;
+
     let (bump, data) = data.split_first().ok_or_else(|| Ee::ByteSizeForU8)?;
 
     let (fee, data) = data
@@ -122,11 +175,12 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for FlashloanBorrow<'a> {
         .map_err(|_| ProgramError::InvalidInstructionData)?,
     );
     log!("fee: {}", fee);
+
+    //Deriving the protocol PDA with the fee creates isolated liquidity pools for each fee tier, eliminating the need to store fee data in accounts. This design is both safe and optimal since each PDA with a specific fee owns only the liquidity associated with that fee rate. If someone passes an invalid fee, the corresponding token account for that fee bracket will be empty, automatically causing the transfer to fail with insufficient funds.
+
     if data.len() % size_of::<u64>() != 0 {
       return Err(Ee::ByteSizeForU64.into());
     }
-    //Deriving the protocol PDA with the fee creates isolated liquidity pools for each fee tier, eliminating the need to store fee data in accounts. This design is both safe and optimal since each PDA with a specific fee owns only the liquidity associated with that fee rate. If someone passes an invalid fee, the corresponding token account for that fee bracket will be empty, automatically causing the transfer to fail with insufficient funds.
-
     // Get the amount slice
     let amounts: &[u64] = unsafe {
       core::slice::from_raw_parts(data.as_ptr() as *const u64, data.len() / size_of::<u64>())
@@ -138,7 +192,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for FlashloanBorrow<'a> {
     Ok(Self {
       signer,
       lender_pda,
-      loan_data,
+      loan_records,
       mint,
       instruction_sysvar,
       config_pda,
@@ -147,6 +201,7 @@ impl<'a> TryFrom<(&'a [u8], &'a [AccountView])> for FlashloanBorrow<'a> {
       rent_sysvar,
       token_accounts,
       //lender_ata, user_ata,
+      decimals: *decimals,
       bump: [*bump],
       fee,
       amounts,

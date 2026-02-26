@@ -201,15 +201,15 @@ pub enum Ee {
   ForeignAta,
   #[error("AtaHasNoData")]
   AtaHasNoData,
-  #[error("Xyz087")]
-  Xyz087,
+  #[error("TokenAcctOwner")]
+  TokenAcctOwner,
+  #[error("TokenAcctDataLen")]
+  TokenAcctDataLen,
   #[error("NoRentExemptMintX")]
   NoRentExemptMintX,
   #[error("NoRentExemptMintY")]
   NoRentExemptMintY,
   //Token 2022
-  #[error("Xyz90")]
-  Xyz90,
   #[error("NoRentExemptTokAcct")]
   NoRentExemptTokAcct,
   #[error("NoRentExemptMint22")]
@@ -229,12 +229,11 @@ pub enum Ee {
   VaultIsForeign,
   #[error("Xyz099")]
   Xyz099,
-  #[error("Xyz100")]
-  Xyz100,
-  #[error("Xyz101")]
-  Xyz101,
   //Math
-  //ArithmeticOverflow exists
+  #[error("AddToOverflow")]
+  AddToOverflow,
+  #[error("MultDivNone")]
+  MultDivNone,
   #[error("MultiplyOverflow")]
   MultiplyOverflow,
   #[error("DividedByZero")]
@@ -280,10 +279,16 @@ pub enum Ee {
   //Flashloan
   #[error("TokenAcctsLength")]
   TokenAcctsLength,
-  #[error("LoanDataAcct")]
-  LoanDataAcct,
+  #[error("LoanRecordAcct")]
+  LoanRecordAcct,
   #[error("AmountsLenVsTokenAcctLen")]
   AmountsLenVsTokenAcctLen,
+  #[error("BorrowAmountTooBig")]
+  BorrowAmountTooBig,
+  #[error("BorrowedAmountIsZero")]
+  BorrowedAmountIsZero,
+  #[error("LenderPdaBalanceIsZero")]
+  LenderPdaBalanceIsZero,
   //Final variant
   #[error("NotMapped")]
   NotMapped,
@@ -391,10 +396,10 @@ impl TryFrom<u32> for Ee {
       84 => Ok(Ee::AtaCheckX1),
       85 => Ok(Ee::ForeignAta),
       86 => Ok(Ee::AtaHasNoData),
-      87 => Ok(Ee::Xyz087),
-      88 => Ok(Ee::NoRentExemptMintX),
-      89 => Ok(Ee::NoRentExemptMintY),
-      90 => Ok(Ee::Xyz90),
+      87 => Ok(Ee::TokenAcctOwner),
+      88 => Ok(Ee::TokenAcctDataLen),
+      89 => Ok(Ee::NoRentExemptMintX),
+      90 => Ok(Ee::NoRentExemptMintY),
       91 => Ok(Ee::NoRentExemptTokAcct),
       92 => Ok(Ee::NoRentExemptMint22),
       93 => Ok(Ee::NoRentExemptTokAcct22),
@@ -404,8 +409,8 @@ impl TryFrom<u32> for Ee {
       97 => Ok(Ee::VaultNoLamport),
       98 => Ok(Ee::VaultIsForeign),
       99 => Ok(Ee::Xyz099),
-      100 => Ok(Ee::Xyz100),
-      101 => Ok(Ee::Xyz101),
+      100 => Ok(Ee::AddToOverflow),
+      101 => Ok(Ee::MultDivNone),
       102 => Ok(Ee::MultiplyOverflow),
       103 => Ok(Ee::DividedByZero),
       104 => Ok(Ee::Remainder),
@@ -427,8 +432,11 @@ impl TryFrom<u32> for Ee {
       120 => Ok(Ee::SimpleAcctOwner),
       121 => Ok(Ee::SimpleAcctWriteAuthority),
       122 => Ok(Ee::TokenAcctsLength),
-      123 => Ok(Ee::LoanDataAcct),
+      123 => Ok(Ee::LoanRecordAcct),
       124 => Ok(Ee::AmountsLenVsTokenAcctLen),
+      125 => Ok(Ee::BorrowAmountTooBig),
+      126 => Ok(Ee::BorrowedAmountIsZero),
+      127 => Ok(Ee::LenderPdaBalanceIsZero),
       _ => Err(Ee::NotMapped.into()),
     }
   }
@@ -531,11 +539,11 @@ impl ToStr for Ee {
       Ee::AtaCheckX1 => "AtaCheckX1",
       Ee::ForeignAta => "ForeignAta",
       Ee::AtaHasNoData => "AtaHasNoData",
-      Ee::Xyz087 => "Xyz087",
+      Ee::TokenAcctOwner => "TokenAcctOwner",
+      Ee::TokenAcctDataLen => "TokenAcctDataLen",
       Ee::NoRentExemptMintX => "NoRentExemptMintX",
       Ee::NoRentExemptMintY => "NoRentExemptMintY",
 
-      Ee::Xyz90 => "Xyz90",
       Ee::NoRentExemptTokAcct => "NoRentExemptTokAcct",
       Ee::NoRentExemptMint22 => "NoRentExemptMint22",
       Ee::NoRentExemptTokAcct22 => "NoRentExemptTokAcct22",
@@ -546,8 +554,8 @@ impl ToStr for Ee {
       Ee::VaultIsForeign => "VaultIsForeign",
       Ee::Xyz099 => "Xyz099",
 
-      Ee::Xyz100 => "Xyz100",
-      Ee::Xyz101 => "Xyz101",
+      Ee::AddToOverflow => "AddToOverflow",
+      Ee::MultDivNone => "MultDivNone",
       Ee::MultiplyOverflow => "MultiplyOverflow",
       Ee::DividedByZero => "DividedByZero",
       Ee::Remainder => "Remainder",
@@ -571,8 +579,11 @@ impl ToStr for Ee {
       Ee::SimpleAcctWriteAuthority => "SimpleAcctWriteAuthority",
       //Flashloan
       Ee::TokenAcctsLength => "TokenAcctsLength",
-      Ee::LoanDataAcct => "LoanDataAcct",
+      Ee::LoanRecordAcct => "LoanRecordAcct",
       Ee::AmountsLenVsTokenAcctLen => "AmountsLenVsTokenAcctLen",
+      Ee::BorrowAmountTooBig => "BorrowAmountTooBig",
+      Ee::BorrowedAmountIsZero => "BorrowedAmountIsZero",
+      Ee::LenderPdaBalanceIsZero => "LenderPdaBalanceIsZero",
       //Final Variant
       Ee::NotMapped => "NotMapped",
     }
@@ -666,7 +677,28 @@ pub fn check_mint22b(
   Ok(())
 }
 
-//----------------== ATA
+//----------------== TokenAccount & ATA
+pub fn amount_from_token_acct(account: &AccountView) -> Result<u64, ProgramError> {
+  if !account.owned_by(&pinocchio_token::ID) {
+    return Err(Ee::TokenAcctOwner.into());
+  }
+  if account
+    .data_len()
+    .ne(&pinocchio_token::state::TokenAccount::LEN)
+  {
+    return Err(Ee::TokenAcctDataLen.into());
+  }
+  let data = account.try_borrow()?;
+  /*Token Account Data has the struct:
+  https://solana.com/docs/tokens
+  pub struct Account {
+      pub mint: Pubkey,// 32 bytes
+      pub owner: Pubkey,// 32 bytes
+      pub amount: u64, // 8 bytes
+      ...
+  }*/
+  Ok(u64::from_le_bytes(data[64..72].try_into().unwrap()))
+}
 pub fn ata_balc(from_ata: &AccountView, amount: u64) -> ProgramResult {
   let from_ata_info = TokenAccount::from_account_view(from_ata)?;
   if from_ata_info.amount() < amount {

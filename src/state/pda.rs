@@ -315,33 +315,10 @@ impl Escrow {
   }
 }
 
-//temporarily store loan data
+//temporarily store loan record
 #[derive(Clone, Debug)]
 #[repr(C, packed)]
-pub struct LoanDataAcct {
-  pub protocol_token_account: [u8; 32],
-  pub balance: u64, // final balance
-}
-impl LoanDataAcct {
-  pub const LEN: usize = core::mem::size_of::<LoanDataAcct>();
-  //pub const LEN: usize = 32 + 8;
-
-  pub const SEED: &[u8] = b"loandataacct";
-
-  pub fn get_token_amount(data: &[u8], account: &AccountView) -> Result<u64, ProgramError> {
-    if !account.owned_by(&pinocchio_token::ID) {
-      return Err(ProgramError::InvalidAccountOwner);
-    }
-    if account
-      .data_len()
-      .ne(&pinocchio_token::state::TokenAccount::LEN)
-    {
-      return Err(ProgramError::InvalidAccountData);
-    }
-    if data.len() != pinocchio_token::state::TokenAccount::LEN {
-      return Err(ProgramError::InvalidAccountData);
-    }
-
-    Ok(u64::from_le_bytes(data[64..72].try_into().unwrap()))
-  }
+pub struct LoanRecord {
+  pub lender_token_acct: [u8; 32],
+  pub balance_with_fee: u64,
 }
