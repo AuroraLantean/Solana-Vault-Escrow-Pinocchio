@@ -162,7 +162,8 @@ impl PriceUpdateV2 {
     if pda.data_len() < Self::LEN {
       return Err(Ee::PythPriceUpdateV2DataLen.into());
     }
-    unsafe { Ok(&*(pda.try_borrow().unwrap().as_ptr() as *const Self)) }
+    let data = pda.try_borrow()?;
+    unsafe { Ok(&*(data.as_ptr() as *const Self)) }
   }
   pub fn write_authority(&self) -> &Address {
     &self.write_authority

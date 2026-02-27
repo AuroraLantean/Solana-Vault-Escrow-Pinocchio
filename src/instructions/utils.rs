@@ -289,6 +289,14 @@ pub enum Ee {
   BorrowedAmountIsZero,
   #[error("LenderPdaBalanceIsZero")]
   LenderPdaBalanceIsZero,
+  #[error("RepayProgId")]
+  RepayProgId,
+  #[error("RepayDiscriminator")]
+  RepayDiscriminator,
+  #[error("RepayIxLenderPda")]
+  RepayIxLenderPda,
+  #[error("RepayTokenAccountLen")]
+  RepayTokenAccountLen,
   //Final variant
   #[error("NotMapped")]
   NotMapped,
@@ -437,6 +445,10 @@ impl TryFrom<u32> for Ee {
       125 => Ok(Ee::BorrowAmountTooBig),
       126 => Ok(Ee::BorrowedAmountIsZero),
       127 => Ok(Ee::LenderPdaBalanceIsZero),
+      128 => Ok(Ee::RepayProgId),
+      129 => Ok(Ee::RepayDiscriminator),
+      130 => Ok(Ee::RepayIxLenderPda),
+      131 => Ok(Ee::RepayTokenAccountLen),
       _ => Err(Ee::NotMapped.into()),
     }
   }
@@ -584,6 +596,10 @@ impl ToStr for Ee {
       Ee::BorrowAmountTooBig => "BorrowAmountTooBig",
       Ee::BorrowedAmountIsZero => "BorrowedAmountIsZero",
       Ee::LenderPdaBalanceIsZero => "LenderPdaBalanceIsZero",
+      Ee::RepayProgId => "RepayProgId",
+      Ee::RepayDiscriminator => "RepayDiscriminator",
+      Ee::RepayIxLenderPda => "RepayIxLenderPda",
+      Ee::RepayTokenAccountLen => "RepayTokenAccountLen",
       //Final Variant
       Ee::NotMapped => "NotMapped",
     }
@@ -697,7 +713,8 @@ pub fn amount_from_token_acct(account: &AccountView) -> Result<u64, ProgramError
       pub amount: u64, // 8 bytes
       ...
   }*/
-  Ok(u64::from_le_bytes(data[64..72].try_into().unwrap()))
+  let balance = parse_u64(&data[64..72])?;
+  Ok(balance)
 }
 pub fn ata_balc(from_ata: &AccountView, amount: u64) -> ProgramResult {
   let from_ata_info = TokenAccount::from_account_view(from_ata)?;
@@ -843,6 +860,25 @@ pub fn check_rent_sysvar(account: &AccountView) -> ProgramResult {
   Ok(())
 }
 //pub const SYSTEMPROGRAM: pinocchio_pubkey::reexport::Pubkey = solana_system_interface::program::ID;
+
+pub fn close_pda(pda: &AccountView, dest: &AccountView) -> ProgramResult {
+  log!("Close pda 1");
+  {
+    let mut data = pda.try_borrow_mut()?;
+    data[0] = 0xff;
+  }
+  log!("Close pda 2");
+  let sum_lam = dest
+    .lamports()
+    .checked_add(pda.lamports())
+    .ok_or_else(|| ProgramError::ArithmeticOverflow)?;
+  dest.set_lamports(sum_lam);
+  pda.set_lamports(0);
+
+  pda.resize(1)?;
+  pda.close()?;
+  Ok(())
+}
 
 //-------------==
 /// Get a `FeedId` from a hex string.

@@ -19,8 +19,6 @@ pub mod escrowTokTake;
 #[allow(non_snake_case)]
 pub mod escrowTokWithdraw;
 #[allow(non_snake_case)]
-pub mod flashloanBorrow;
-#[allow(non_snake_case)]
 pub mod oraclesRead;
 #[allow(non_snake_case)]
 pub mod solDeposit;
@@ -58,7 +56,6 @@ pub use escrowTokCancel::*;
 pub use escrowTokMake::*;
 pub use escrowTokTake::*;
 pub use escrowTokWithdraw::*;
-pub use flashloanBorrow::*;
 pub use oraclesRead::*;
 pub use solDeposit::*;
 pub use solWithdraw::*;
@@ -362,7 +359,16 @@ pub enum ProgramIx {
   #[account(3, name = "token_mint", desc = "Token Mint")]
   #[account(4, name = "token_prog", desc = "Token Program")]
   #[account(5, writable, name = "from_ata", desc = "From ATA")]
-  Flashloan { flashloan_vendor: u8, amount: u64 },
+  FlashloanBorrow { flashloan_vendor: u8, amount: u64 },
+
+  /// 23 FlashloanBorrow
+  #[account(0, signer, writable, name = "signer", desc = "signer")]
+  #[account(1, writable, name = "config_pda", desc = "Config PDA")]
+  #[account(2, name = "vendor_prog", desc = "Vendor Program")]
+  #[account(3, name = "token_mint", desc = "Token Mint")]
+  #[account(4, name = "token_prog", desc = "Token Program")]
+  #[account(5, writable, name = "from_ata", desc = "From ATA")]
+  FlashloanRepay { flashloan_vendor: u8, amount: u64 },
   //---------------== Admin PDA
   //---------------== User PDA
   //---------------== Action PDA
