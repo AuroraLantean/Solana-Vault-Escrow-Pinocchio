@@ -10,13 +10,10 @@ use solana_sdk::{inner_instruction, transaction::Transaction};
 
 #[test]
 fn create_account() {
-  // Create the test environment
   let mut svm = LiteSVM::new();
 
-  // Create a test account
   let user = Keypair::new();
 
-  // Fund the account with SOL
   let mint_authority = Keypair::new();
   svm
     .airdrop(&mint_authority.pubkey(), 1_000_000_000)
@@ -24,7 +21,6 @@ fn create_account() {
 
   svm.airdrop(&user.pubkey(), 1_000_000_000).unwrap();
 
-  // Check the balance
   let balance = svm.get_balance(&user.pubkey()).unwrap();
   assert_eq!(balance, 1_000_000_000);
 
@@ -60,4 +56,61 @@ fn test_transfer() {
   assert!(svm.get_balance(&alice.pubkey()).unwrap() < 1_000_000_000);*/
 
   println!("Transfer successful!");
+}
+
+#[test]
+fn make_mint_ata() {
+  let mut svm = LiteSVM::new();
+
+  let mint = Keypair::new();
+  let mint_data = Mint {
+    mint_authority: None.into(),
+    supply: 0,
+    decimals: 6,
+    is_initialized: true,
+    freeze_authority: None.into(),
+  };
+  let mut mint_account_data = vec![0; Mint::LEN];
+  Mint::pack(mint_data, &mut mint_account_data).unwrap();
+
+  svm.set_account(
+    mint.pubkey(),
+    Account {
+      lamports: 100_000_000,
+      //    let lamports = svm.minimum_balance_for_rent_exemption(Mint::LEN);
+      data: mint_account_data,
+      owner: TOKEN_PROGRAM_ID,
+      executable: false,
+      rent_epoch: 0,
+    },
+  );
+
+  // Create a new Token Account
+  let token_account = Keypair::new();
+  let owner = Keypair::new();
+
+  let token_account_data = TokenAccount {
+    mint: mint.pubkey(),
+    owner: owner.pubkey(),
+    amount: 0,
+    delegate: None.into(),
+    state: spl_token::state::AccountState::Initialized,
+    is_native: None.into(),
+    delegated_amount: 0,
+    close_authority: None.into(),
+  };
+  let mut token_account_data_bytes = vec![0; TokenAccount::LEN];
+  TokenAccount::pack(token_account_data, &mut token_account_data_bytes).unwrap();
+
+  svm.set_account(
+    token_account.pubkey(),
+    Account {
+      lamports: 100_000_000,
+      // let lamports = svm.minimum_balance_for_rent_exemption(TokenAccount::LEN);
+      data: token_account_data_bytes,
+      owner: TOKEN_PROGRAM_ID,
+      executable: false,
+      rent_epoch: 0,
+    },
+  );
 }

@@ -363,6 +363,10 @@ impl User {
         return Err(Ee::ForeignPDA.into());
       }
     }
-    unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
+    // Check alignment
+    if (pda.try_borrow()?.as_ptr() as usize) % core::mem::align_of::<Self>() != 0 {
+      return Err(Ee::UserDataLengh.into());
+    }
+    unsafe { Ok(&mut *(pda.try_borrow_mut()?.as_ptr() as *mut Self)) }
   }
 }
