@@ -321,3 +321,48 @@ impl Escrow {
     //unsafe { Ok(&mut *(pda.borrow_mut_data_unchecked().as_ptr() as *mut Self)) }
   }
 }
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct User {
+  mint: Address,
+  token_balc: [u8; 8],
+  bump: u8, //1
+}
+impl User {
+  pub const LEN: usize = core::mem::size_of::<User>();
+  pub const SEED: &[u8] = b"user";
+
+  pub fn mint(&self) -> &Address {
+    &self.mint
+  }
+  pub fn token_balc(&self) -> u64 {
+    u64::from_le_bytes(self.token_balc)
+  }
+  pub fn bump(&self) -> u8 {
+    self.bump
+  }
+  pub fn set_mint(&mut self, addr: &Address) {
+    self.mint = addr.clone();
+  }
+  pub fn set_token_balc(&mut self, amt: u64) -> ProgramResult {
+    none_zero_u64(amt)?;
+    self.token_balc = amt.to_le_bytes();
+    Ok(())
+  }
+  pub fn set_bump(&mut self, amt: u8) {
+    self.bump = amt.clone();
+  }
+  //For Escrow PDA
+  pub fn from_account_view(pda: &AccountView) -> Result<&mut Self, ProgramError> {
+    if pda.data_len() != Self::LEN {
+      return Err(Ee::EscrowDataLengh.into());
+    }
+    unsafe {
+      if pda.owner().ne(&PROG_ADDR) {
+        return Err(Ee::ForeignPDA.into());
+      }
+    }
+    unsafe { Ok(&mut *(pda.borrow_unchecked_mut().as_ptr() as *mut Self)) }
+  }
+}
