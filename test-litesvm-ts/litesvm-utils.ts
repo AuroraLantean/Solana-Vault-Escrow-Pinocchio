@@ -12,7 +12,6 @@ import {
 	type Keypair,
 	LAMPORTS_PER_SOL,
 	PublicKey,
-	SYSVAR_INSTRUCTIONS_PUBKEY,
 	SystemProgram,
 	Transaction,
 	TransactionInstruction,
@@ -31,7 +30,6 @@ import {
 	checkBigint,
 	checkDecimals,
 	decodeHexstrToUint8,
-	getTimeBig,
 	numToBytes,
 	statusToByte,
 	strToU8Fixed,
@@ -130,6 +128,32 @@ export const getSimpleAcct = (programId: PublicKey): PublicKey => {
 export const simpleAcctPbk = getSimpleAcct(futureOptionAddr);
 export const simpleAcctPricefeed = makeFakePricefeed(simpleAcctPbk);
 
+//-------------== Account
+export const acctIsNull = (account: PublicKey) => {
+	const raw = svm.getAccount(account);
+	expect(raw).toBeNull();
+};
+export const acctExists = (account: PublicKey) => {
+	const raw = svm.getAccount(account);
+	expect(raw).not.toBeNull();
+};
+export const acctEqual = (acct1: PublicKey | undefined, acct2: PublicKey) => {
+	if (acct1 === undefined) {
+		expect(false, "acct1 is undefined");
+	} else {
+		expect(acct1.toBase58()).toEqual(acct2.toBase58());
+	}
+};
+export const readAcct = (acct1: PublicKey, acctOwner?: PublicKey) => {
+	const pdaRaw = svm.getAccount(acct1);
+	expect(pdaRaw).not.toBeNull;
+	const rawAccountData = pdaRaw?.data;
+	console.log("rawAccountData:", rawAccountData);
+	console.log("pdaRaw?.owner:", pdaRaw?.owner.toBase58());
+	//expect(rawAccountData).not.toBeUndefined;
+	if (acctOwner) acctEqual(pdaRaw?.owner, acctOwner);
+	return rawAccountData;
+};
 //-------------== Program Methods
 export const initConfig = (
 	signer: Keypair,
@@ -142,6 +166,7 @@ export const initConfig = (
 	str: string,
 ) => {
 	const disc = 12;
+	const progAddr = vaultProgAddr;
 	const argData = [
 		boolToByte(isAuthorized),
 		statusToByte(status),
@@ -173,10 +198,10 @@ export const initConfig = (
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 export const updateConfig = (
 	signer: Keypair,
@@ -187,6 +212,7 @@ export const updateConfig = (
 	//str: string,
 ) => {
 	const disc = 13;
+	const progAddr = vaultProgAddr;
 	const argData = [
 		...bytes4u8s,
 		...numToBytes(numU32, 32),
@@ -202,10 +228,10 @@ export const updateConfig = (
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
 			{ pubkey: acct1, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 export const configResize = (
 	signer: Keypair,
@@ -213,6 +239,7 @@ export const configResize = (
 	newSize: bigint,
 ) => {
 	const disc = 19;
+	const progAddr = vaultProgAddr;
 	ll("configPDA:", configPDA.toBase58());
 	ll("newSize:", newSize);
 	const argData = [...numToBytes(newSize, 64)];
@@ -224,10 +251,10 @@ export const configResize = (
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 export const updateConfig2 = (
 	signer: Keypair,
@@ -240,6 +267,7 @@ export const updateConfig2 = (
 	str: string,
 ) => {
 	const disc = 20;
+	const progAddr = vaultProgAddr;
 	const argData = [
 		...bytes4bools,
 		...bytes4u8s,
@@ -258,10 +286,10 @@ export const updateConfig2 = (
 			{ pubkey: acct1, isSigner: false, isWritable: false },
 			{ pubkey: acct2, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 export const closeConfig = (
 	signer: Keypair,
@@ -269,6 +297,7 @@ export const closeConfig = (
 	dest: PublicKey,
 ) => {
 	const disc = 14;
+	const progAddr = vaultProgAddr;
 	ll("configPDA:", configPDA.toBase58());
 	ll("dest:", dest.toBase58());
 
@@ -279,10 +308,10 @@ export const closeConfig = (
 			{ pubkey: configPDA, isSigner: false, isWritable: true },
 			{ pubkey: dest, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 
 export const depositSol = (
@@ -291,6 +320,7 @@ export const depositSol = (
 	amount: bigint,
 ) => {
 	const disc = 0;
+	const progAddr = vaultProgAddr;
 	const argData = numToBytes(amount);
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -300,10 +330,10 @@ export const depositSol = (
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 export const withdrawSol = (
 	signer: Keypair,
@@ -312,6 +342,7 @@ export const withdrawSol = (
 	expectedError = "",
 ) => {
 	const disc = 1;
+	const progAddr = vaultProgAddr;
 	const argData = numToBytes(amount);
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -320,10 +351,10 @@ export const withdrawSol = (
 			{ pubkey: vaultPdaX, isSigner: false, isWritable: true },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer], expectedError);
+	sendTxns(blockhash, [ix], [signer], progAddr, expectedError);
 };
 export const lgcInitMint = (
 	signer: Keypair,
@@ -335,6 +366,7 @@ export const lgcInitMint = (
 	tokenProg = TOKEN_PROGRAM_ID,
 ) => {
 	const disc = 2;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimals);
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -347,10 +379,10 @@ export const lgcInitMint = (
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, decimals]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer, mintKp]);
+	sendTxns(blockhash, [ix], [signer, mintKp], progAddr);
 };
 export const tok22InitMint = (
 	signer: Keypair,
@@ -362,6 +394,7 @@ export const tok22InitMint = (
 	tokenProg = TOKEN_PROGRAM_ID,
 ) => {
 	const disc = 2;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimals);
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
@@ -374,10 +407,10 @@ export const tok22InitMint = (
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, decimals]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer, mintKp]);
+	sendTxns(blockhash, [ix], [signer, mintKp], progAddr);
 };
 export const lgcInitAta = (
 	signer: Keypair,
@@ -388,6 +421,7 @@ export const lgcInitAta = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 3;
+	const progAddr = vaultProgAddr;
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -400,10 +434,10 @@ export const lgcInitAta = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 export const lgcMintToken = (
 	mintAuthority: Keypair,
@@ -416,6 +450,7 @@ export const lgcMintToken = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 4;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
 	const argData = [decimals, ...numToBytes(amount)];
@@ -431,10 +466,10 @@ export const lgcMintToken = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [mintAuthority]);
+	sendTxns(blockhash, [ix], [mintAuthority], progAddr);
 };
 
 export const lgcDeposit = (
@@ -450,6 +485,7 @@ export const lgcDeposit = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 5;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
 	const argData = [decimals, ...numToBytes(amount)];
@@ -467,10 +503,10 @@ export const lgcDeposit = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [userSigner]);
+	sendTxns(blockhash, [ix], [userSigner], progAddr);
 };
 export const lgcWithdraw = (
 	userSigner: Keypair,
@@ -484,6 +520,7 @@ export const lgcWithdraw = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 6;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
 	const argData = [decimals, ...numToBytes(amount)];
@@ -500,10 +537,10 @@ export const lgcWithdraw = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [userSigner]);
+	sendTxns(blockhash, [ix], [userSigner], progAddr);
 };
 export const lgcPay = (
 	userSigner: Keypair,
@@ -518,6 +555,7 @@ export const lgcPay = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 7;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
 	const argData = [decimals, ...numToBytes(amount)];
@@ -535,10 +573,10 @@ export const lgcPay = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [userSigner]);
+	sendTxns(blockhash, [ix], [userSigner], progAddr);
 };
 export const lgcRedeem = (
 	userSigner: Keypair,
@@ -553,6 +591,7 @@ export const lgcRedeem = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 8;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimals);
 	checkBigint(amount, "amount");
 	const argData = [decimals, ...numToBytes(amount)];
@@ -570,10 +609,10 @@ export const lgcRedeem = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [userSigner]);
+	sendTxns(blockhash, [ix], [userSigner], progAddr);
 };
 export const makeTokEscrow = (
 	maker: Keypair,
@@ -592,6 +631,7 @@ export const makeTokEscrow = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 15;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimalX, "decimalX");
 	checkDecimals(decimalX, "decimalY");
 	checkBigint(amountX, "amountX");
@@ -619,10 +659,10 @@ export const makeTokEscrow = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [maker]);
+	sendTxns(blockhash, [ix], [maker], progAddr);
 };
 export const takeTokEscrow = (
 	taker: Keypair,
@@ -643,6 +683,7 @@ export const takeTokEscrow = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 16;
+	const progAddr = vaultProgAddr;
 	checkDecimals(decimalX, "decimalX");
 	checkDecimals(decimalX, "decimalY");
 	checkBigint(amountX, "amountX");
@@ -672,10 +713,10 @@ export const takeTokEscrow = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [taker]);
+	sendTxns(blockhash, [ix], [taker], progAddr);
 };
 export const withdrawTokEscrow = (
 	maker: Keypair,
@@ -691,6 +732,7 @@ export const withdrawTokEscrow = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 17;
+	const progAddr = vaultProgAddr;
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -708,10 +750,10 @@ export const withdrawTokEscrow = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc]),
 	});
-	sendTxns(svm, blockhash, [ix], [maker]);
+	sendTxns(blockhash, [ix], [maker], progAddr);
 };
 export const cancelTokEscrow = (
 	makerSigner: Keypair,
@@ -727,6 +769,7 @@ export const cancelTokEscrow = (
 	atokenProg = ATokenGPvbd,
 ) => {
 	const disc = 18;
+	const progAddr = vaultProgAddr;
 	const blockhash = svm.latestBlockhash();
 	const ix = new TransactionInstruction({
 		keys: [
@@ -744,10 +787,10 @@ export const cancelTokEscrow = (
 			{ pubkey: atokenProg, isSigner: false, isWritable: false },
 			{ pubkey: RentSysvar, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc]),
 	});
-	sendTxns(svm, blockhash, [ix], [makerSigner]);
+	sendTxns(blockhash, [ix], [makerSigner], progAddr);
 };
 
 export const oraclesRead = (
@@ -760,6 +803,7 @@ export const oraclesRead = (
 	num_u64: bigint,
 ) => {
 	const disc = 21;
+	const progAddr = vaultProgAddr;
 	if (pricefeed.vendor > 255) throw new Error("oracleVendor > 255");
 	const argData = [
 		pricefeed.vendor,
@@ -782,10 +826,10 @@ export const oraclesRead = (
 			{ pubkey: tokenProg, isSigner: false, isWritable: false },
 			{ pubkey: writeAuthority, isSigner: false, isWritable: false },
 		],
-		programId: vaultProgAddr,
+		programId: progAddr,
 		data: Buffer.from([disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer]);
+	sendTxns(blockhash, [ix], [signer], progAddr);
 };
 
 //-------------== LiteSVM System Methods
@@ -798,7 +842,7 @@ export const sendSol = (signer: Keypair, addrTo: PublicKey, amount: bigint) => {
 			lamports: amount,
 		}),
 	];
-	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
+	sendTxns(blockhash, ixs, [signer], SYSTEM_PROGRAM, "");
 };
 
 export const makeAccount = (
@@ -816,19 +860,18 @@ export const makeAccount = (
 			programId: programId,
 		}),
 	];
-	sendTxns(svm, blockhash, ixs, [signer], "", SYSTEM_PROGRAM);
+	sendTxns(blockhash, ixs, [signer], SYSTEM_PROGRAM, "");
 };
 //const rawAccount = svm.getAccount(address);
 
 //When you want to make Mint without the Mint Keypair. E.g. UsdtMintKp;
 //https://solana.com/docs/tokens/basics/create-mint
-export const setMint = (
+export const setLgcMint = (
 	mint: PublicKey,
 	decimals = 6,
 	supply = 9_000_000_000_000n,
 	mintAuthority = owner,
 	freezeAuthority = owner,
-	programId = TOKEN_PROGRAM_ID,
 ) => {
 	const rawMintAcctData = Buffer.alloc(MINT_SIZE);
 	MintLayout.encode(
@@ -846,7 +889,7 @@ export const setMint = (
 	svm.setAccount(mint, {
 		lamports: 1_000_000_000,
 		data: rawMintAcctData,
-		owner: programId,
+		owner: TOKEN_PROGRAM_ID,
 		executable: false,
 	});
 };
@@ -874,14 +917,6 @@ export const setPriceFeedPda = (pricefeed: PriceFeed) => {
 	});
 };
 //-------------== USDC or USDT
-export const acctIsNull = (account: PublicKey) => {
-	const raw = svm.getAccount(account);
-	expect(raw).toBeNull();
-};
-export const acctExists = (account: PublicKey) => {
-	const raw = svm.getAccount(account);
-	expect(raw).not.toBeNull();
-};
 export const getAta = (
 	mint: PublicKey,
 	owner: PublicKey,
@@ -1095,6 +1130,7 @@ export const initSimpleAcct = (
 	price: bigint,
 ) => {
 	const disc = Uint8Array.from([70, 220, 86, 48, 234, 178, 26, 125]); //copied from Anchor IDL
+	const progAddr = futureOptionAddr;
 	const argData = [...numToBytes(price)];
 
 	const blockhash = svm.latestBlockhash();
@@ -1104,20 +1140,19 @@ export const initSimpleAcct = (
 			{ pubkey: signer.publicKey, isSigner: true, isWritable: true },
 			{ pubkey: SYSTEM_PROGRAM, isSigner: false, isWritable: false },
 		],
-		programId: futureOptionAddr,
+		programId: progAddr,
 		data: Buffer.from([...disc, ...argData]),
 	});
-	sendTxns(svm, blockhash, [ix], [signer], "", futureOptionAddr);
+	sendTxns(blockhash, [ix], [signer], progAddr, "");
 };
 
 //---------------== Run Test
 export const sendTxns = (
-	svm: LiteSVM,
 	blockhash: string,
 	ixs: TransactionInstruction[],
 	signerKps: Keypair[],
+	programId: PublicKey,
 	expectedError = "",
-	programId = vaultProgAddr,
 ) => {
 	const tx = new Transaction();
 	tx.recentBlockhash = blockhash;
@@ -1135,9 +1170,6 @@ export const checkLogs = (
 	isVerbose = false,
 ) => {
 	ll("\nsimRes meta prettylogs:", simRes.meta().prettyLogs());
-	if (isVerbose) {
-		ll("\nsimRes.meta().logs():", simRes.meta().logs());
-	}
 	/** simRes.meta():
       computeUnitsConsumed: [class computeUnitsConsumed],
       innerInstructions: [class innerInstructions],
@@ -1147,12 +1179,22 @@ export const checkLogs = (
       signature: [class signature],
       toString: [class toString], */
 	if (sendRes instanceof TransactionMetadata) {
-		expect(simRes.meta().logs()).toStrictEqual(sendRes.logs());
+		const simResMetalogs = simRes.meta().logs();
+		if (isVerbose) {
+			ll(
+				"txn succeeded 1... simRes.meta().logs():",
+				simResMetalogs.length,
+				simResMetalogs,
+			);
+			const sendReslogs = sendRes.logs();
+			console.log("sendRes.logs():", sendReslogs.length, sendReslogs);
+			//expect(simResMetalogs).eq(sendRes.logs());
+			console.log("txn succeeded 2");
+		}
+		expect(simResMetalogs).toStrictEqual(sendRes.logs());
 
-		const logLength = simRes.meta().logs().length;
-		//ll("logLength:", logLength);
 		//ll("sendRes.logs()[logIndex]:", sendRes.logs()[logIndex]);
-		expect(sendRes.logs()[logLength - 1]).toStrictEqual(
+		expect(sendRes.logs()[simResMetalogs.length - 1]).toStrictEqual(
 			`Program ${programId} success`,
 		);
 	} else {
@@ -1226,9 +1268,19 @@ export const checkLogs = (
 	const raw = svm.getAccount(ata);
 	return { raw, ata };
 };*/
-export const setTime = (svm: LiteSVM) => {
-	const time = getTimeBig();
+export const getJsTime = () => {
+	const time = Math.floor(Date.now() / 1000);
+	console.log("JS time:", time);
+	return time;
+};
+export const setTime = (time: bigint) => {
 	const clock = svm.getClock();
 	clock.unixTimestamp = time;
+	svm.setClock(clock);
+};
+export const day = 86400; // seconds
+export const warpTime = (seconds: number) => {
+	const clock = svm.getClock();
+	clock.unixTimestamp += BigInt(seconds);
 	svm.setClock(clock);
 };

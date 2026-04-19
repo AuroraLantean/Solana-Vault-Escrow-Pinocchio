@@ -2,11 +2,7 @@
 import { expect, test } from "bun:test";
 import type { Keypair, PublicKey } from "@solana/web3.js";
 import type { AccountInfoBytes } from "litesvm";
-import {
-	Status,
-	solanaKitDecodeConfigDev,
-	solanaKitDecodeEscrowDev,
-} from "./decoder";
+import { decodeConfigDev, decodeEscrowDev, Status } from "./decoder";
 import {
 	acctExists,
 	acctIsNull,
@@ -24,8 +20,9 @@ import {
 	lgcMintToken,
 	makeTokEscrow,
 	type PdaOut,
+	readAcct,
 	setAtaCheck,
-	setMint,
+	setLgcMint,
 	svm,
 	takeTokEscrow,
 	vault1,
@@ -102,13 +99,13 @@ expect(adminBalc).toStrictEqual(initSolBalc);
 
 test("Set Mints", () => {
 	ll("\n------== Set Mints");
-	setMint(usdcMint);
+	setLgcMint(usdcMint);
 	acctExists(usdcMint);
-	setMint(usdtMint);
+	setLgcMint(usdtMint);
 	acctExists(usdtMint);
-	setMint(pyusdMint);
+	setLgcMint(pyusdMint);
 	acctExists(pyusdMint);
-	setMint(usdgMint);
+	setLgcMint(usdgMint);
 	acctExists(usdgMint);
 });
 test("InitConfig", () => {
@@ -143,7 +140,7 @@ test("InitConfig", () => {
 	ll("rawAccountData:", rawAccountData);
 	expect(pdaRaw?.owner).toEqual(vaultProgAddr);
 
-	const decoded = solanaKitDecodeConfigDev(rawAccountData);
+	const decoded = decodeConfigDev(rawAccountData);
 	expect(decoded.mint0).toEqual(mints[0]!);
 	expect(decoded.mint1).toEqual(mints[1]!);
 	expect(decoded.mint2).toEqual(mints[2]!);
@@ -163,13 +160,13 @@ test("InitConfig", () => {
 
 test("Set USDT Mint and ATAs", () => {
 	ll("\n------== Set USDT Mint and ATAs");
-	setMint(usdcMint);
+	setLgcMint(usdcMint);
 	acctExists(usdcMint);
-	setMint(usdtMint);
+	setLgcMint(usdtMint);
 	acctExists(usdtMint);
-	setMint(pyusdMint);
+	setLgcMint(pyusdMint);
 	acctExists(pyusdMint);
-	setMint(usdgMint);
+	setLgcMint(usdgMint);
 	acctExists(usdgMint);
 	const initUsdcBalc = bigintAmt(1000, 6);
 	setAtaCheck(usdcMint, user1, initUsdcBalc, "User1 USDC");
@@ -241,12 +238,8 @@ test("Make Token Escrow", () => {
 		amountY,
 		id,
 	);
-	const pdaRaw = svm.getAccount(escrowPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-
-	const decoded = solanaKitDecodeEscrowDev(rawAccountData);
+	const rawAccountData = readAcct(escrowPDA);
+	const decoded = decodeEscrowDev(rawAccountData);
 	expect(decoded.maker).toEqual(signer);
 	expect(decoded.mintX).toEqual(mintX);
 	expect(decoded.mintY).toEqual(mintY);
@@ -295,12 +288,9 @@ test("Take Token Escrow", () => {
 		amountY,
 		id,
 	);
-	const pdaRaw = svm.getAccount(escrowPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
+	const rawAccountData = readAcct(escrowPDA);
 
-	const _decoded = solanaKitDecodeEscrowDev(rawAccountData);
+	const _decoded = decodeEscrowDev(rawAccountData);
 	ataBalCk(escrowAtaX, zero, "Escrow X");
 	ataBalCk(escrowAtaY, amountY, "Escrow Y");
 	ataBalCk(takerAtaX, prevBalcX + amountX, "Taker X");

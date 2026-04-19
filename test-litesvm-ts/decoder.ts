@@ -79,7 +79,7 @@ export const configAcctDecoder: FixedSizeDecoder<ConfigAcct> = getStructDecoder(
 		//["padding", getArrayDecoder(getU64Decoder(), { size: 3 })],
 	],
 );
-export const solanaKitDecodeConfig = (
+export const decodeConfig = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike>,
 	isVerbose = false,
 ) => {
@@ -104,11 +104,11 @@ export const solanaKitDecodeConfig = (
 	return decoded;
 };
 // This below is only used for testing as it is outputing PublicKey, not Address
-export const solanaKitDecodeConfigDev = (
+export const decodeConfigDev = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
 ) => {
 	if (!bytes) throw new Error("bytes invalid");
-	const decoded = solanaKitDecodeConfig(bytes, true);
+	const decoded = decodeConfig(bytes, true);
 	const decodedV1: ConfigAcctDev = {
 		mint0: new PublicKey(decoded.mint0.toString()),
 		mint1: new PublicKey(decoded.mint1.toString()),
@@ -192,10 +192,12 @@ export const config2AcctDecoder: FixedSizeDecoder<Config2Acct> =
 		["newAccount1", getAddressDecoder()],
 		//["padding", getArrayDecoder(getU64Decoder(), { size: 3 })],
 	]);
-export const solanaKitDecodeConfig2 = (
+export const decodeConfig2 = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike>,
 	isVerbose = false,
 ) => {
+	ll("decodeConfig2");
+	if (bytes.length === 0) throw new Error("decodeConfig2 bytes empty");
 	const decoded = config2AcctDecoder.decode(bytes);
 	if (isVerbose) {
 		ll("mint0:", decoded.mint0);
@@ -220,11 +222,13 @@ export const solanaKitDecodeConfig2 = (
 	return decoded;
 };
 // This below is only used for testing as it is outputing PublicKey, not Address
-export const solanaKitDecodeConfig2Dev = (
+export const decodeConfig2Dev = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
 ) => {
-	if (!bytes) throw new Error("bytes invalid");
-	const decoded = solanaKitDecodeConfig2(bytes, true);
+	ll("decodeConfig2Dev");
+	if (!bytes) throw new Error("bytes undefined");
+	if (bytes.length === 0) throw new Error("bytes is empty");
+	const decoded = decodeConfig2(bytes, true);
 	const decodedV1: Config2AcctDev = {
 		mint0: new PublicKey(decoded.mint0.toString()),
 		mint1: new PublicKey(decoded.mint1.toString()),
@@ -294,7 +298,7 @@ export const escrowAcctDecoder: FixedSizeDecoder<EscrowAcct> = getStructDecoder(
 		["bump", getU8Decoder()],
 	],
 );
-export const solanaKitDecodeEscrow = (
+export const decodeEscrow = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike>,
 	isVerbose = false,
 ) => {
@@ -313,11 +317,11 @@ export const solanaKitDecodeEscrow = (
 	return decoded;
 };
 // This below is only used for testing as it is outputing PublicKey, not Address
-export const solanaKitDecodeEscrowDev = (
+export const decodeEscrowDev = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
 ) => {
 	if (!bytes) throw new Error("bytes invalid");
-	const decoded = solanaKitDecodeEscrow(bytes, true);
+	const decoded = decodeEscrow(bytes, true);
 	const decodedV1: EscrowAcctDev = {
 		maker: new PublicKey(decoded.maker.toString()),
 		mintX: new PublicKey(decoded.mintX.toString()),
@@ -368,7 +372,7 @@ export const simpleAcctDecoder: FixedSizeDecoder<SimpleAcct> = getStructDecoder(
 		//["padding", getArrayDecoder(getU64Decoder(), { size: 3 })],
 	],
 );
-export const solanaKitDecodeSimpleAcct = (
+export const decodeSimpleAcct = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike>,
 	isVerbose = false,
 ) => {
@@ -380,11 +384,11 @@ export const solanaKitDecodeSimpleAcct = (
 	return decoded;
 };
 // This below is only used for testing as it is outputing PublicKey, not Address
-export const solanaKitDecodeSimpleAcctDev = (
+export const decodeSimpleAcctDev = (
 	bytes: ReadonlyUint8Array | Uint8Array<ArrayBufferLike> | undefined,
 ) => {
 	if (!bytes) throw new Error("bytes invalid");
-	const decoded = solanaKitDecodeSimpleAcct(bytes, true);
+	const decoded = decodeSimpleAcct(bytes, true);
 	const decodedV1: SimpleAcctDev = {
 		writeAuthority: new PublicKey(decoded.writeAuthority.toString()),
 		price: decoded.price,

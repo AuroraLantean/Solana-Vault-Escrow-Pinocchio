@@ -22,7 +22,7 @@ import {
 	lgcWithdraw,
 	type PdaOut,
 	setAtaCheck,
-	setMint,
+	setLgcMint,
 	svm,
 	vault1,
 	vaultAta1,
@@ -112,13 +112,13 @@ test("Make DragonCoin Mint, ATA, Tokens", () => {
 
 test("Set USDT Mint and ATAs", () => {
 	ll("\n------== Set USDT Mint and ATAs");
-	setMint(usdcMint);
+	setLgcMint(usdcMint);
 	acctExists(usdcMint);
-	setMint(usdtMint);
+	setLgcMint(usdtMint);
 	acctExists(usdtMint);
-	setMint(pyusdMint);
+	setLgcMint(pyusdMint);
 	acctExists(pyusdMint);
-	setMint(usdgMint);
+	setLgcMint(usdgMint);
 	acctExists(usdgMint);
 
 	setAtaCheck(usdcMint, admin, initUsdcBalc, "Admin USDC");

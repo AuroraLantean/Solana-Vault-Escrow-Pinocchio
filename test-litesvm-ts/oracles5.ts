@@ -2,20 +2,18 @@
 import { expect, test } from "bun:test";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Keypair, PublicKey } from "@solana/web3.js";
-import {
-	Status,
-	solanaKitDecodeConfigDev,
-	solanaKitDecodeSimpleAcctDev,
-} from "./decoder";
+import { decodeConfigDev, decodeSimpleAcctDev, Status } from "./decoder";
 import {
 	acctExists,
 	configBump,
 	configPDA,
+	getJsTime,
 	initConfig,
 	initSimpleAcct,
 	initSolBalc,
 	oraclesRead,
-	setMint,
+	readAcct,
+	setLgcMint,
 	setPriceFeedPda,
 	setTime,
 	simpleAcctPbk,
@@ -64,13 +62,13 @@ let pricefeed: PriceFeed;
 
 test("Set Mints", () => {
 	ll("\n------== Set Mints");
-	setMint(usdcMint);
+	setLgcMint(usdcMint);
 	acctExists(usdcMint);
-	setMint(usdtMint);
+	setLgcMint(usdtMint);
 	acctExists(usdtMint);
-	setMint(pyusdMint);
+	setLgcMint(pyusdMint);
 	acctExists(pyusdMint);
-	setMint(usdgMint);
+	setLgcMint(usdgMint);
 	acctExists(usdgMint);
 });
 test("InitConfig", () => {
@@ -99,13 +97,9 @@ test("InitConfig", () => {
 		str,
 	);
 
-	const pdaRaw = svm.getAccount(configPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-	expect(pdaRaw?.owner).toEqual(vaultProgAddr);
-
-	const decoded = solanaKitDecodeConfigDev(rawAccountData);
+	const rawAccountData = readAcct(configPDA, vaultProgAddr);
+	//TODO
+	const decoded = decodeConfigDev(rawAccountData);
 	expect(decoded.mint0).toEqual(mints[0]!);
 	expect(decoded.mint1).toEqual(mints[1]!);
 	expect(decoded.mint2).toEqual(mints[2]!);
@@ -130,13 +124,8 @@ test("Make Anchor PDA", () => {
 	ll("signer:", signer.toBase58());
 	initSimpleAcct(signerKp, simpleAcctPbk, price);
 
-	const pdaRaw = svm.getAccount(simpleAcctPbk);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-	expect(pdaRaw?.owner).toEqual(futureOptionAddr);
-
-	const decoded = solanaKitDecodeSimpleAcctDev(rawAccountData);
+	const rawAccountData = readAcct(simpleAcctPbk, futureOptionAddr);
+	const decoded = decodeSimpleAcctDev(rawAccountData);
 	expect(decoded.writeAuthority).toEqual(signer);
 	expect(decoded.price).toEqual(price);
 });
@@ -181,7 +170,7 @@ test("OraclesRead", () => {
 
 	pricefeed = pythPricefeedBTCUSD;
 	setPriceFeedPda(pricefeed);
-	setTime(svm);
+	setTime(BigInt(getJsTime()));
 	oraclesRead(
 		signerKp,
 		configPDA,

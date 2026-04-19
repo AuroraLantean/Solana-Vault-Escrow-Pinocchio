@@ -2,20 +2,18 @@
 import { expect, test } from "bun:test";
 import { getBase58Decoder } from "@solana/kit";
 import type { Keypair, PublicKey } from "@solana/web3.js";
-import {
-	Status,
-	solanaKitDecodeConfig2Dev,
-	solanaKitDecodeConfigDev,
-} from "./decoder";
+import { decodeConfig2Dev, decodeConfigDev, Status } from "./decoder";
 import {
 	acctExists,
 	closeConfig,
 	configBump,
 	configPDA,
 	configResize,
+	getJsTime,
 	initConfig,
 	initSolBalc,
-	setMint,
+	readAcct,
+	setLgcMint,
 	setTime,
 	svm,
 	updateConfig,
@@ -72,13 +70,13 @@ let bytes4u64s: number[];
 
 test("Set Mints", () => {
 	ll("\n------== Set Mints");
-	setMint(usdcMint);
+	setLgcMint(usdcMint);
 	acctExists(usdcMint);
-	setMint(usdtMint);
+	setLgcMint(usdtMint);
 	acctExists(usdtMint);
-	setMint(pyusdMint);
+	setLgcMint(pyusdMint);
 	acctExists(pyusdMint);
-	setMint(usdgMint);
+	setLgcMint(usdgMint);
 	acctExists(usdgMint);
 });
 test("InitConfig", () => {
@@ -107,13 +105,8 @@ test("InitConfig", () => {
 		str,
 	);
 
-	const pdaRaw = svm.getAccount(configPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-	expect(pdaRaw?.owner).toEqual(vaultProgAddr);
-
-	const decoded = solanaKitDecodeConfigDev(rawAccountData);
+	const rawAccountData = readAcct(configPDA, vaultProgAddr);
+	const decoded = decodeConfigDev(rawAccountData);
 	expect(decoded.mint0).toEqual(mints[0]!);
 	expect(decoded.mint1).toEqual(mints[1]!);
 	expect(decoded.mint2).toEqual(mints[2]!);
@@ -146,7 +139,7 @@ test("updateConfig + time travel", () => {
 	//bytes4u32s = [...numToBytes(time, 32), ...u32Bytes, ...u32Bytes, ...u32Bytes];
 	//tokenAmount = as9zBn(274);
 	//bytes4u64s = [...numToBytes(fee),		...numToBytes(tokenAmount),...u64Bytes,		...u64Bytes];
-	setTime(svm);
+	setTime(BigInt(getJsTime()));
 
 	updateConfig(
 		signerKp,
@@ -157,12 +150,8 @@ test("updateConfig + time travel", () => {
 		//str,
 	);
 
-	const pdaRaw = svm.getAccount(configPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-
-	const decoded = solanaKitDecodeConfigDev(rawAccountData);
+	const rawAccountData = readAcct(configPDA);
+	const decoded = decodeConfigDev(rawAccountData);
 	expect(decoded.admin).toEqual(acct1);
 	expect(decoded.status).toEqual(status);
 	expect(decoded.updatedAt).toEqual(numU32);
@@ -188,13 +177,9 @@ test("extend configPDA", () => {
 test("Read Config2", () => {
 	ll("\n------== Read Config2");
 	ll(`configPDA: ${configPDA}`);
-	const pdaRaw = svm.getAccount(configPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-	expect(pdaRaw?.owner).toEqual(vaultProgAddr);
+	const rawAccountData = readAcct(configPDA, vaultProgAddr);
 
-	const decoded = solanaKitDecodeConfig2Dev(rawAccountData);
+	const decoded = decodeConfig2Dev(rawAccountData);
 	expect(decoded.mint0).toEqual(mints[0]!);
 	expect(decoded.mint1).toEqual(mints[1]!);
 	expect(decoded.mint2).toEqual(mints[2]!);
@@ -256,13 +241,8 @@ test("updateConfig2", () => {
 		str,
 	);
 
-	const pdaRaw = svm.getAccount(configPDA);
-	expect(pdaRaw).not.toBeNull();
-	const rawAccountData = pdaRaw?.data;
-	ll("rawAccountData:", rawAccountData);
-	expect(pdaRaw?.owner).toEqual(vaultProgAddr);
-
-	const decoded = solanaKitDecodeConfig2Dev(rawAccountData);
+	const rawAccountData = readAcct(configPDA, vaultProgAddr);
+	const decoded = decodeConfig2Dev(rawAccountData);
 	expect(decoded.mint0).toEqual(mints[0]!);
 	expect(decoded.mint1).toEqual(mints[1]!);
 	expect(decoded.mint2).toEqual(mints[2]!);
